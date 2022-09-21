@@ -1,0 +1,12 @@
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Placement
+metadata:
+  name: aws
+spec:
+  locationSelectors:
+  - matchLabels:
+      cloud: aws
+  namespaceSelector:
+    matchLabels:
+      app: foo
+  locationWorkspace: root:default:location-ws

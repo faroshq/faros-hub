@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
@@ -19,7 +18,7 @@ import (
 )
 
 func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) error {
-	client, rest, err := b.getWorkspaceClient(ctx, b.kcpClient, b.rest, workspace)
+	client, rest, err := b.getChildWorkspaceClient(ctx, b.kcpClient, b.rest, workspace)
 	if err != nil {
 		return err
 	}
@@ -31,19 +30,6 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 
 	separatorIndex := strings.LastIndex(workspace, ":")
 	var structuredWorkspaceType tenancyv1alpha1.ClusterWorkspaceTypeReference
-	//switch separatorIndex {
-	//case -1:
-	//	structuredWorkspaceType = tenancyv1alpha1.ClusterWorkspaceTypeReference{
-	//		Name: tenancyv1alpha1.ClusterWorkspaceTypeName(strings.ToLower("organization")),
-	//		// path is defaulted through admission
-	//	}
-	//default:
-	//	structuredWorkspaceType = tenancyv1alpha1.ClusterWorkspaceTypeReference{
-	//		Name: tenancyv1alpha1.ClusterWorkspaceTypeName(strings.ToLower("universal")),
-	//		Path: workspace[:separatorIndex],
-	//	}
-	//}
-	spew.Dump("create in", currentClusterName, workspace, workspace[separatorIndex+1:])
 	ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: workspace[separatorIndex+1:],
@@ -90,7 +76,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	return nil
 }
 
-func (b *bootstrap) getWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
+func (b *bootstrap) getChildWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
 	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
 	if err != nil {
 		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", b.rest.Host)
@@ -116,22 +102,36 @@ func (b *bootstrap) getWorkspaceClient(ctx context.Context, client kcpclient.Clu
 		clusterConfig.Host = u.String()
 		clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
 
-		return b.getWorkspaceClient(ctx, client, clusterConfig, childWorkspace)
-	} else {
-		u, err := url.Parse(config.Host)
-		if err != nil {
-			return nil, nil, err
-		}
-		u.Path = ""
+		return b.getChildWorkspaceClient(ctx, client, clusterConfig, childWorkspace)
+	}
+	return client, config, nil
+}
 
-		clusterConfig := rest.CopyConfig(config)
-		clusterConfig.Host = u.String()
-		clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-		client, err = kcpclient.NewClusterForConfig(clusterConfig)
-		if err != nil {
-			return nil, nil, err
-		}
-		return client, config, nil
+func (b *bootstrap) getWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
+	client, config, err := b.getChildWorkspaceClient(ctx, client, config, workspace)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	parts := strings.Split(workspace, ":")
+
+	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
+	if err != nil {
+		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", b.rest.Host)
+	}
+
+	ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Get(ctx, parts[len(parts)-1], metav1.GetOptions{})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	u, err := url.Parse(ws.Status.URL)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	clusterConfig := rest.CopyConfig(config)
+	clusterConfig.Host = u.String()
+	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
+	return client, clusterConfig, nil
 }

@@ -1,0 +1,8 @@
+resources:
+  - v20220924.apiresourceschemas.yaml
+  - apiexport.yaml
+  - clusterrole.yaml
+  - clusterrolebinding.yaml
+
+configurations:
+  - kustomizeconfig.yaml

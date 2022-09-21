@@ -7,18 +7,18 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/InVisionApp/go-health"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/faroshq/faros-hub/pkg/bootstrap"
-	"github.com/faroshq/faros-hub/pkg/config"
-	fconfig "github.com/faroshq/faros-hub/pkg/config"
-	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	"github.com/kcp-dev/kcp/pkg/embeddedetcd"
 	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
 	"github.com/kcp-dev/kcp/pkg/server"
 	"github.com/kcp-dev/kcp/pkg/server/options"
+	"github.com/mjudeikis/kcp-example/pkg/bootstrap"
+	"github.com/mjudeikis/kcp-example/pkg/config"
+	fconfig "github.com/mjudeikis/kcp-example/pkg/config"
+	utilhttp "github.com/mjudeikis/kcp-example/pkg/util/http"
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -52,7 +52,8 @@ func runKCP(ctx context.Context, c *config.Config) error {
 	ctx = klog.NewContext(ctx, logger)
 
 	serverOptions := options.NewOptions(c.Server.StateDir)
-	serverOptions.GenericControlPlane.Logs.Config.Verbosity = kconfig.VerbosityLevel(2)
+	serverOptions.GenericControlPlane.Logs.Config.Verbosity = kconfig.VerbosityLevel(5)
+
 	// set tunnels true
 	runtime.Must(utilfeature.DefaultMutableFeatureGate.Set(fmt.Sprintf("%s=true", kcpfeatures.SyncerTunnel)))
 
@@ -74,6 +75,8 @@ func runKCP(ctx context.Context, c *config.Config) error {
 	if err != nil {
 		return err
 	}
+
+	klog.Infof("Batteries included: %s", strings.Join(completed.Extra.BatteriesIncluded, ","))
 
 	if completedConfig.EmbeddedEtcd.Config != nil {
 		if err := embeddedetcd.NewServer(completedConfig.EmbeddedEtcd).Run(ctx); err != nil {
@@ -124,12 +127,27 @@ func run(ctx context.Context) error {
 	os.Setenv("KUBECONFIG", filepath.Join(c.Server.StateDir, "admin.kubeconfig"))
 	restConfig := ctrl.GetConfigOrDie()
 
-	b, err := bootstrap.New(ctx, restConfig)
+	b, err := bootstrap.New(ctx, c, restConfig)
 	if err != nil {
-		spew.Dump(err)
+		return err
 	}
 
 	err = b.BootstrapOrganization(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = b.BootstrapCompute(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = b.BootstrapServices(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = b.BootstrapUsers(ctx)
 	if err != nil {
 		return err
 	}

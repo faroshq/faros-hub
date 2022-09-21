@@ -216,10 +216,6 @@ github.com/evanphx/json-patch v4.12.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQL
 github.com/evanphx/json-patch v5.6.0+incompatible h1:jBYDEEiFBPxA0v50tFdvOzQQTCvpL6mnFh5mB2/l16U=
 github.com/evanphx/json-patch v5.6.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d/go.mod h1:ZZMPRZwes7CROmyNKgQzC3XPs6L/G2EJLHddWejkmf4=
-github.com/faroshq/kcp v0.0.0-20220912223622-796f31897c86 h1:NfljB2wHfT19z/8+u1oBz3uEuIBHH6BS3+7oylJSI4Y=
-github.com/faroshq/kcp v0.0.0-20220912223622-796f31897c86/go.mod h1:yTPdeVG0dHWdRV3Q6MBs9Gh31k/uy9e+E4VzrI8/sYA=
-github.com/faroshq/kcp/pkg/apis v0.0.0-20220912223622-796f31897c86 h1:EM9bXYGMLugZHF7+UKgXTj53VAr1HoMvDKvuUybMA3s=
-github.com/faroshq/kcp/pkg/apis v0.0.0-20220912223622-796f31897c86/go.mod h1:jwvDdhVuswpwqCriyr7frT3Ak23OzuFoVRjqSvfFiRk=
 github.com/fatih/camelcase v1.0.0/go.mod h1:yN2Sb0lFhZJUdVvtELVWefmrXpuZESvPmqwoZc+/fpc=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/felixge/httpsnoop v1.0.1 h1:lvB5Jl89CsZtGIWuTcDM1E/vkVs49/Ml7JJe07l8SPQ=
@@ -238,6 +234,7 @@ github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui72
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/getsentry/raven-go v0.2.0 h1:no+xWJRb5ZI7eE8TWgIq1jLulQiIoLG0IfYxv5JYMGs=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
+github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-errors/errors v1.0.1 h1:LUHzmkK3GUKUrL/1gfBUxAHzcev3apQlezX/+O7ma6w=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
@@ -435,10 +432,14 @@ github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7V
 github.com/julienschmidt/httprouter v1.3.0/go.mod h1:JR6WtHb+2LUe8TCKY3cZOxFyyO8IZAc4RVcycCCAKdM=
 github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E/uU8ce6rXgefFLlgrJj/GYY22cpxn+r32jIOes=
 github.com/karrick/godirwalk v1.16.1/go.mod h1:j4mkqPuvaLI8mp1DroR3P6ad7cyYd4c1qeJ3RV7ULlk=
-github.com/kcp-dev/apimachinery v0.0.0-20220819164220-dbb759406933 h1:32by2A7rpm3Vmu9sQwSZjOdCGRmG+PQOLuusgcRdF0k=
-github.com/kcp-dev/apimachinery v0.0.0-20220819164220-dbb759406933/go.mod h1:qnvUHkdxOrNzX17yX+z8r81CZEBuFdveNzWqFlwZ55w=
+github.com/kcp-dev/apimachinery v0.0.0-20220912132244-efe716c18e43 h1:vPv81j3mT5VYQ6YnCXrnKJQPeRNHwPcGJNsQNQfIG9Q=
+github.com/kcp-dev/apimachinery v0.0.0-20220912132244-efe716c18e43/go.mod h1:qnvUHkdxOrNzX17yX+z8r81CZEBuFdveNzWqFlwZ55w=
 github.com/kcp-dev/controller-runtime v0.12.2-0.20220808200255-4b60fd66e5de h1:IuXSIlIKJiR3ZsuO5PJ1yYdncsheX3A9rpuXQJ/TfQg=
 github.com/kcp-dev/controller-runtime v0.12.2-0.20220808200255-4b60fd66e5de/go.mod h1:OFkNQPsWPPz6qWrIY3FUjmSb0W7qKLK8aZC/xBIJwUE=
+github.com/kcp-dev/kcp v0.8.1-0.20220923135930-16209c9734d8 h1:cZm+JwbGX80EIJ6R+Q13WHwio0utKfL0YSTYELudFOw=
+github.com/kcp-dev/kcp v0.8.1-0.20220923135930-16209c9734d8/go.mod h1:DGtm4rzjKSQwR3mmwtUqhuVKgvboPjYFfqV1KdBA6jE=
+github.com/kcp-dev/kcp/pkg/apis v0.8.1-0.20220923135930-16209c9734d8 h1:ALgB7BMMMYNZHdDsLDi/O9BS0cRhRqu9aAR8ViFHMoI=
+github.com/kcp-dev/kcp/pkg/apis v0.8.1-0.20220923135930-16209c9734d8/go.mod h1:jwvDdhVuswpwqCriyr7frT3Ak23OzuFoVRjqSvfFiRk=
 github.com/kcp-dev/kubernetes v0.0.0-20220909115719-01e2c80c52f8 h1:QS6YI6io2tHV6EINrv+4abuyyzT3sNP8reEXHcbyWqQ=
 github.com/kcp-dev/kubernetes v0.0.0-20220909115719-01e2c80c52f8/go.mod h1:x3RxHGS2ZEGxxiakIQx3KJJJ9T5Q0DqFKWjIjIRSGCY=
 github.com/kcp-dev/kubernetes/staging/src/k8s.io/api v0.0.0-20220909115719-01e2c80c52f8 h1:4yLR2soAQuFX3CXrAvsc+yDWlmETQBDeKt/iF1srPtY=

@@ -1,14 +1,19 @@
-module github.com/faroshq/faros-hub
+module github.com/mjudeikis/kcp-example
 
 go 1.18
 
 require (
 	github.com/InVisionApp/go-health v2.1.0+incompatible
 	github.com/davecgh/go-spew v1.1.1
+	github.com/evanphx/json-patch v5.6.0+incompatible
+	github.com/ghodss/yaml v1.0.0
 	github.com/joho/godotenv v1.4.0
-	github.com/kcp-dev/kcp v0.0.0
-	github.com/kcp-dev/kcp/pkg/apis v0.0.0-00010101000000-000000000000
+	github.com/kcp-dev/kcp v0.8.1-0.20220923135930-16209c9734d8
+	github.com/kcp-dev/kcp/pkg/apis v0.8.1-0.20220923135930-16209c9734d8
+	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/martinlindhe/base36 v1.1.1
+	k8s.io/api v0.25.0
 	k8s.io/apiextensions-apiserver v0.24.3
 	k8s.io/apimachinery v0.25.0
 	k8s.io/apiserver v0.25.0
@@ -16,7 +21,10 @@ require (
 	k8s.io/component-base v0.25.0
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kube-aggregator v0.0.0
+	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42
 	sigs.k8s.io/controller-runtime v0.0.0-00010101000000-000000000000
+	sigs.k8s.io/kustomize/api v0.11.4
+	sigs.k8s.io/kustomize/kyaml v0.13.6
 )
 
 require (
@@ -44,12 +52,12 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
-	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.3+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/zapr v1.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
@@ -73,11 +81,9 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kcp-dev/apimachinery v0.0.0-20220819164220-dbb759406933 // indirect
-	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.1 // indirect
+	github.com/kcp-dev/apimachinery v0.0.0-20220912132244-efe716c18e43 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
-	github.com/martinlindhe/base36 v1.1.1 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -148,14 +154,12 @@ require (
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.25.0 // indirect
 	k8s.io/cli-runtime v0.24.3 // indirect
 	k8s.io/cloud-provider v0.0.0 // indirect
 	k8s.io/cluster-bootstrap v0.0.0 // indirect
 	k8s.io/component-helpers v0.0.0 // indirect
 	k8s.io/controller-manager v0.0.0 // indirect
 	k8s.io/kube-controller-manager v0.0.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect
 	k8s.io/kubelet v0.0.0 // indirect
 	k8s.io/kubernetes v1.24.3 // indirect
 	k8s.io/mount-utils v0.0.0 // indirect
@@ -163,15 +167,11 @@ require (
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.32 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
-	sigs.k8s.io/kustomize/api v0.11.4 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.13.6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace (
-	github.com/kcp-dev/kcp => github.com/faroshq/kcp v0.0.0-20220912223622-796f31897c86
-	github.com/kcp-dev/kcp/pkg/apis => github.com/faroshq/kcp/pkg/apis v0.0.0-20220912223622-796f31897c86
 	k8s.io/api => github.com/kcp-dev/kubernetes/staging/src/k8s.io/api v0.0.0-20220909115719-01e2c80c52f8
 	k8s.io/apiextensions-apiserver => github.com/kcp-dev/kubernetes/staging/src/k8s.io/apiextensions-apiserver v0.0.0-20220909115719-01e2c80c52f8
 	k8s.io/apimachinery => github.com/kcp-dev/kubernetes/staging/src/k8s.io/apimachinery v0.0.0-20220909115719-01e2c80c52f8

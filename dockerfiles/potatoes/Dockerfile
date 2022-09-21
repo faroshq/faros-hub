@@ -15,12 +15,12 @@ COPY go.sum .
 # COPY the source code as the last step
 COPY . .
 
-RUN make build-server
+RUN make build-potatoes
 
 FROM alpine
 RUN apk --update add ca-certificates
 
-COPY --from=builder /app/bin/server /bin
+COPY --from=builder /app/bin/potatoes /bin
 
 # Create a group and user
 ENV USER_ID=1000
@@ -32,11 +32,8 @@ RUN addgroup -g $USER_ID $GROUP_NAME && \
     adduser --shell /sbin/nologin --disabled-password \
     --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
 
-RUN mkdir -p /server/
+RUN chown -R $USER_NAME:$GROUP_NAME /bin/potatoes
 
-RUN chown -R $USER_NAME:$GROUP_NAME /bin/server
-
-ENV SERVER_STATE_DIR=/var/opt/server
 USER $USER_ID
 
-ENTRYPOINT ["/bin/server"]
+ENTRYPOINT ["/bin/potatoes"]

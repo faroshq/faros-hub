@@ -1,0 +1,6 @@
+apiVersion: faros.sh/v1alpha1
+kind: Potato
+metadata:
+  name: potato-sample
+spec:
+  request: 1
