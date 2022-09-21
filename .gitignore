@@ -1,0 +1,5 @@
+.env
+/dev
+/bin
+/vendor
+.kcp
