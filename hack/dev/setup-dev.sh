@@ -10,5 +10,4 @@ else
     echo "KIND already installed"
 fi
 
-kind create cluster --name services1 --kubeconfig ./dev/services1.kubeconfig
-kind create cluster --name shared1 --kubeconfig ./dev/shared1.kubeconfig
+kind create cluster --name cluster --kubeconfig ./dev/cluster.kubeconfig

@@ -3,22 +3,19 @@ package bootstrap
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	pluginhelpers "github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/rest"
 )
 
 func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) error {
-	client, rest, err := b.getChildWorkspaceClient(ctx, b.kcpClient, b.rest, workspace)
+	client, rest, err := b.clientFactory.GetChildWorkspaceClient(ctx, workspace)
 	if err != nil {
 		return err
 	}
@@ -74,64 +71,4 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	return nil
-}
-
-func (b *bootstrap) getChildWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
-	if err != nil {
-		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", b.rest.Host)
-	}
-
-	parts := strings.Split(workspace, ":")
-
-	if len(parts) >= 2 {
-		currentWorkspace := parts[0]
-		childWorkspace := strings.Join(parts[1:], ":")
-
-		ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Get(ctx, currentWorkspace, metav1.GetOptions{})
-		if err != nil {
-			return nil, nil, err
-		}
-
-		u, err := url.Parse(ws.Status.URL)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		clusterConfig := rest.CopyConfig(config)
-		clusterConfig.Host = u.String()
-		clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-		return b.getChildWorkspaceClient(ctx, client, clusterConfig, childWorkspace)
-	}
-	return client, config, nil
-}
-
-func (b *bootstrap) getWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, config, err := b.getChildWorkspaceClient(ctx, client, config, workspace)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	parts := strings.Split(workspace, ":")
-
-	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
-	if err != nil {
-		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", b.rest.Host)
-	}
-
-	ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Get(ctx, parts[len(parts)-1], metav1.GetOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	u, err := url.Parse(ws.Status.URL)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	clusterConfig := rest.CopyConfig(config)
-	clusterConfig.Host = u.String()
-	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-	return client, clusterConfig, nil
 }

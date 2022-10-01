@@ -1,16 +1,10 @@
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIExport
 metadata:
-  name: faros.sh
+  name: access.faros.sh
 spec:
   latestResourceSchemas:
-    - v20220924.potatoes.faros.sh
+    - v20221001.kubeconfigrequests.access.faros.sh
   permissionClaims:
-    - group: ""
-      resource: "secrets"
-    - group: ""
-      resource: "configmaps"
-    - group: ""
-      resource: "namespaces"
-    - group: "faros.sh"
-      resource: "potatoes"
+    - group: "access.faros.sh"
+      resource: "kubeconfigrequests"

@@ -29,7 +29,7 @@ spec:
         runAsNonRoot: true
       containers:
       - args:
-        - --api-export-name=faros.sh
+        - --api-export-name=access.faros.sh
         - --leader-elect
         env:
         - name: POD_NAMESPACE
@@ -37,7 +37,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         # TODO: This is replaced by the kustomize. But we dont do it here.
-        image: quay.io/faroshq/kcp-potatoes-service:latest
+        image: quay.io/faroshq/kcp-hub-controllers:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

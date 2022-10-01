@@ -92,9 +92,9 @@
       - list
       - watch
     - apiGroups:
-      - faros.sh
+      - access.faros.sh
       resources:
-      - widgets
+      - kubeconfigrequest
       verbs:
       - create
       - delete
@@ -104,15 +104,15 @@
       - update
       - watch
     - apiGroups:
-      - faros.sh
+      - access.faros.sh
       resources:
-      - potatoes/finalizers
+      - kubeconfigrequest/finalizers
       verbs:
       - update
     - apiGroups:
-      - faros.sh
+      - access.faros.sh
       resources:
-      - potatoes/status
+      - kubeconfigrequest/status
       verbs:
       - get
       - patch

@@ -1,0 +1,143 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kcp-syncer-kind-271k0izw
+  labels:
+    workload.kcp.io/logical-cluster: root_clusters_dev-env
+    workload.kcp.io/sync-target: kind
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kcp-syncer-kind-271k0izw
+  namespace: kcp-syncer-kind-271k0izw
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kcp-syncer-kind-271k0izw-token
+  namespace: kcp-syncer-kind-271k0izw
+  annotations:
+    kubernetes.io/service-account.name: kcp-syncer-kind-271k0izw
+type: kubernetes.io/service-account-token
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kcp-syncer-kind-271k0izw
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - "apiextensions.k8s.io"
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - "get"
+  - "watch"
+  - "list"
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  verbs:
+  - "*"
+- apiGroups:
+  - "apps"
+  resources:
+  - deployments
+  verbs:
+  - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kcp-syncer-kind-271k0izw
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kcp-syncer-kind-271k0izw
+subjects:
+- kind: ServiceAccount
+  name: kcp-syncer-kind-271k0izw
+  namespace: kcp-syncer-kind-271k0izw
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kcp-syncer-kind-271k0izw
+  namespace: kcp-syncer-kind-271k0izw
+stringData:
+  kubeconfig: |
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - name: default-cluster
+      cluster:
+        certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUROakNDQWg2Z0F3SUJBZ0lCQWpBTkJna3Foa2lHOXcwQkFRc0ZBREFtTVNRd0lnWURWUVFEREJzeE9USXUKTVRZNExqRXVNVE00TFdOaFFERTJOalEyTVRjMU5qWXdIaGNOTWpJeE1EQXhNRGcwTmpBMldoY05Nak14TURBeApNRGcwTmpBMldqQWpNU0V3SHdZRFZRUUREQmd4T1RJdU1UWTRMakV1TVRNNFFERTJOalEyTVRjMU5qWXdnZ0VpCk1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRRHhOT3Y3L1NLSDk3cjFHSjdpa3djdWRRNGEKd3MxUms3N052WnpmYWNHWTVlYWdLMUZLVVNoUDdxWkJRZ2YwN0dPMUdheGg4NjlCY21VenN4MUJyNEdwZFZpMQp6OFhhdXhLUDZoeDFDQjREVFZRWFNLVTZCalM4bVIwQ1daVitZQktMSnlyNWFVMmtYN1ZHL3pyUE93am5sR3BKClNMZWxPYkxycjhwSDNsWXFyMENjejdkRDZpUG4wSndyQnpGVDF5SExKRGFnMW1MWTZGQjRTQmZ0VU1ScEhKSFcKSnpoMWw5WVg1SWY5NVdOKzZnWnAzRDBKSW9SWTJHSzZEWjdhUzBKZFJLM1RncDZIZ3o0eHpOMmtpQmN1V2svdQpYOG9DM1h6U2RYNzFuR2J5czBHeWRZNGszQmFyQWlHVExYaVFnVGdBalpIeGhMUHJ6Q3gxa01NSFd2anZBZ01CCkFBR2pjakJ3TUE0R0ExVWREd0VCL3dRRUF3SUZvREFUQmdOVkhTVUVEREFLQmdnckJnRUZCUWNEQVRBTUJnTlYKSFJNQkFmOEVBakFBTUI4R0ExVWRJd1FZTUJhQUZCUnVkSFN2bEhDZkVCQk4xTWtuMDZwbDBXcUFNQm9HQTFVZApFUVFUTUJHQ0NXeHZZMkZzYUc5emRJY0V3S2dCaWpBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWdILzR4VVczCkZVQzRRNE1nbXM2R0dFOHV4T25EZUh3d3JjZGFPWGhOUUdwV0RKR1d6TXd3MEgwTDIrQUYwNzhzc3YyYXJFQW4KZnV2S3VaN0lVWWFlQnBoZmdsUTRrdUEyanJVZ3llZS9OWTJFOVVNaG9SNUkrUjNzY0xld2h4ZTBJbHE0YlE2dQpKeGhMSFNsQmtYSGhkQkFZczRxYW4zNEFBRnBLcWJDYTJ3SDhWaGYzVnhSbUZwOTRkZndLWVE2RkNURGZZN1NYCnNQdERQYnNyTENpMUZRTnh0Nng5d2V6NmcxTGNaNTBzMUkrUUMrOG5aT05rRE5YWmJaRjNQc0xmMkZHUU5sZy8KaG51eW1MbG14cUJJWWg3NGxCRVl1Y3kzckJwTDhJRjBFS1FrWVhlR3YrN01WVzlNV2FJTkw1V0NFV2E1cHJxQwo5V0tBbTd5NjQ5UGI5Zz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURDVENDQWZHZ0F3SUJBZ0lCQVRBTkJna3Foa2lHOXcwQkFRc0ZBREFtTVNRd0lnWURWUVFEREJzeE9USXUKTVRZNExqRXVNVE00TFdOaFFERTJOalEyTVRjMU5qWXdIaGNOTWpJeE1EQXhNRGcwTmpBMldoY05Nak14TURBeApNRGcwTmpBMldqQW1NU1F3SWdZRFZRUUREQnN4T1RJdU1UWTRMakV1TVRNNExXTmhRREUyTmpRMk1UYzFOall3CmdnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUM5SU5GeWhORDVwTWEyYUlSRkZRU2gKbWZJbzQ0ckRDaVJBNi9hc0drMEtNdkNuSDVCMWMwRkczNnA3ak94S2luV0IvVVNKVDVCam9EblkrL0N5cmNKMwpyRWxXRDJNSG1tblkvSDdRd3BrUk9yWlNHd1ZJR0lpdjYzZDZPcVVaRW5PTXJCVG1GRk9Od0J3NXhNVWo2T0tVCnJ2UzNTSTRJNUtnMnYwM2d0MmdUamhuRFFkLzlhZ1F5ajZQZE5RWFJOWFUyR1BOa1ViaTFtenVzQzc1djRCazkKb2xVL1FQRDJFY0V1QnJ3NTJsbXRyU2ltQ1BMcGNaNUtRaXZQWFJkRS9FR3l1VHVreUt5KytWSHJoRXE5cCs5NQpPc0sra0pEbG54Mk9qdFdTbUZlaEpxaGZBZzJKL0xGS2lodEx4MFhtSXlGTnpjdXVHWmZkREd5eDBBUzNiL3pGCkFnTUJBQUdqUWpCQU1BNEdBMVVkRHdFQi93UUVBd0lDcERBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWQKRGdRV0JCUVViblIwcjVSd254QVFUZFRKSjlPcVpkRnFnREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBZU9ObAo1dTlwcmZORnNEcXBwSmJaeWJNSUxiZXVjaUtULzdTeE1sdi9sKzBoYlB1YlhnZ0JMRjBVTUpMY24zQVE1S2F0ClhZU0F4cUtQdXFabmJUUlRVZXIvbkhrdzVKY2s2OVNuV0RaOTRLSFNxdGhhREpMR0Y5ZkY0aTM4cmRCdDdoQVEKSnRJcVVkTWV2cmNHeHNPUno2bEdTNnNkTkRUNmpDK3JuM0RiQXhnYkJjZklCVzhOWnB1RUxsdmZWMVFuSG9DYwpWb0xWeG81dDBBN2N3ZmVnRkx3b0syRUEzaFZOM1pkeUdYTTcwTVkybnROeUZSR2VwdkFFK1FFdlo5KzVrbnBqCk8rUGNCM29UYmpENEtqMk8yREQvUkdhNTVKb0x0UnUrTnNqTmg2ZmlDcGxPWEVtOGhhZ01YeW1FRkZPK01IMmkKckQ3Y3hUUW1WUDFEejVQZ3RBPT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+        server: https://192.168.1.138:6443
+    contexts:
+    - name: default-context
+      context:
+        cluster: default-cluster
+        namespace: default
+        user: default-user
+    current-context: default-context
+    users:
+    - name: default-user
+      user:
+        token: eyJhbGciOiJSUzI1NiIsImtpZCI6ImRnc1BmVzVTWnFPQUtVa3VIZmxORHpzd1kyanNFS3dYVmNaNHBsMldEdzAifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9jbHVzdGVyTmFtZSI6InJvb3Q6Y2x1c3RlcnM6ZGV2LWVudiIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvbmFtZXNwYWNlIjoiZGVmYXVsdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJrY3Atc3luY2VyLWtpbmQtMjcxazBpenctdG9rZW4tOTd4NGgiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2NwLXN5bmNlci1raW5kLTI3MWswaXp3Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiYjMyYjk1ODktNzUxZC00N2JkLWFmMDctNmQ3MjQwMzE0MjNmIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRlZmF1bHQ6a2NwLXN5bmNlci1raW5kLTI3MWswaXp3In0.fbcnl7QBLi9RcJHaRqokPA8LROwbsA8uO-b2PVY8rWsgllWXX-im24hqMiln-9lfK7zcIZwdRqjt727UNMrSgB-aRVlZr6WGF_1LzWjgOCk5Qod2MOVEV1EylaqEH5CmbGeYejVIxwVG7ETqLQxVSGneVEhO2ZsLbrTL9cU-7DY6BSfjV8177qPfHmOWEhjL8i2hFLnvZieP8cSaWaxzoInhkdQJub4hCm4VA9g1dX2dHCWkhkmItcqXXpKgGC5EYt9Qc93JIbxrdibz4yuMZndXPAwdmqae8QIe5RoAqAUTbCZKsIxC44DynDrlTy_z1zZ40MNvradS7tIb39A6OypzIeOsphNp3WZiENSJt4-HEAQHm883Xss9_mtk_pylITh0qmLAYO5vY1Ao6z28fEdTCun54EqSxhREtRH86nq1N5QMTpRQ5CoPcnhU0yWXUHwJzuL9-nmX29cNKIP_CV4s2qSfXHeX77wSTNZkosl0qJepelQa8hidiTf6evqlBI6W4TBGiRqbt7M9kzoFZknth4UryrUXGixmoQEkkoNlz3YAXAg91hCNZhjkC--a18AcauhP7-fTLNJexn8al3_4yDe_JF0pXlw9AK8vJGP2u_uaOTTOwtZnE6WOuIJUPZDEbcL_6vcXsR7uv4KUiGkeVaThnMOHyM9nZAkAiWc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kcp-syncer-kind-271k0izw
+  namespace: kcp-syncer-kind-271k0izw
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kcp-syncer-kind-271k0izw
+  template:
+    metadata:
+      labels:
+        app: kcp-syncer-kind-271k0izw
+    spec:
+      containers:
+      - name: kcp-syncer
+        command:
+        - /ko-app/syncer
+        args:
+        - --from-kubeconfig=/kcp/kubeconfig
+        - --feature-gates=KCPSyncerTunnel=true
+        - --sync-target-name=kind
+        - --sync-target-uid=27847747-0702-47d2-857f-a5e81d235709
+        - --from-cluster=root:clusters:dev-env
+        - --resources=configmaps
+        - --resources=deployments.apps
+        - --resources=secrets
+        - --resources=serviceaccounts
+        - --qps=20
+        - --burst=30
+        image: ghcr.io/kcp-dev/kcp/syncer:main
+        imagePullPolicy: IfNotPresent
+        terminationMessagePolicy: FallbackToLogsOnError
+        volumeMounts:
+        - name: kcp-config
+          mountPath: /kcp/
+          readOnly: true
+      serviceAccountName: kcp-syncer-kind-271k0izw
+      volumes:
+        - name: kcp-config
+          secret:
+            secretName: kcp-syncer-kind-271k0izw
+            optional: false

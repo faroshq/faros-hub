@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/faroshq/faros-hub/pkg/util/file"
+	"github.com/faroshq/faros-hub/pkg/util/validation"
 	"github.com/ghodss/yaml"
-	"github.com/mjudeikis/kcp-example/pkg/util/file"
-	"github.com/mjudeikis/kcp-example/pkg/util/validation"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
