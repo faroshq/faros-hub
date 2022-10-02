@@ -2,19 +2,19 @@ apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
-  name: v20221001.kubeconfigrequests.access.faros.sh
+  name: v20221002.requests.access.faros.sh
 spec:
   group: access.faros.sh
   names:
-    kind: KubeConfigRequest
-    listKind: KubeConfigRequestList
-    plural: kubeconfigrequests
-    singular: kubeconfigrequest
+    kind: Request
+    listKind: RequestList
+    plural: requests
+    singular: request
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
-      description: KubeConfigRequest is the Schema for the KubeConfigRequest API
+      description: Request is the Schema for the Access Request API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -29,7 +29,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: KubeConfigRequestSpec defines the desired state of KubeConfigRequest
+          description: RequestSpec defines the desired state of Request
           properties:
             request:
               format: int64

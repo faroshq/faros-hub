@@ -2,7 +2,6 @@ package access
 
 import (
 	"context"
-	"sync"
 
 	"github.com/kcp-dev/logicalcluster/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -22,13 +21,11 @@ type Reconciler struct {
 	Scheme        *runtime.Scheme
 	Config        *config.Config
 	ClusterClient *kubernetesclient.Clientset
-
-	lock sync.Mutex
 }
 
-// +kubebuilder:rbac:groups=access.faros.sh,resources=kubeconfigrequest,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=access.faros.sh,resources=kubeconfigrequest/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=access.faros.sh,resources=kubeconfigrequest/finalizers,verbs=update
+// +kubebuilder:rbac:groups=access.faros.sh,resources=request,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=access.faros.sh,resources=request/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=access.faros.sh,resources=request/finalizers,verbs=update
 
 // Reconcile reconciles a Potato object
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -41,8 +38,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Add the logical cluster to the context
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(req.ClusterName))
 
-	logger.Info("Getting KubeConfigRequest request")
-	var original accessv1alpha1.KubeConfigRequest
+	logger.Info("Getting Request")
+	var original accessv1alpha1.Request
 	if err := r.Get(ctx, req.NamespacedName, &original); err != nil {
 		if errors.IsNotFound(err) {
 			// Normal - was deleted
@@ -67,6 +64,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&accessv1alpha1.KubeConfigRequest{}).
+		For(&accessv1alpha1.Request{}).
 		Complete(r)
 }

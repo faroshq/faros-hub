@@ -5,7 +5,6 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.8.0
 
 # KCP prefix
 APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
@@ -42,12 +41,9 @@ $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
 	touch $(KUSTOMIZE) # we download an "old" file, so make will re-download to refresh it unless we make it newer than the owning dir
 
-$(CONTROLLER_GEN): ## Download controller-gen locally if necessary.
-	mkdir -p $(LOCALBIN)
-	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
-manifests: $(CONTROLLER_GEN) ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./pkg/....;./cmd/...." output:crd:artifacts:config=config/crd/bases
+manifests: ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	go run ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/ rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases | true
 
 .PHONY: apiresourceschemas
 apiresourceschemas: $(KUSTOMIZE) ## Convert CRDs from config/crds to APIResourceSchemas. Specify APIEXPORT_PREFIX as needed.
@@ -55,5 +51,8 @@ apiresourceschemas: $(KUSTOMIZE) ## Convert CRDs from config/crds to APIResource
 
 
 .PHONY: generate
-generate: $(CONTROLLER_GEN) ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/....;./cmd/...."
+generate: ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+# go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go object:headerFile="hack/boilerplate.go.txt" paths="./..."
+# -: build constraints exclude all Go files in /go/src/github.com/faroshq/faros-hub/vendor/github.com/kcp-dev/kcp/pkg/openapi
+# Error: not all generators ran successfully
+	go run ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/ object:headerFile="hack/boilerplate.go.txt" paths="./..." | true

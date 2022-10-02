@@ -7,34 +7,34 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// KubeConfigRequest is the Schema for the KubeConfigRequest API
-type KubeConfigRequest struct {
+// Request is the Schema for the Access Request API
+type Request struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KubeConfigRequestSpec   `json:"spec,omitempty"`
-	Status KubeConfigRequestStatus `json:"status,omitempty"`
+	Spec   RequestSpec   `json:"spec,omitempty"`
+	Status RequestStatus `json:"status,omitempty"`
 }
 
-// KubeConfigRequestSpec defines the desired state of KubeConfigRequest
-type KubeConfigRequestSpec struct {
+// RequestSpec defines the desired state of Request
+type RequestSpec struct {
 	Request int64 `json:"request,omitempty"`
 }
 
 // PotatoStatus defines the observed state of Potato object
-type KubeConfigRequestStatus struct {
+type RequestStatus struct {
 	Message string `json:"message,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// KubeConfigRequestList contains a list of KubeConfigRequest
-type KubeConfigRequestList struct {
+// RequestList contains a list of Request
+type RequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KubeConfigRequest `json:"items"`
+	Items           []Request `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&KubeConfigRequest{}, &KubeConfigRequestList{})
+	SchemeBuilder.Register(&Request{}, &RequestList{})
 }

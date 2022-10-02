@@ -18,6 +18,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/kcp"
 
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
@@ -103,18 +104,25 @@ func (c *controllers) Run(ctx context.Context) error {
 	if err := c.bootstrap(ctx); err != nil {
 		return err
 	}
+	time.Sleep(time.Second * 5)
 
-	options := ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     ":8080",
-		Port:                   9443,
-		HealthProbeBindAddress: ":8081",
-		LeaderElection:         true,
-		LeaderElectionID:       "controllers.faros.sh",
-		LeaderElectionConfig:   c.ctrlRestConfig,
+	_, rest, err := c.clientFactory.GetWorkspaceClient(ctx, c.config.ControllersWorkspace)
+	if err != nil {
+		return err
 	}
 
-	mgr, err := ctrl.NewManager(c.ctrlRestConfig, options)
+	options := ctrl.Options{
+		Scheme:                  scheme,
+		MetricsBindAddress:      ":8080",
+		Port:                    9443,
+		HealthProbeBindAddress:  ":8081",
+		LeaderElection:          false,
+		LeaderElectionID:        "controllers.faros.sh",
+		LeaderElectionNamespace: "default",
+		LeaderElectionConfig:    rest,
+	}
+
+	mgr, err := kcp.NewClusterAwareManager(c.ctrlRestConfig, options)
 	if err != nil {
 		klog.Error(err, "unable to start manager")
 		return err

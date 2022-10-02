@@ -4,7 +4,7 @@ metadata:
   name: access.faros.sh
 spec:
   latestResourceSchemas:
-    - v20221001.kubeconfigrequests.access.faros.sh
+    - v20221002.apiresourceschemas.yaml
   permissionClaims:
     - group: "access.faros.sh"
-      resource: "kubeconfigrequests"
+      resource: "requests"
