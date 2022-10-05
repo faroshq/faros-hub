@@ -142,8 +142,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 // https://host/services/faros-tunnels/clusters/<ws>/apis/access.faros.sh/v1alpha1/clusters/<name>/connect establish reverse connections and queue them so it can be consumed by the dialer
 // https://host/services/faros-tunnels/clusters/<ws>/apis/access.faros.sh/v1alpha1/clusters/<name>/proxy/{path} proxies the {path} through the reverse connection identified by the cluster and syncer name
 func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1alpha1.Request, cluster, token string) ([]byte, error) {
-	path := fmt.Sprintf("/services/faros-tunnels/clusters/%s/apis/access.faros.sh/v1alpha1/access/%s/proxy",
-		cluster, request.Name)
+	path := fmt.Sprintf("/services/faros-tunnels/clusters/%s/apis/access.faros.sh/v1alpha1/namespaces/%s/access/%s/proxy",
+		cluster, request.Namespace, request.Name)
 
 	u, err := url.Parse(r.Config.RootRestConfig.Host)
 	if err != nil {

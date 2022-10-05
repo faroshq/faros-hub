@@ -14,6 +14,7 @@ import (
 
 type ClientFactory interface {
 	GetRootKCPClient() (kcpclient.ClusterInterface, error)
+
 	GetRootRestConfig() (*rest.Config, error)
 	GetWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error)
 	GetChildWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error)

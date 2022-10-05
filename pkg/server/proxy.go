@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/faroshq/faros-hub/pkg/util/clientcache"
 	"github.com/faroshq/faros-hub/pkg/util/responsewriter"
-	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 )
@@ -38,30 +38,16 @@ func newKubeConfigProxy(rest *rest.Config) *kubeConfigProxy {
 func (k *kubeConfigProxy) director(r *http.Request) {
 	ctx := r.Context()
 
-	syncer, ok := ctx.Value(contextKeySyncer).(*workloadv1alpha1.SyncTarget)
-	if !ok {
-		k.error(r, http.StatusInternalServerError, fmt.Errorf("no syncer in context"))
-		return
-	}
-	if syncer == nil {
-		k.error(r, http.StatusForbidden, nil)
-		return
-	}
-
-	clusterName, ok := ctx.Value(contextKeyClusterName).(string)
+	path, ok := ctx.Value(contextKeyForwardPath).(string)
 	if !ok {
 		k.error(r, http.StatusInternalServerError, fmt.Errorf("no cluster name in context"))
 		return
 	}
 
 	key := struct {
-		namespace string
-		name      string
-		cluster   string
+		path string
 	}{
-		syncer.Namespace,
-		syncer.Name,
-		clusterName,
+		path,
 	}
 
 	cli := k.clientCache.Get(key)
@@ -84,8 +70,8 @@ func (k *kubeConfigProxy) director(r *http.Request) {
 	// https://localhost:6443/services/faros-tunnels/clusters/<ws>/apis/access.faros.sh/v1alpha1/access/<name>/proxy ->
 	// https://localhost:6443/services/syncer-tunnels/clusters/<ws>/apis/workload.kcp.dev/v1alpha1/synctargets/<name>/proxy
 
-	r.URL.Path = strings.Replace(r.URL.Path, "faros-tunnels", "syncer-tunnels", 1)
-	r.URL.Path = strings.Replace(r.URL.Path, "access.faros.sh/v1alpha1/clusters", "workload.kcp.dev/v1alpha1/synctargets", 1)
+	r.URL.Path = path
+	spew.Dump(path)
 
 	r.Header.Del("Authorization")
 	r.Host = r.URL.Host
