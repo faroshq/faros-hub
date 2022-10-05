@@ -104,7 +104,7 @@ func (c *controllers) WaitForAPIReady(ctx context.Context) error {
 func (c *controllers) Run(ctx context.Context) error {
 	// bootstrap will set missing ctrlRestConfig and deploy kcp wide resources
 	if err := c.bootstrap(ctx); err != nil {
-		return err
+		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 	time.Sleep(time.Second * 5)
 

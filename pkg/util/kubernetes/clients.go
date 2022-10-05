@@ -6,28 +6,32 @@ import (
 	"net/url"
 	"strings"
 
-	farosclients "github.com/faroshq/faros-hub/pkg/generated/clientset/versioned"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
-	pluginhelpers "github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/kcp-dev/logicalcluster/v2"
 	"k8s.io/client-go/rest"
 )
 
 type ClientFactory interface {
 	GetRootKCPClient() (kcpclient.ClusterInterface, error)
-	GetChildWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
-	GetWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
-
-	GetFarosClientset(ctx context.Context, workspace string) (farosclients.ClusterInterface, *rest.Config, error)
+	GetRootRestConfig() (*rest.Config, error)
+	GetWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error)
+	GetChildWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error)
 }
 
 type clientFactory struct {
-	rest *rest.Config
+	rest             *rest.Config
+	kcpClusterClient kcpclient.ClusterInterface
 }
 
 func NewClientFactory(config *rest.Config) (*clientFactory, error) {
+	client, err := kcpclient.NewClusterForConfig(config)
+	if err != nil {
+		return nil, err
+	}
 	return &clientFactory{
-		rest: config,
+		rest:             config,
+		kcpClusterClient: client,
 	}, nil
 }
 
@@ -39,30 +43,51 @@ func (c *clientFactory) GetRootKCPClient() (kcpclient.ClusterInterface, error) {
 	return kcpclient.NewClusterForConfig(clusterConfig)
 }
 
-func (c *clientFactory) GetChildWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, err := c.GetRootKCPClient()
-	if err != nil {
-		return nil, nil, err
-	}
-	return c.getChildWorkspaceClient(ctx, client, c.rest, workspace)
+func (c *clientFactory) GetRootRestConfig() (*rest.Config, error) {
+	return c.getRootRestConfig()
 }
 
-func (c *clientFactory) GetWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, err := c.GetRootKCPClient()
-	if err != nil {
-		return nil, nil, err
+func (c *clientFactory) GetWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error) {
+	cluster := logicalcluster.New(workspace)
+
+	if strings.Contains(workspace, ":") && !cluster.HasPrefix(logicalcluster.New("system")) &&
+		!cluster.HasPrefix(tenancyv1alpha1.RootCluster) {
+		return nil, fmt.Errorf("invalid workspace name format: %s", workspace)
 	}
-	return c.getWorkspaceClient(ctx, client, c.rest, workspace)
+
+	u, err := url.Parse(c.rest.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	r := rest.CopyConfig(c.rest)
+	u.Path = cluster.Path()
+	r.Host = u.String()
+
+	return r, nil
 }
 
-func (c *clientFactory) GetFarosWorkspaceClient(ctx context.Context, workspace string) (farosclients.ClusterInterface, *rest.Config, error) {
-	_, rest, err := c.GetWorkspaceKCPClient(ctx, workspace)
-	if err != nil {
-		return nil, nil, err
+func (c *clientFactory) GetChildWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error) {
+	parent, exists := logicalcluster.New(workspace).Parent()
+	if !exists {
+		return nil, fmt.Errorf("workspace %q  does not have child workspace", workspace)
 	}
 
-	client, err := farosclients.NewForConfig(rest)
-	return client, rest, err
+	if strings.Contains(workspace, ":") && !parent.HasPrefix(logicalcluster.New("system")) &&
+		!parent.HasPrefix(tenancyv1alpha1.RootCluster) {
+		return nil, fmt.Errorf("invalid workspace name format: %s", workspace)
+	}
+
+	u, err := url.Parse(c.rest.Host)
+	if err != nil {
+		return nil, err
+	}
+
+	r := rest.CopyConfig(c.rest)
+	u.Path = parent.Path()
+	r.Host = u.String()
+
+	return r, nil
 }
 
 func (c *clientFactory) getRootRestConfig() (*rest.Config, error) {
@@ -75,64 +100,4 @@ func (c *clientFactory) getRootRestConfig() (*rest.Config, error) {
 	clusterConfig.Host = u.String()
 	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
 	return clusterConfig, nil
-}
-
-func (c *clientFactory) getChildWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
-	if err != nil {
-		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", config.Host)
-	}
-
-	parts := strings.Split(workspace, ":")
-
-	if len(parts) >= 2 {
-		currentWorkspace := parts[0]
-		childWorkspace := strings.Join(parts[1:], ":")
-
-		ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Get(ctx, currentWorkspace, metav1.GetOptions{})
-		if err != nil {
-			return nil, nil, err
-		}
-
-		u, err := url.Parse(ws.Status.URL)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		clusterConfig := rest.CopyConfig(config)
-		clusterConfig.Host = u.String()
-		clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-		return c.getChildWorkspaceClient(ctx, client, clusterConfig, childWorkspace)
-	}
-	return client, config, nil
-}
-
-func (c *clientFactory) getWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, config, err := c.getChildWorkspaceClient(ctx, client, config, workspace)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	parts := strings.Split(workspace, ":")
-
-	_, currentClusterName, err := pluginhelpers.ParseClusterURL(config.Host)
-	if err != nil {
-		return nil, nil, fmt.Errorf("current URL %q does not point to cluster workspace", config.Host)
-	}
-
-	ws, err := client.Cluster(currentClusterName).TenancyV1beta1().Workspaces().Get(ctx, parts[len(parts)-1], metav1.GetOptions{})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	u, err := url.Parse(ws.Status.URL)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	clusterConfig := rest.CopyConfig(config)
-	clusterConfig.Host = u.String()
-	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-	return client, clusterConfig, nil
 }
