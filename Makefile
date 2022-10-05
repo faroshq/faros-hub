@@ -7,7 +7,8 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KUSTOMIZE_VERSION ?= v3.8.7
 
 # KCP prefix
-APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
+#APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
+APIEXPORT_PREFIX = today
 
 run-server:
 	@echo "Starting server..."
@@ -56,3 +57,6 @@ generate: ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject
 # -: build constraints exclude all Go files in /go/src/github.com/faroshq/faros-hub/vendor/github.com/kcp-dev/kcp/pkg/openapi
 # Error: not all generators ran successfully
 	go run ./vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/ object:headerFile="hack/boilerplate.go.txt" paths="./..." | true
+
+clients:
+	./hack/update-codegen.sh

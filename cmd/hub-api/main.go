@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -28,6 +29,8 @@ import (
 	"github.com/kcp-dev/kcp/pkg/server"
 	"github.com/kcp-dev/kcp/pkg/server/options"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+
+	faroserver "github.com/faroshq/faros-hub/pkg/server"
 )
 
 func main() {
@@ -76,6 +79,11 @@ func main() {
 				return err
 			}
 
+			t := faroserver.NewTunneler()
+			serverOptions.Extra.AdditionalAPIHandlers = []func(h http.Handler) http.HandlerFunc{
+				t.WithCustomTunnels,
+			}
+
 			completed, err := serverOptions.Complete()
 			if err != nil {
 				return err
@@ -114,6 +122,14 @@ func main() {
 			if err != nil {
 				return err
 			}
+
+			// Add hook to populate tunnels clients
+			// Register a post-start hook that connects to the api-server
+			s.AddPostStartHook("connect-to-api", func(ctx genericapiserver.PostStartHookContext) error {
+				// Create a new client using the client config from our newly created api-server
+				err := t.SeedClients(ctx.LoopbackClientConfig)
+				return err
+			})
 
 			return s.Run(ctx)
 		},

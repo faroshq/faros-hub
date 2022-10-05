@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	farosclients "github.com/faroshq/faros-hub/pkg/generated/clientset/versioned"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	pluginhelpers "github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,9 +14,11 @@ import (
 )
 
 type ClientFactory interface {
-	GetWorkspaceClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
-	GetChildWorkspaceClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
-	GetRootKCPClusterClient(ctx context.Context) (kcpclient.ClusterInterface, error)
+	GetRootKCPClient() (kcpclient.ClusterInterface, error)
+	GetChildWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
+	GetWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error)
+
+	GetFarosClientset(ctx context.Context, workspace string) (farosclients.ClusterInterface, *rest.Config, error)
 }
 
 type clientFactory struct {
@@ -28,7 +31,41 @@ func NewClientFactory(config *rest.Config) (*clientFactory, error) {
 	}, nil
 }
 
-func (c *clientFactory) GetRootKCPClusterClient(_ context.Context) (kcpclient.ClusterInterface, error) {
+func (c *clientFactory) GetRootKCPClient() (kcpclient.ClusterInterface, error) {
+	clusterConfig, err := c.getRootRestConfig()
+	if err != nil {
+		return nil, err
+	}
+	return kcpclient.NewClusterForConfig(clusterConfig)
+}
+
+func (c *clientFactory) GetChildWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
+	client, err := c.GetRootKCPClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.getChildWorkspaceClient(ctx, client, c.rest, workspace)
+}
+
+func (c *clientFactory) GetWorkspaceKCPClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
+	client, err := c.GetRootKCPClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	return c.getWorkspaceClient(ctx, client, c.rest, workspace)
+}
+
+func (c *clientFactory) GetFarosWorkspaceClient(ctx context.Context, workspace string) (farosclients.ClusterInterface, *rest.Config, error) {
+	_, rest, err := c.GetWorkspaceKCPClient(ctx, workspace)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client, err := farosclients.NewForConfig(rest)
+	return client, rest, err
+}
+
+func (c *clientFactory) getRootRestConfig() (*rest.Config, error) {
 	clusterConfig := rest.CopyConfig(c.rest)
 	u, err := url.Parse(c.rest.Host)
 	if err != nil {
@@ -37,23 +74,7 @@ func (c *clientFactory) GetRootKCPClusterClient(_ context.Context) (kcpclient.Cl
 	u.Path = ""
 	clusterConfig.Host = u.String()
 	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-	return kcpclient.NewClusterForConfig(clusterConfig)
-}
-
-func (c *clientFactory) GetChildWorkspaceClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, err := c.GetRootKCPClusterClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return c.getChildWorkspaceClient(ctx, client, c.rest, workspace)
-}
-
-func (c *clientFactory) GetWorkspaceClient(ctx context.Context, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {
-	client, err := c.GetRootKCPClusterClient(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return c.getWorkspaceClient(ctx, client, c.rest, workspace)
+	return clusterConfig, nil
 }
 
 func (c *clientFactory) getChildWorkspaceClient(ctx context.Context, client kcpclient.ClusterInterface, config *rest.Config, workspace string) (kcpclient.ClusterInterface, *rest.Config, error) {

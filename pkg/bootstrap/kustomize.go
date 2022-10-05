@@ -20,7 +20,7 @@ const retryLimit = 5
 
 func (b *bootstrap) deployComponents(ctx context.Context, workspace, dir string) error {
 	fmt.Printf("Bootstrapping resources %s in workspace %s \n", dir, workspace)
-	_, rest, err := b.clientFactory.GetWorkspaceClient(ctx, workspace)
+	_, rest, err := b.clientFactory.GetWorkspaceKCPClient(ctx, workspace)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
 resources:
-  - v20221002.apiresourceschemas.yaml
+  - today.apiresourceschemas.yaml
   - apiexport.yaml
   - clusterrole.yaml
   - clusterrolebinding.yaml

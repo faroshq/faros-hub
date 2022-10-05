@@ -1,0 +1,7 @@
+apiVersion: access.faros.sh/v1alpha1
+kind: Request
+metadata:
+  name: kind-request
+spec:
+  clusterName: kind
+  ttl: "24h"

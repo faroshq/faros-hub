@@ -39,14 +39,12 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	restConfig := ctrl.GetConfigOrDie()
-
 	c, err := config.Load()
 	if err != nil {
 		return err
 	}
 
-	controllers, err := controllers.New(c, restConfig)
+	controllers, err := controllers.New(c)
 	if err != nil {
 		return err
 	}

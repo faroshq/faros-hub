@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/faroshq/faros-hub/pkg/config"
-	"k8s.io/client-go/rest"
 
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
@@ -15,20 +14,18 @@ type Bootstraper interface {
 }
 
 type bootstrap struct {
-	rest   *rest.Config
 	config *config.Config
 
 	clientFactory utilkubernetes.ClientFactory
 }
 
-func New(config *config.Config, rest *rest.Config) (*bootstrap, error) {
-	cf, err := utilkubernetes.NewClientFactory(rest)
+func New(config *config.Config) (*bootstrap, error) {
+	cf, err := utilkubernetes.NewClientFactory(config.RootRestConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	b := &bootstrap{
-		rest:          rest,
 		config:        config,
 		clientFactory: cf,
 	}

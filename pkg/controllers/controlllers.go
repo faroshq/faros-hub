@@ -26,6 +26,7 @@ import (
 	"github.com/faroshq/faros-hub/pkg/controllers/access"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
 var (
@@ -35,6 +36,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
 }
 
 type Controllers interface {
@@ -52,13 +54,13 @@ type controllers struct {
 	bootstraper    bootstrap.Bootstraper
 }
 
-func New(c *config.Config, r *rest.Config) (Controllers, error) {
-	b, err := bootstrap.New(c, r)
+func New(c *config.Config) (Controllers, error) {
+	b, err := bootstrap.New(c)
 	if err != nil {
 		return nil, err
 	}
 
-	cf, err := utilkubernetes.NewClientFactory(r)
+	cf, err := utilkubernetes.NewClientFactory(c.RootRestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,7 @@ func (c *controllers) WaitForAPIReady(ctx context.Context) error {
 
 	for {
 		h := utilhttp.GetInsecureClient()
-		res, err := h.Get("https://localhost:6443/healthz")
+		res, err := h.Get(c.config.RootRestConfig.Host + "/healthz")
 		switch {
 		case err != nil:
 			klog.Infof("Waiting for API server to report healthy: %v", err)
@@ -106,9 +108,21 @@ func (c *controllers) Run(ctx context.Context) error {
 	}
 	time.Sleep(time.Second * 5)
 
-	_, rest, err := c.clientFactory.GetWorkspaceClient(ctx, c.config.ControllersWorkspace)
+	rest, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
+	}
+
+	// bootstrap rest config for controllers
+	if kcpAPIsGroupPresent(rest) {
+		klog.Info("Looking up virtual workspace URL")
+		rest, err := restConfigForAPIExport(ctx, rest, c.config.ControllersAPIExport)
+		if err != nil {
+			return err
+		}
+		c.ctrlRestConfig = rest
+	} else {
+		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
 	}
 
 	options := ctrl.Options{
@@ -129,9 +143,10 @@ func (c *controllers) Run(ctx context.Context) error {
 	}
 
 	if err = (&access.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Config: c.config,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Config:        c.config,
+		ClientFactory: c.clientFactory,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "controller")
 		return err
@@ -164,25 +179,6 @@ func (c *controllers) bootstrap(ctx context.Context) error {
 	}
 	if err := c.bootstraper.DeployKustomizeAssets(ctx, c.config.ControllersWorkspace, "./config/kcp"); err != nil {
 		return err
-	}
-
-	// controller would need to be running in workspace context, so we need to get rest.Config
-	// for that workspace
-	_, rest, err := c.clientFactory.GetWorkspaceClient(ctx, c.config.ControllersWorkspace)
-	if err != nil {
-		return err
-	}
-
-	// bootstrap rest config for controllers
-	if kcpAPIsGroupPresent(rest) {
-		klog.Info("Looking up virtual workspace URL")
-		rest, err := restConfigForAPIExport(ctx, rest, c.config.ControllersAPIExport)
-		if err != nil {
-			return err
-		}
-		c.ctrlRestConfig = rest
-	} else {
-		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
 	}
 
 	return nil

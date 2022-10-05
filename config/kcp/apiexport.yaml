@@ -4,7 +4,9 @@ metadata:
   name: access.faros.sh
 spec:
   latestResourceSchemas:
-    - v20221002.apiresourceschemas.yaml
+    - today.requests.access.faros.sh
   permissionClaims:
     - group: "access.faros.sh"
       resource: "requests"
+    - group: ""
+      resource: "secrets"

@@ -15,14 +15,14 @@ import (
 )
 
 func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) error {
-	client, rest, err := b.clientFactory.GetChildWorkspaceClient(ctx, workspace)
+	client, rest, err := b.clientFactory.GetChildWorkspaceKCPClient(ctx, workspace)
 	if err != nil {
 		return err
 	}
 
 	_, currentClusterName, err := pluginhelpers.ParseClusterURL(rest.Host)
 	if err != nil {
-		return fmt.Errorf("current URL %q does not point to cluster workspace", b.rest.Host)
+		return fmt.Errorf("current URL %q does not point to cluster workspace", b.config.RootRestConfig.Host)
 	}
 
 	separatorIndex := strings.LastIndex(workspace, ":")
