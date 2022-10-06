@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/generated/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
@@ -114,7 +113,6 @@ func (t *tunneler) WithCustomTunnels(apiHandler http.Handler) http.HandlerFunc {
 			path[3] != gv.Group ||
 			path[4] != gv.Version ||
 			path[7] != "access" {
-			spew.Dump(path)
 			http.Error(w, "invalid path", http.StatusInternalServerError)
 			return
 		}
@@ -128,7 +126,6 @@ func (t *tunneler) WithCustomTunnels(apiHandler http.Handler) http.HandlerFunc {
 
 		access, err := t.farosClient.Cluster(logicalcluster.New(clusterName)).AccessV1alpha1().Requests(requestNamespace).Get(ctx, requestName, metav1.GetOptions{})
 		if err != nil {
-			spew.Dump(err)
 			klog.V(2).Infof("failed to get access", err)
 			http.Error(w, "invalid path", http.StatusInternalServerError)
 			return
@@ -136,7 +133,6 @@ func (t *tunneler) WithCustomTunnels(apiHandler http.Handler) http.HandlerFunc {
 
 		secret, err := t.coreClients.Cluster(logicalcluster.New(clusterName)).CoreV1().Secrets(access.Namespace).Get(ctx, access.Name, metav1.GetOptions{})
 		if err != nil {
-			spew.Dump(secret)
 			klog.V(2).Infof("failed to get access", err)
 			http.Error(w, "invalid path", http.StatusInternalServerError)
 			return
@@ -170,7 +166,6 @@ func (t *tunneler) WithCustomTunnels(apiHandler http.Handler) http.HandlerFunc {
 
 		forwardPath := fmt.Sprintf("/services/syncer-tunnels/clusters/%s/apis/workload.kcp.dev/v1alpha1/synctargets/%s/proxy/%s", clusterName, access.Spec.ClusterName, strings.Join(command, "/"))
 
-		spew.Dump("auth ok, move forward")
 		ctx = context.WithValue(ctx, contextKeyForwardPath, forwardPath)
 		r = r.WithContext(ctx)
 		t.proxy.ServeHTTP(w, r)

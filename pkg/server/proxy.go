@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/faroshq/faros-hub/pkg/util/clientcache"
 	"github.com/faroshq/faros-hub/pkg/util/responsewriter"
 	"k8s.io/client-go/rest"
@@ -71,7 +70,6 @@ func (k *kubeConfigProxy) director(r *http.Request) {
 	// https://localhost:6443/services/syncer-tunnels/clusters/<ws>/apis/workload.kcp.dev/v1alpha1/synctargets/<name>/proxy
 
 	r.URL.Path = path
-	spew.Dump(path)
 
 	r.Header.Del("Authorization")
 	r.Host = r.URL.Host
