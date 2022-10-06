@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,12 +25,15 @@ import (
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 )
 
+var kubeRootCA = "kube-root-ca.crt"
+
 // Reconciler reconciles a Potato object
 type Reconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
 	Config        *config.Config
 	ClientFactory utilkubernetes.ClientFactory
+	CoreClients   kubernetes.ClusterInterface
 }
 
 // +kubebuilder:rbac:groups=access.faros.sh,resources=request,verbs=get;list;watch;create;update;patch;delete
@@ -98,8 +102,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	exists := err == nil
 	if !exists {
 		logger.Info("Creating request temporary credentials secrets secret")
+		var caConfigMap corev1.ConfigMap
+
+		err := r.Client.Get(ctx, client.ObjectKey{Name: kubeRootCA, Namespace: request.Namespace}, &caConfigMap)
+		if err != nil {
+			conditions.MarkFalse(requestCopy, conditionsv1alpha1.ReadyCondition, "FailedToGetRootCASecret", conditionsv1alpha1.ConditionSeverityError, err.Error())
+			if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, err
+		}
+
+		caCrt, ok := caConfigMap.Data["ca.crt"]
+		if !ok {
+			conditions.MarkFalse(requestCopy, conditionsv1alpha1.ReadyCondition, "FailedToGetRootCASecret", conditionsv1alpha1.ConditionSeverityError, "ca.crt not found in configmap")
+			if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, err
+		}
+
 		token := uuid.New().String()
-		kubeconfig, err := r.generateKubeConfig(ctx, requestCopy, req.ClusterName, token)
+		kubeconfig, err := r.generateKubeConfig(ctx, requestCopy, req.ClusterName, token, caCrt)
 		if err != nil {
 			conditions.MarkFalse(requestCopy, conditionsv1alpha1.ReadyCondition, "FailedToGenerateKubeconfig", conditionsv1alpha1.ConditionSeverityError, err.Error())
 			if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
@@ -141,7 +165,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // https://host/services/faros-tunnels/clusters/<ws>/apis/access.faros.sh/v1alpha1/clusters/<name>/connect establish reverse connections and queue them so it can be consumed by the dialer
 // https://host/services/faros-tunnels/clusters/<ws>/apis/access.faros.sh/v1alpha1/clusters/<name>/proxy/{path} proxies the {path} through the reverse connection identified by the cluster and syncer name
-func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1alpha1.Request, cluster, token string) ([]byte, error) {
+func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1alpha1.Request, cluster, token, cacrt string) ([]byte, error) {
 	path := fmt.Sprintf("/services/faros-tunnels/clusters/%s/apis/access.faros.sh/v1alpha1/namespaces/%s/access/%s/proxy",
 		cluster, request.Namespace, request.Name)
 
@@ -155,5 +179,5 @@ func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1al
 	// TODO: inject CA so we can verify the server
 	// Currently we are using insecure-skip-tls-verify
 
-	return kubeconfig.MakeKubeconfig(server, token)
+	return kubeconfig.MakeKubeconfig(server, token, cacrt)
 }

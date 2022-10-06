@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -142,11 +143,17 @@ func (c *controllers) Run(ctx context.Context) error {
 		return err
 	}
 
+	coreClients, err := kubernetes.NewClusterForConfig(c.config.RootRestConfig)
+	if err != nil {
+		return err
+	}
+
 	if err = (&access.Reconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		Config:        c.config,
 		ClientFactory: c.clientFactory,
+		CoreClients:   coreClients,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "controller")
 		return err

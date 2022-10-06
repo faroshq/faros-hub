@@ -6,7 +6,7 @@ import (
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
-func MakeKubeconfig(server, token string) ([]byte, error) {
+func MakeKubeconfig(server, token, cacrt string) ([]byte, error) {
 	return json.MarshalIndent(&clientcmdv1.Config{
 		APIVersion: "v1",
 		Kind:       "Config",
@@ -14,8 +14,8 @@ func MakeKubeconfig(server, token string) ([]byte, error) {
 			{
 				Name: "cluster",
 				Cluster: clientcmdv1.Cluster{
-					Server:                server,
-					InsecureSkipTLSVerify: true,
+					Server:                   server,
+					CertificateAuthorityData: []byte(cacrt),
 				},
 			},
 		},
