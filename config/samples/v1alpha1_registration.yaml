@@ -1,0 +1,5 @@
+apiVersion: edge.faros.sh/v1alpha1
+kind: Registration
+metadata:
+  name: agent-remote
+spec:

@@ -22,9 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
+	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/controllers/access"
+	"github.com/faroshq/faros-hub/pkg/controllers/registration"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
@@ -37,6 +39,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
 	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
 }
 
@@ -155,7 +158,18 @@ func (c *controllers) Run(ctx context.Context) error {
 		ClientFactory: c.clientFactory,
 		CoreClients:   coreClients,
 	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "controller")
+		klog.Error(err, "unable to create controller", "access")
+		return err
+	}
+
+	if err = (&registration.Reconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Config:        c.config,
+		ClientFactory: c.clientFactory,
+		CoreClients:   coreClients,
+	}).SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller", "registration")
 		return err
 	}
 	// +kubebuilder:scaffold:builder

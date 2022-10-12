@@ -3,6 +3,8 @@
 # It should be run by config/default
 resources:
 - bases/access.faros.sh_requests.yaml
+- bases/edge.faros.sh_agents.yaml
+- bases/edge.faros.sh_registrations.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

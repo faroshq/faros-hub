@@ -10,8 +10,8 @@ import (
 	"github.com/kcp-dev/logicalcluster/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,6 +23,7 @@ import (
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
 var kubeRootCA = "kube-root-ca.crt"
@@ -61,15 +62,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	kcpClient, err := r.ClientFactory.GetRootKCPClient()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
 	requestCopy := request.DeepCopy()
 
 	// check if sync target exists and is ready
-	synctarget, err := kcpClient.Cluster(logicalcluster.New(req.ClusterName)).WorkloadV1alpha1().SyncTargets().Get(ctx, request.Spec.ClusterName, metav1.GetOptions{})
+	synctarget := &workloadv1alpha1.SyncTarget{}
+	err := r.Get(ctx, types.NamespacedName{Name: request.Spec.ClusterName}, synctarget)
 	if err != nil {
 		conditions.MarkFalse(requestCopy, conditionsv1alpha1.ReadyCondition, "SyncTargetNotFound", conditionsv1alpha1.ConditionSeverityError, err.Error())
 		if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {

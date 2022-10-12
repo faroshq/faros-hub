@@ -1,16 +1,29 @@
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIBinding
 metadata:
-  name: access.faros.sh
+  name: faros.sh
 spec:
   permissionClaims:
   - group: access.faros.sh
     resource: requests
     state: Accepted
+  - group: edge.faros.sh
+    resource: registrations
+    state: Accepted
+  - group: ""
+    resource: serviceaccounts
+    state: Accepted
   - group: ""
     resource: secrets
     state: Accepted
+  - group: ""
+    resource: configmaps
+    state: Accepted
+  - group: workload.kcp.dev
+    resource: synctargets
+    identityHash: a2f09aebf5bc96033c19aaa1dbe2c1808542ad3ffd65b68e30fcdd3ae61c35cc
+    state: Accepted
   reference:
     workspace:
-      exportName: access.faros.sh
+      exportName: faros.sh
       path: root:compute:controllers
