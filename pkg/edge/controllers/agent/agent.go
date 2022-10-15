@@ -3,15 +3,16 @@ package agent
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
+	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/config"
 )
 
@@ -19,8 +20,8 @@ import (
 type Reconciler struct {
 	client.Client
 	Scheme      *runtime.Scheme
-	Config      *config.Config
-	CoreClients kubernetes.ClusterInterface
+	Config      *config.AgentConfig
+	FarosClient farosclient.Interface
 }
 
 // +kubebuilder:rbac:groups=edge.faros.sh,resources=agent,verbs=get;list;watch;create;update;patch;delete
@@ -29,25 +30,26 @@ type Reconciler struct {
 
 // Reconcile reconciles a Edge object
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	if req.Name != r.Config.Name && req.Namespace != r.Config.Namespace {
+		return ctrl.Result{}, nil
+	}
 
-	// Include the clusterName from req.ObjectKey in the logger, similar to the namespace and name keys that are already
-	// there.
-	logger = logger.WithValues("namespace", req.Namespace).WithValues("name", req.Name)
-
-	logger.Info("Getting Agent")
-	var agent edgev1alpha1.Agent
-	if err := r.Get(ctx, req.NamespacedName, &agent); err != nil {
+	// TODO: For some reason dynamic client from controller-runtime can't get if we scope it to a namespace
+	agent, err := r.FarosClient.EdgeV1alpha1().Agents(r.Config.Namespace).Get(ctx, r.Config.Name, metav1.GetOptions{})
+	if err != nil {
 		if errors.IsNotFound(err) {
-			// Normal - was deleted
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
 	}
 
 	agentCopy := agent.DeepCopy()
+	conditions.MarkTrue(agentCopy, conditionsv1alpha1.ReadyCondition)
 
-	spew.Dump(agentCopy)
+	_, err = r.FarosClient.EdgeV1alpha1().Agents(r.Config.Namespace).UpdateStatus(ctx, agentCopy, metav1.UpdateOptions{})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }

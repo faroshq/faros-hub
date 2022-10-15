@@ -2,12 +2,8 @@ package registration
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/kcp-dev/logicalcluster/v2"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,23 +15,24 @@ import (
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
-	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
-// Reconciler reconciles a Potato object
+var finalizerName = "registration.edge.faros.sh/finalizer"
+
+// Reconciler reconciles a Registration object
 type Reconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
-	Config        *config.Config
+	Config        *config.ControllerConfig
 	ClientFactory utilkubernetes.ClientFactory
 	CoreClients   kubernetes.ClusterInterface
 }
 
-// +kubebuilder:rbac:groups=edge.faros.sh,resources=registration,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=edge.faros.sh,resources=registration/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=edge.faros.sh,resources=registration/finalizers,verbs=update
+// +kubebuilder:rbac:groups=edge.faros.sh,resources=registrations,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=edge.faros.sh,resources=registrations/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=edge.faros.sh,resources=registrations/finalizers,verbs=update
 
-// Reconcile reconciles a Potato object
+// Reconcile reconciles a Registration object
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
@@ -46,51 +43,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Add the logical cluster to the context
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(req.ClusterName))
 
-	logger.Info("Getting registration")
 	var registration edgev1alpha1.Registration
 	if err := r.Get(ctx, req.NamespacedName, &registration); err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
 	}
 
-	registrationOwnersReferences := []metav1.OwnerReference{{
-		APIVersion: workloadv1alpha1.SchemeGroupVersion.String(),
-		Kind:       edgev1alpha1.RegistrationKind,
-		Name:       registration.Name,
-		UID:        registration.UID,
-	}}
-
-	var sa *corev1.ServiceAccount
-	err := r.Get(ctx, req.NamespacedName, sa)
-	switch {
-	case apierrors.IsNotFound(err):
-		logger.Error(err, "Creating service account", req.Name)
-		err := r.Create(ctx, &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            req.Name,
-				Namespace:       req.Namespace,
-				OwnerReferences: registrationOwnersReferences,
-			},
-		}, &client.CreateOptions{})
-		if err != nil && !apierrors.IsAlreadyExists(err) {
-			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create ServiceAccount: %s", err)
-		}
-	case err == nil:
-		// service account already exist, merge owner references
-		sa.OwnerReferences = mergeOwnerReference(sa.OwnerReferences, registrationOwnersReferences)
-
-		logger.Info("Updating service account %s", sa.Name)
-		err = r.Patch(ctx, sa, client.MergeFrom(sa.DeepCopy()), &client.PatchOptions{})
-		if err != nil {
-			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to patch ServiceAccount %s", err)
-		}
-	default:
-		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to get the ServiceAccount %s", err)
+	if registration.DeletionTimestamp.IsZero() {
+		return r.createOrUpdate(ctx, logger, registration.DeepCopy())
+	} else {
+		return r.delete(ctx, logger, registration.DeepCopy())
 	}
-
-	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

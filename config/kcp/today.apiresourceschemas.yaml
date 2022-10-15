@@ -125,10 +125,12 @@ spec:
         metadata:
           type: object
         spec:
-          description: AgentSpec defines the desired state of agent
+          description: RegistrationSpec defines the desired state of registration
+            token request
           type: object
         status:
-          description: AgentStatus defines the observed state of Agent
+          description: RegistrationStatus defines the observed state of Registration
+            object
           properties:
             conditions:
               description: Current processing state of the Agent.
@@ -174,6 +176,9 @@ spec:
                 - type
                 type: object
               type: array
+            token:
+              description: The token used to register the agent
+              type: string
           type: object
       type: object
     served: true

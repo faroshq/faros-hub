@@ -26,9 +26,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	fakeclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/fake"
 	"github.com/kcp-dev/logicalcluster/v2"
 	"github.com/stretchr/testify/require"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -38,12 +42,6 @@ import (
 	clientgotesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-
-	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
-	fakeclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/fake"
 )
 
 func TestCreate(t *testing.T) {

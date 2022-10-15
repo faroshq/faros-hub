@@ -44,9 +44,9 @@ func (in *Agent) GetConditions() conditionsv1alpha1.Conditions {
 	return in.Status.Conditions
 }
 
-// +kubebuilder:object:root=true
-
 // AgentList contains a list of Agents
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 type AgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

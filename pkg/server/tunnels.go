@@ -8,15 +8,16 @@ import (
 	"strings"
 	"time"
 
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
-	farosclient "github.com/faroshq/faros-hub/pkg/generated/clientset/versioned"
-	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+
+	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
+	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
+	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
 )
 
 var (

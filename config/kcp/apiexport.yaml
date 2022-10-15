@@ -18,6 +18,7 @@ spec:
       resource: "serviceaccounts"
     - group: ""
       resource: "configmaps"
-    - group: "workload.kcp.dev"
-      identityHash: a2f09aebf5bc96033c19aaa1dbe2c1808542ad3ffd65b68e30fcdd3ae61c35cc
-      resource: "synctargets"
+    - group: "rbac.authorization.k8s.io"
+      resource: "roles"
+    - group: "rbac.authorization.k8s.io"
+      resource: "rolebindings"

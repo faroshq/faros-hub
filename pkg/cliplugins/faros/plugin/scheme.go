@@ -17,9 +17,8 @@ limitations under the License.
 package plugin
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	kcpscheme "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/scheme"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func init() {

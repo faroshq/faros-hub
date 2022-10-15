@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/faroshq/faros-hub/pkg/util/file"
-	"github.com/faroshq/faros-hub/pkg/util/validation"
 	"github.com/ghodss/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	clientcmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
+
+	"github.com/faroshq/faros-hub/pkg/util/file"
+	"github.com/faroshq/faros-hub/pkg/util/validation"
 )
 
 func GetRestConfigFromURL(url string) (*rest.Config, error) {

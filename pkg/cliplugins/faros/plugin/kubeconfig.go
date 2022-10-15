@@ -26,10 +26,15 @@ import (
 	"strings"
 	"time"
 
+	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	"github.com/kcp-dev/kcp/pkg/cliplugins/base"
+	pluginhelpers "github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 	"github.com/kcp-dev/logicalcluster/v2"
 	"github.com/spf13/cobra"
 	"github.com/xlab/treeprint"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -37,13 +42,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-
-	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
-	"github.com/kcp-dev/kcp/pkg/cliplugins/base"
-	pluginhelpers "github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 )
 
 const (

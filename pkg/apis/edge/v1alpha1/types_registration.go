@@ -18,8 +18,8 @@ type Registration struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AgentSpec   `json:"spec,omitempty"`
-	Status AgentStatus `json:"status,omitempty"`
+	Spec   RegistrationSpec   `json:"spec,omitempty"`
+	Status RegistrationStatus `json:"status,omitempty"`
 }
 
 // RegistrationSpec defines the desired state of registration token request
@@ -30,6 +30,10 @@ type RegistrationStatus struct {
 	// Current processing state of the Agent.
 	// +optional
 	Conditions conditionsv1alpha1.Conditions `json:"conditions,omitempty"`
+
+	// The token used to register the agent
+	// +required
+	Token string `json:"token,omitempty"`
 }
 
 func (in *Registration) SetConditions(c conditionsv1alpha1.Conditions) {
@@ -40,9 +44,10 @@ func (in *Registration) GetConditions() conditionsv1alpha1.Conditions {
 	return in.Status.Conditions
 }
 
+// RegistrationList contains a list of Registrations
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
 
-// RegistrationList contains a list of Registrations
 type RegistrationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

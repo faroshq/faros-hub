@@ -5,6 +5,7 @@
 package tools
 
 import (
+	_ "golang.org/x/tools/cmd/goimports"
 	_ "k8s.io/code-generator/cmd/client-gen"
 	_ "k8s.io/code-generator/cmd/deepcopy-gen"
 	_ "k8s.io/code-generator/cmd/informer-gen"

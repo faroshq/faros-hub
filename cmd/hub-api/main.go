@@ -7,12 +7,19 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kcp-dev/kcp/pkg/cmd/help"
+	"github.com/kcp-dev/kcp/pkg/embeddedetcd"
+	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
+	"github.com/kcp-dev/kcp/pkg/server"
+	"github.com/kcp-dev/kcp/pkg/server/options"
 	"github.com/spf13/cobra"
-
 	"k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/client-go/rest"
 	"k8s.io/component-base/cli"
 	cliflag "k8s.io/component-base/cli/flag"
@@ -23,15 +30,12 @@ import (
 	"k8s.io/component-base/version"
 	"k8s.io/klog"
 
-	"github.com/kcp-dev/kcp/pkg/cmd/help"
-	"github.com/kcp-dev/kcp/pkg/embeddedetcd"
-	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
-	"github.com/kcp-dev/kcp/pkg/server"
-	"github.com/kcp-dev/kcp/pkg/server/options"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-
+	farosconfig "github.com/faroshq/faros-hub/pkg/config"
+	"github.com/faroshq/faros-hub/pkg/controllers"
 	faroserver "github.com/faroshq/faros-hub/pkg/server"
 )
+
+var allInOne bool
 
 func main() {
 	cmd := &cobra.Command{
@@ -131,14 +135,51 @@ func main() {
 				return err
 			})
 
+			// Start the controllers in a goroutine
+			// Would be better not to do this in production
+			if allInOne {
+				spew.Dump("All in one")
+				// Add hook to start controllers too
+				s.AddPostStartHook("run-faros-controllers", func(ctxP genericapiserver.PostStartHookContext) error {
+					c, err := farosconfig.LoadController()
+					if err != nil {
+						return err
+					}
+					c.RestConfig = ctxP.LoopbackClientConfig
+
+					controllers, err := controllers.New(c)
+					if err != nil {
+						return err
+					}
+
+					go func() {
+						for {
+							err := controllers.Run(ctx)
+							if err != nil {
+								klog.Errorf("Error running controllers: %v", err)
+							}
+							select {
+							case <-ctx.Done():
+								return
+							case <-time.After(1 * time.Second):
+							}
+						}
+					}()
+					return nil
+				})
+			}
+
 			return s.Run(ctx)
 		},
 	}
 
 	// add start named flag sets to start flags
 	namedStartFlagSets := serverOptions.Flags()
+
 	globalflag.AddGlobalFlags(namedStartFlagSets.FlagSet("global"), cmd.Name(), logs.SkipLoggingConfigurationFlags())
 	startFlags := startCmd.Flags()
+	startFlags.BoolVarP(&allInOne, "all-in-one", "a", false, "Should start all-in-one")
+
 	for _, f := range namedStartFlagSets.FlagSets {
 		startFlags.AddFlagSet(f)
 	}

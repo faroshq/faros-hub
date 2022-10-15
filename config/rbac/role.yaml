@@ -39,3 +39,55 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - agent
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - agent/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - agent/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - registrations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - registrations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - edge.faros.sh
+  resources:
+  - registrations/status
+  verbs:
+  - get
+  - patch
+  - update

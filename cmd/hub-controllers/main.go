@@ -5,12 +5,8 @@ import (
 	"flag"
 	"os"
 
-	"k8s.io/klog/v2"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -29,6 +25,8 @@ func main() {
 	flag.Parse()
 	flag.Lookup("v").Value.Set("6")
 
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
 	ctx := ctrl.SetupSignalHandler()
 
 	err := run(ctx)
@@ -39,7 +37,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	c, err := config.Load()
+	c, err := config.LoadController()
 	if err != nil {
 		return err
 	}

@@ -19,9 +19,11 @@ spec:
   - group: ""
     resource: configmaps
     state: Accepted
-  - group: workload.kcp.dev
-    resource: synctargets
-    identityHash: a2f09aebf5bc96033c19aaa1dbe2c1808542ad3ffd65b68e30fcdd3ae61c35cc
+  - group: "rbac.authorization.k8s.io"
+    resource: "roles"
+    state: Accepted
+  - group: "rbac.authorization.k8s.io"
+    resource: "rolebindings"
     state: Accepted
   reference:
     workspace:

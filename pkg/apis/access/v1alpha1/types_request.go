@@ -51,9 +51,9 @@ func (in *Request) GetConditions() conditionsv1alpha1.Conditions {
 	return in.Status.Conditions
 }
 
-// +kubebuilder:object:root=true
-
 // RequestList contains a list of Request
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 type RequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

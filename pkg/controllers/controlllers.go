@@ -8,6 +8,7 @@ import (
 	"time"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -29,7 +30,6 @@ import (
 	"github.com/faroshq/faros-hub/pkg/controllers/registration"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
-	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
 var (
@@ -49,7 +49,7 @@ type Controllers interface {
 }
 
 type controllers struct {
-	config        *config.Config
+	config        *config.ControllerConfig
 	clientFactory utilkubernetes.ClientFactory
 
 	// ctrlRestConfig is workspaces rest config for controllers workspace
@@ -58,13 +58,13 @@ type controllers struct {
 	bootstraper    bootstrap.Bootstraper
 }
 
-func New(c *config.Config) (Controllers, error) {
+func New(c *config.ControllerConfig) (Controllers, error) {
 	b, err := bootstrap.New(c)
 	if err != nil {
 		return nil, err
 	}
 
-	cf, err := utilkubernetes.NewClientFactory(c.RootRestConfig)
+	cf, err := utilkubernetes.NewClientFactory(c.RestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *controllers) WaitForAPIReady(ctx context.Context) error {
 
 	for {
 		h := utilhttp.GetInsecureClient()
-		res, err := h.Get(c.config.RootRestConfig.Host + "/healthz")
+		res, err := h.Get(c.config.RestConfig.Host + "/healthz")
 		switch {
 		case err != nil:
 			klog.Infof("Waiting for API server to report healthy: %v", err)
@@ -146,8 +146,19 @@ func (c *controllers) Run(ctx context.Context) error {
 		return err
 	}
 
-	coreClients, err := kubernetes.NewClusterForConfig(c.config.RootRestConfig)
+	coreClients, err := kubernetes.NewClusterForConfig(c.config.RestConfig)
 	if err != nil {
+		return err
+	}
+
+	if err = (&registration.Reconciler{
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Config:        c.config,
+		ClientFactory: c.clientFactory,
+		CoreClients:   coreClients,
+	}).SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller", "registration")
 		return err
 	}
 
@@ -162,16 +173,6 @@ func (c *controllers) Run(ctx context.Context) error {
 		return err
 	}
 
-	if err = (&registration.Reconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Config:        c.config,
-		ClientFactory: c.clientFactory,
-		CoreClients:   coreClients,
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "registration")
-		return err
-	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

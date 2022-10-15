@@ -8,10 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/faroshq/faros-hub/pkg/util/clientcache"
-	"github.com/faroshq/faros-hub/pkg/util/responsewriter"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+
+	"github.com/faroshq/faros-hub/pkg/util/clientcache"
+	"github.com/faroshq/faros-hub/pkg/util/responsewriter"
 )
 
 type kubeConfigProxy struct {

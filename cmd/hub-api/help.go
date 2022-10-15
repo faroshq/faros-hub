@@ -1,5 +1,3 @@
-
-
 // Based on https://github.com/kcp-dev/kcp/
 
 package main
@@ -10,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
 	"k8s.io/apimachinery/pkg/util/sets"
 	cliflag "k8s.io/component-base/cli/flag"
 )

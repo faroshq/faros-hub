@@ -7,7 +7,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -15,8 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/edge/controllers/agent"
+	"github.com/faroshq/faros-hub/pkg/edge/controllers/register"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 )
 
@@ -35,12 +36,12 @@ type Controllers interface {
 }
 
 type controllers struct {
-	config *config.Config
+	config *config.AgentConfig
 
 	rest *rest.Config
 }
 
-func New(c *config.Config) (Controllers, error) {
+func New(c *config.AgentConfig) (Controllers, error) {
 	restConfig := ctrl.GetConfigOrDie()
 
 	return &controllers{
@@ -80,14 +81,12 @@ func (c *controllers) WaitForAPIReady(ctx context.Context) error {
 
 func (c *controllers) Run(ctx context.Context) error {
 	options := ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      ":8080",
-		Port:                    9443,
-		HealthProbeBindAddress:  ":8081",
-		LeaderElection:          false,
-		LeaderElectionID:        "edge.faros.sh",
-		LeaderElectionNamespace: "default",
-		LeaderElectionConfig:    c.rest,
+		Scheme:                 scheme,
+		MetricsBindAddress:     ":9080",
+		Port:                   9443,
+		HealthProbeBindAddress: ":9081",
+		LeaderElection:         false,
+		Namespace:              c.config.Namespace,
 	}
 
 	mgr, err := ctrl.NewManager(c.rest, options)
@@ -95,7 +94,7 @@ func (c *controllers) Run(ctx context.Context) error {
 		return err
 	}
 
-	coreClients, err := kubernetes.NewClusterForConfig(c.config.RootRestConfig)
+	farosClient, err := farosclient.NewForConfig(c.config.RestConfig)
 	if err != nil {
 		return err
 	}
@@ -104,7 +103,7 @@ func (c *controllers) Run(ctx context.Context) error {
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
 		Config:      c.config,
-		CoreClients: coreClients,
+		FarosClient: farosClient,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "controller")
 		return err
@@ -120,7 +119,16 @@ func (c *controllers) Run(ctx context.Context) error {
 		return err
 	}
 
-	klog.Info("starting manager")
+	klog.Info("registering agent")
+	r, err := register.New(c.rest)
+	if err != nil {
+		return err
+	}
 
+	if err := r.Register(ctx, c.config.Name, c.config.Namespace); err != nil {
+		return err
+	}
+
+	klog.Info("starting manager")
 	return mgr.Start(ctx)
 }

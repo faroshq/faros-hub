@@ -7,6 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,9 +24,6 @@ import (
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/util/kubeconfig"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
-	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
-	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
-	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
 var kubeRootCA = "kube-root-ca.crt"
@@ -32,7 +32,7 @@ var kubeRootCA = "kube-root-ca.crt"
 type Reconciler struct {
 	client.Client
 	Scheme        *runtime.Scheme
-	Config        *config.Config
+	Config        *config.ControllerConfig
 	ClientFactory utilkubernetes.ClientFactory
 	CoreClients   kubernetes.ClusterInterface
 }
@@ -63,7 +63,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	requestCopy := request.DeepCopy()
-
 	// check if sync target exists and is ready
 	synctarget := &workloadv1alpha1.SyncTarget{}
 	err := r.Get(ctx, types.NamespacedName{Name: request.Spec.ClusterName}, synctarget)
@@ -166,7 +165,7 @@ func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1al
 	path := fmt.Sprintf("/services/faros-tunnels/clusters/%s/apis/access.faros.sh/v1alpha1/namespaces/%s/access/%s/proxy",
 		cluster, request.Namespace, request.Name)
 
-	u, err := url.Parse(r.Config.RootRestConfig.Host)
+	u, err := url.Parse(r.Config.RestConfig.Host)
 	if err != nil {
 		return nil, err
 	}
