@@ -19,6 +19,12 @@ overhead of managing kubeletes, nodes, compute, etc.
 It allows to write single "multi-tenant" controller and run single instance of it
 managing all tenants.
 
+![High level diagram](docs/img/hl.jph)
+
+## Important
+
+Project is in heavy development. It is not ready for production use.
+
 ## Getting started
 
 Currently project still needs [`kubectl-kcp`](https://github.com/kcp-dev/kcp) to be installed. It will be replaced
