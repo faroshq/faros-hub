@@ -19,7 +19,7 @@ overhead of managing kubeletes, nodes, compute, etc.
 It allows to write single "multi-tenant" controller and run single instance of it
 managing all tenants.
 
-![High level diagram](docs/img/hl.jph)
+![High level diagram](docs/img/hl.jpg)
 
 ## Important
 
