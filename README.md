@@ -41,6 +41,7 @@ This will start hub-api, reconciler.
 Create first workpace/virtual cluster:
 
 ```bash
+export KUBECONFIG=.faros/admin.kubeconfig
 kubectl kcp workspace use root
 kubectl kcp workspace create tenant1 --enter
 ```
