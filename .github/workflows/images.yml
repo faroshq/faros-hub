@@ -25,7 +25,7 @@ jobs:
       - env:
           auth_token: ${{ secrets.auth_token }}
         run: |
-          echo "${auth_token}" | ko login https://my.registry --username my-username --password-stdin
+          echo "${{ github.token }}" | ./ko login ghcr.io --username "${{ github.actor }}" --password-stdin
           ko build ./cmd/edge-agent
           ko build ./cmd/hub-controllers
           ko build ./cmd/kubectl-faros
