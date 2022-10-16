@@ -22,9 +22,10 @@ jobs:
       - uses: imjasonh/setup-ko@v0.6
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.repository }}
+      - env:
           auth_token: ${{ secrets.auth_token }}
         run: |
-          echo "${{ github.token }}" | ./ko login ghcr.io --username "${{ github.actor }}" --password-stdin
+          echo "${auth_token}" | ko login https://my.registry --username my-username --password-stdin
           ko build ./cmd/edge-agent
           ko build ./cmd/hub-controllers
           ko build ./cmd/kubectl-faros
