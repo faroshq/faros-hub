@@ -26,7 +26,4 @@ jobs:
           auth_token: ${{ secrets.auth_token }}
         run: |
           echo "${{ github.token }}" | ko login ghcr.io --username "${{ github.actor }}" --password-stdin
-          ko build --platform=all -t latest -t ${{ github.sha }} ./cmd/edge-agent
-          ko build --platform=all -t latest -t ${{ github.sha }} ./cmd/hub-controllers
-          ko build --platform=all -t latest -t ${{ github.sha }} ./cmd/kubectl-faros
-          ko build --platform=all -t latest -t ${{ github.sha }} ./cmd/hub-api
+          ko build -B --platform=all -t latest -t ${{ github.sha }} ./cmd/*
