@@ -1,79 +1,86 @@
-# Faros hub
+# Faros
 
-Faros hub is Kubernetes like Edge device management control plane.
+Faros hub is Kubernetes native Edge device management control plane.
 It allows to manage edge devices in the way similar to Kubernetes.
 
-Each edge device is running reconciler which is responsible for edge device
-state. Each device reads agent `spec` and updates `status` accordingly.
+Faros hub will enable you to connect remote device to central hub and deploy plugins to it.
+## Getting started
 
-Project is based on [KCP](https://www.kcp.io/) allowing each tennat to be isolated
-at the same time allowing centralized management.
+Start by installing Faros hub on your Kubernetes cluster.
 
-Each tenant 'looks like' Kubernetes cluster. It has namespaces, events, rbac, etc.
+```bash
+TBC
+```
 
-# Why KCP?
+Create first workspace and register your first device.
 
-Before we go into why, lets what is so great at not great about Kubernetes when
-it comes to building SAAS platform.
+```bash
+TBC
+```
 
-## What is great about Kubernetes
+Once device registered you can deploy plugins to it.
 
-Kubernetes ecosystem is amazing. Creating new APIS, integrations with external
-services is as easy as it can get. Using CRDs and controllers you can build any
-new API in minutes.
-You get CLI, API, UI for free. You can use any of the existing tools to build
-and interact with your platform.
+## Plugins
 
-People, who are familiar with Kubernetes, can easily understand your platform.
-Other - can use abstractions.
+Plugins are go binaries containing Kubernetes reconciler. Faros will distribute
+plugins to edge devices and run them on the device with right context. At the same time
+exposing Plugins API into workspaces, where plugins are enabled.
 
-You get rich RBAC, events, namespacing for free.
+Plugins will be able to communicate with Faros hub and other plugins by interacting
+with Kubernetes API.
 
-## What is not so great about Kubernetes
+Example for network plugin in your workspace:
+```bash
+apiVersion: plugins.faros.sh/v1alpha1
+kind: Network
+metadata:
+  name: wireguard
+spec:
+  type: wireguard
+  config:
+    privateKey: "TBC"
+    listenPort: 51820
+    peers:
+      - publicKey: "TBC"
+        allowedIPs: "
+```
 
-Kubernetes is not designed to be SAAS platform. It is designed to be a platform.
-Namespaces are not fine grained enough. You have to limit users to Namespaces,
-and CRD's itself are build for cluster scope.
+Example for docker plugin in your workspace:
+```bash
+apiVersion: plugins.faros.sh/v1alpha1
+kind: ContainerRuntime
+metadata:
+  name: docker-runtime
+spec:
+  type: docker
+  config: TBC
+```
 
-To have fully SAAS version of Kubernetes you need to run APIServer per tenant.
-Which is possible with projects like vCluster, but it is not easy to setup and
-its very expensive to run.
+Configure your device to use wireguard network and docker runtime plugins.
 
-When you need only APIServer and CRD's, you don't need Nodes, node controllers,
-Deployments, Services, etc etc. All these things are not needed for SAAS platform
-as such (with some exception based on what are you building).
+```bash
+apiVersion: edge.faros.sh/v1alpha1
+kind: Agent
+metadata:
+  name: foo1
+spec:
+  plugins:
+   - name: wireguard
+     config: TBC
+   - name: docker-runtime
+     config: TBC
+```
 
-## What is great about KCP
+This will deploy wireguard network plugin to your device and configure it to use it.
+At the same time it will deploy docker runtime plugin and configure it to use it.
 
-KCP is designed to be SAAS platform. It allows to expose Kubernetes-like-API
-per tenant. So each tenant is `cluster-admin` and can do anything with its
-resources. Bu at the same time you are still running single APIServer and
-single etcd.
+You can write server and client side plugins. In example you can write plugin that
+reconciles and run in your edge device, and server side plugin that will be able to
+manage data coming from your device.
 
-KCP is designed to be used with CRD's. It allows to single instance of CRD's
-and "share" them between tenants. So you 'provider' tenant can share CRDs to
-other tenants.
+Each device reads agent `spec` and updates `status` accordingly.
 
-Same applies to controllers. You can have single instance of controller and
-"share" it between tenants. So when tenant created CRD, controller will be
-reconcile it, but tenants don't have to run their own controllers.
-
-As there is no nodes, compute, storage, etc, you don't need to run any of the
-controllers. All system is lighweight and easy to setup.
-
-## Main benefits
-
-- Single APIServer
-- Single etcd
-- Each new tenant/user is its own 'virtual' cluster with its own rbac and 'cluster-admin'
-- Each tenant can have its own CRD's and controllers and users can write their own
-controllers to interact with their own tenant
-- You can have single operator to manage all tenants and all CRD's
-- You can use all dynamic client/code generation tools to bootstrap your platform and features
-- You can use all existing Kubernetes tools to build your platform
-
-Overall its like Kubernetes, but with less complexity and more flexibility hence
-"kubernetes-like". Less complexity, cheap to run, all the benefits of Kubernetes.
+Anybody can write plugins and publish to faros marketplace.
 
 ![High level diagram](docs/img/hl.jpg)
 
@@ -160,6 +167,8 @@ status:
 
 # Roadmap
 
+- [ ] Add plugins API
+- [ ] Add plugins runner to edge-agent
 - [ ] Add CLI for workspace provisioning
 - [ ] Add front-proxy for JWT provider authentication
 - [ ] Add image and binary builds for hub-api and edge-agent, and controllers
