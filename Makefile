@@ -58,3 +58,4 @@ setup-kind:
 
 deploy-kind:
 	./hack/dev/deploy-kind.sh
+

@@ -142,8 +142,9 @@ spec:
         app: faros
     spec:
       containers:
-      - name: faros-api
-        image: ghcr.io/faroshq/faros-hub/hub-api:latest
+      - name: faros
+        image: faros:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 6443
         args:

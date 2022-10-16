@@ -5,6 +5,8 @@ resources:
 - issuer.yaml
 - faros.yaml
 images:
-- name: faros-api
+- name: controller
+  newName: faros
+- name: faros
   newName: kind.local/hub-api-173d4ab6bcfe4f66947fbabf99d9de0c
-  newTag: 7ad6c6eab39da85cc987b437b4bb8e42c03c36dcd7dd574ac8843a8caf686ad5
+  newTag: 8581cdc7de54e7559c9edcf93bafa6463583ed3c9d150eafcea16726f2db3845
