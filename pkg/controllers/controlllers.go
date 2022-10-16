@@ -196,10 +196,10 @@ func (c *controllers) bootstrap(ctx context.Context) error {
 	}
 	// create assets for controller workspace being able to access all "workspaces"
 	// and implement their requests
-	if err := c.bootstraper.DeployKustomizeAssets(ctx, c.config.ControllersWorkspace, "./config/crd"); err != nil {
+	if err := c.bootstraper.DeployKustomizeAssetsCRD(ctx, c.config.ControllersWorkspace); err != nil {
 		return err
 	}
-	if err := c.bootstraper.DeployKustomizeAssets(ctx, c.config.ControllersWorkspace, "./config/kcp"); err != nil {
+	if err := c.bootstraper.DeployKustomizeAssetsKCP(ctx, c.config.ControllersWorkspace); err != nil {
 		return err
 	}
 

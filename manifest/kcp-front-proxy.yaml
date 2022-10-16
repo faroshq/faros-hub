@@ -1,0 +1,258 @@
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: faros-front-proxy
+spec:
+  host: faros
+  port:
+    targetPort: 8443
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: faros-front-proxy
+    weight: 100
+  wildcardPolicy: None
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: faros-front-proxy-issuer
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: faros-front-proxy-issuer-account-key
+    solvers:
+    - http01:
+        ingress:
+          serviceType: ClusterIP
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: faros-front-proxy
+spec:
+  secretName: faros-front-proxy-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+  dnsNames:
+    - "faros"
+  issuerRef:
+    name: faros-front-proxy-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: faros-client-ca
+spec:
+  isCA: true
+  commonName: faros-client-ca
+  secretName: faros-client-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: faros-pki-bootstrap
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: faros-client-issuer
+spec:
+  ca:
+    secretName: faros-client-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: faros-front-proxy-faros-client-cert
+spec:
+  secretName: faros-front-proxy-faros-client-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - client auth
+  dnsNames:
+    - "faros-front-proxy"
+  issuerRef:
+    name: faros-requestheader-client-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: faros-front-proxy-virtual-workspaces-client-cert
+spec:
+  secretName: faros-front-proxy-virtual-workspaces-client-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - client auth
+  dnsNames:
+    - "faros-front-proxy"
+  issuerRef:
+    name: faros-requestheader-client-issuer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faros-front-proxy
+spec:
+  ports:
+    - protocol: TCP
+      name: faros-front-proxy
+      port: 8443
+      targetPort: 8443
+  selector:
+    app: faros-front-proxy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: faros-front-proxy-config
+data:
+  path-mapping.yaml: |
+    - path: /services/
+      backend: https://faros:6444
+      backend_server_ca: /etc/virtual-workspaces/tls/ca.crt
+      proxy_client_cert: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces/tls.crt
+      proxy_client_key: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces/tls.key
+    - path: /
+      backend: https://faros:6443
+      backend_server_ca: /etc/faros/tls/ca.crt
+      proxy_client_cert: /etc/faros-front-proxy/requestheader-client/tls/faros/tls.crt
+      proxy_client_key: /etc/faros-front-proxy/requestheader-client/tls/faros/tls.key
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faros-front-proxy
+  labels:
+    app: faros-front-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: faros-front-proxy
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: faros-front-proxy
+    spec:
+      containers:
+      - name: faros-front-proxy
+        image: ghcr.io/kcp-dev/kcp:latest
+        ports:
+        - containerPort: 8443
+        command:
+        - /kcp-front-proxy
+        args:
+        - --secure-port=8443
+        - --tls-private-key-file=/etc/faros-front-proxy/tls/tls.key
+        - --tls-cert-file=/etc/faros-front-proxy/tls/tls.crt
+        - --client-ca-file=/etc/faros-front-proxy/client/tls/ca.crt
+        - --mapping-file=/etc/faros-front-proxy/config/path-mapping.yaml
+        - --v=6
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: livez
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: readyz
+            port: 8443
+            scheme: HTTPS
+        volumeMounts:
+        - name: faros-front-proxy-cert
+          mountPath: /etc/faros-front-proxy/tls
+        - name: faros-front-proxy-config
+          mountPath: /etc/faros-front-proxy/config
+        - name: faros-client-ca
+          mountPath: /etc/faros-front-proxy/client/tls
+        - name: faros-ca
+          mountPath: /etc/faros/tls
+        - name: faros-virtual-workspaces-ca
+          mountPath: /etc/virtual-workspaces/tls
+        - name: faros-front-proxy-faros-client-cert
+          mountPath: /etc/faros-front-proxy/requestheader-client/tls/faros
+        - name: faros-front-proxy-virtual-workspaces-client-cert
+          mountPath: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces
+      volumes:
+      - name: faros-front-proxy-cert
+        secret:
+          secretName: faros-front-proxy-cert
+      - name: faros-client-ca
+        secret:
+          secretName: faros-client-ca
+          items:
+            - key: ca.crt
+              path: ca.crt
+      - name: faros-ca
+        secret:
+          secretName: faros-cert
+          items:
+            - key: ca.crt
+              path: ca.crt
+      - name: faros-virtual-workspaces-ca
+        secret:
+          secretName: faros-virtual-workspaces-cert
+          items:
+            - key: ca.crt
+              path: ca.crt
+      - name: faros-front-proxy-faros-client-cert
+        secret:
+          secretName: faros-front-proxy-faros-client-cert
+          items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+      - name: faros-front-proxy-virtual-workspaces-client-cert
+        secret:
+          secretName: faros-front-proxy-virtual-workspaces-client-cert
+          items:
+            - key: tls.crt
+              path: tls.crt
+            - key: tls.key
+              path: tls.key
+      - name: faros-front-proxy-config
+        configMap:
+          name: faros-front-proxy-config
+          items:
+            - key: "path-mapping.yaml"
+              path: "path-mapping.yaml"

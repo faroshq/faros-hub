@@ -18,20 +18,20 @@ export CONTROLLER_GEN # so hack scripts can use it
 #APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
 APIEXPORT_PREFIX = today
 
-images: image-server image-potatoes
-
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	mkdir -p $(LOCALBIN)
 	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
 	touch $(KUSTOMIZE) # we download an "old" file, so make will re-download to refresh it unless we make it newer than the owning dir
 
-manifests: ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+manifests:  ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases | true
+	make generate
 
 .PHONY: apiresourceschemas
 apiresourceschemas: $(KUSTOMIZE) ## Convert CRDs from config/crds to APIResourceSchemas. Specify APIEXPORT_PREFIX as needed.
 	$(KUSTOMIZE) build config/crd | kubectl kcp crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml
+	make generate
 
 tools:$(CONTROLLER_GEN)
 .PHONY: tools
@@ -39,14 +39,22 @@ tools:$(CONTROLLER_GEN)
 $(CONTROLLER_GEN):
 	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) sigs.k8s.io/controller-tools/cmd/controller-gen $(CONTROLLER_GEN_BIN) $(CONTROLLER_GEN_VER)
 
-
-codegen: $(CONTROLLER_GEN) ## Run the codegenerators
+codegen: $(CONTROLLER_GEN) generate ## Run the codegenerators
 	go mod download
 	./hack/update-codegen.sh
 .PHONY: codegen
+
+generate:
+	go generate ./...
 
 lint:
 	gofmt -s -w cmd hack pkg
 	go run golang.org/x/tools/cmd/goimports -w -local=github.com/faroshq/faros-hub cmd hack pkg
 	go run ./hack/validate-imports cmd hack pkg
 	staticcheck ./...
+
+setup-kind:
+	./hack/dev/setup-kind.sh
+
+deploy-kind:
+	./hack/dev/deploy-kind.sh

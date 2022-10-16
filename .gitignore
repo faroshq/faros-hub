@@ -5,4 +5,3 @@
 .kcp
 .faros
 *.kubeconfig
-*.yaml
