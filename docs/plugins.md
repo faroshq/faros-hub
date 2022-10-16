@@ -10,3 +10,4 @@ plugins to edge devices and run them on the device with right context.
 - [ ] Notifications plugin (Slack)
 - [ ] Metrics plugin (Prometheus)
 - [ ] Logging plugin (Fluentbit)
+- [ ] Remote access plugin (SSH, Proxy)
