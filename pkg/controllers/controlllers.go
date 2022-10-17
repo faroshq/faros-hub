@@ -8,27 +8,22 @@ import (
 	"time"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
 	"github.com/faroshq/faros-hub/pkg/config"
-	"github.com/faroshq/faros-hub/pkg/controllers/access"
-	"github.com/faroshq/faros-hub/pkg/controllers/registration"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
@@ -42,6 +37,7 @@ func init() {
 	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
 	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
 }
 
 type Controllers interface {
@@ -52,11 +48,7 @@ type Controllers interface {
 type controllers struct {
 	config        *config.ControllerConfig
 	clientFactory utilkubernetes.ClientFactory
-
-	// ctrlRestConfig is workspaces rest config for controllers workspace
-	// for operators to be operating in
-	ctrlRestConfig *rest.Config
-	bootstraper    bootstrap.Bootstraper
+	bootstraper   bootstrap.Bootstraper
 }
 
 func New(c *config.ControllerConfig) (Controllers, error) {
@@ -113,88 +105,16 @@ func (c *controllers) Run(ctx context.Context) error {
 	}
 	time.Sleep(time.Second * 5)
 
-	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
-	if err != nil {
-		return err
-	}
+	eg := errgroup.Group{}
 
-	// bootstrap rest config for controllers
-	if kcpAPIsGroupPresent(restConfig) {
-		var ctrlRestConfig *rest.Config
-		if err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
-			klog.Info("looking up virtual workspace URL")
-			ctrlRestConfig, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersAPIExport)
-			if err != nil {
-				return false, nil
-			}
-			return true, nil
-		}); err != nil {
-			return err
-		}
+	eg.Go(func() error {
+		return c.runEdge(ctx)
+	})
+	eg.Go(func() error {
+		return c.runAccess(ctx)
+	})
 
-		c.ctrlRestConfig = ctrlRestConfig
-	} else {
-		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
-	}
-
-	options := ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      ":8080",
-		Port:                    9443,
-		HealthProbeBindAddress:  ":8081",
-		LeaderElection:          false,
-		LeaderElectionID:        "controllers.faros.sh",
-		LeaderElectionNamespace: "default",
-		LeaderElectionConfig:    restConfig,
-	}
-
-	mgr, err := kcp.NewClusterAwareManager(c.ctrlRestConfig, options)
-	if err != nil {
-		klog.Error(err, "unable to start manager")
-		return err
-	}
-
-	coreClients, err := kubernetes.NewClusterForConfig(c.config.RestConfig)
-	if err != nil {
-		return err
-	}
-
-	if err = (&registration.Reconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Config:        c.config,
-		ClientFactory: c.clientFactory,
-		CoreClients:   coreClients,
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "registration")
-		return err
-	}
-
-	if err = (&access.Reconciler{
-		Client:        mgr.GetClient(),
-		Scheme:        mgr.GetScheme(),
-		Config:        c.config,
-		ClientFactory: c.clientFactory,
-		CoreClients:   coreClients,
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "access")
-		return err
-	}
-
-	// +kubebuilder:scaffold:builder
-
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up health check")
-		return err
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up ready check")
-		return err
-	}
-
-	klog.Info("starting manager")
-
-	return mgr.Start(ctx)
+	return eg.Wait()
 }
 
 func (c *controllers) bootstrap(ctx context.Context) error {
@@ -213,8 +133,6 @@ func (c *controllers) bootstrap(ctx context.Context) error {
 
 	return nil
 }
-
-// +kubebuilder:rbac:groups="apis.kcp.dev",resources=apiexports,verbs=get;list;watch
 
 // restConfigForAPIExport returns a *rest.Config properly configured to communicate with the endpoint for the
 // APIExport's virtual workspace.

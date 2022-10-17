@@ -51,7 +51,7 @@ func (b *bootstrap) DeployKustomizeAssetsCRD(ctx context.Context, workspace stri
 	defer os.RemoveAll(tmpDir)
 
 	for _, name := range AssetNames() {
-		if strings.HasPrefix(name, "crd") {
+		if strings.HasPrefix(name, "crds") {
 			data, err := Asset(name)
 			if err != nil {
 				return err
@@ -66,7 +66,7 @@ func (b *bootstrap) DeployKustomizeAssetsCRD(ctx context.Context, workspace stri
 		}
 	}
 
-	err = b.deployComponents(ctx, workspace, tmpDir+"/crd")
+	err = b.deployComponents(ctx, workspace, tmpDir+"/crds")
 	if err != nil {
 		return err
 	}

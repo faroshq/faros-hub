@@ -1,4 +1,4 @@
-package access
+package requests
 
 import (
 	"context"
@@ -15,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -23,25 +22,22 @@ import (
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/util/kubeconfig"
-	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
 
 var kubeRootCA = "kube-root-ca.crt"
 
-// Reconciler reconciles a Potato object
+// Reconciler reconciles an object
 type Reconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	Config        *config.ControllerConfig
-	ClientFactory utilkubernetes.ClientFactory
-	CoreClients   kubernetes.ClusterInterface
+	Scheme *runtime.Scheme
+	Config *config.ControllerConfig
 }
 
 // +kubebuilder:rbac:groups=access.faros.sh,resources=request,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=access.faros.sh,resources=request/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=access.faros.sh,resources=request/finalizers,verbs=update
 
-// Reconcile reconciles a Potato object
+// Reconcile reconciles an object
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 

@@ -7,14 +7,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
-	"github.com/faroshq/faros-hub/pkg/config"
-	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
 
 var finalizerName = "registration.edge.faros.sh/finalizer"
@@ -22,10 +19,7 @@ var finalizerName = "registration.edge.faros.sh/finalizer"
 // Reconciler reconciles a Registration object
 type Reconciler struct {
 	client.Client
-	Scheme        *runtime.Scheme
-	Config        *config.ControllerConfig
-	ClientFactory utilkubernetes.ClientFactory
-	CoreClients   kubernetes.ClusterInterface
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups=edge.faros.sh,resources=registrations,verbs=get;list;watch;create;update;patch;delete
