@@ -1,8 +1,8 @@
 resources:
   - today.apiresourceschemas.yaml
-  - apiexport.yaml
-  - clusterrole.yaml
-  - clusterrolebinding.yaml
+  - apiexport-access.yaml
+  - apiexport-edge.yaml
+  - apiexport-plugins.yaml
 
 configurations:
   - kustomizeconfig.yaml

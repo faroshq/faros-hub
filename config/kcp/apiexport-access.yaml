@@ -1,0 +1,10 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: access.faros.sh
+spec:
+  latestResourceSchemas:
+    - today.requests.access.faros.sh
+  permissionClaims:
+    - group: "access.faros.sh"
+      resource: "requests"

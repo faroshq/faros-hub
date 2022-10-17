@@ -1,17 +1,16 @@
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIExport
 metadata:
-  name: faros.sh
+  name: edge.faros.sh
 spec:
   latestResourceSchemas:
-    - today.requests.access.faros.sh
     - today.agents.edge.faros.sh
     - today.registrations.edge.faros.sh
   permissionClaims:
-    - group: "access.faros.sh"
-      resource: "requests"
     - group: "edge.faros.sh"
       resource: "registrations"
+    - group: "edge.faros.sh"
+      resource: "agents"
     - group: ""
       resource: "secrets"
     - group: ""

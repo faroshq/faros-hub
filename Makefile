@@ -30,7 +30,7 @@ manifests:  ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefi
 
 .PHONY: apiresourceschemas
 apiresourceschemas: $(KUSTOMIZE) ## Convert CRDs from config/crds to APIResourceSchemas. Specify APIEXPORT_PREFIX as needed.
-	$(KUSTOMIZE) build config/crd | kubectl kcp crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml
+	$(KUSTOMIZE) build config/crds | kubectl kcp crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml
 	make generate
 
 tools:$(CONTROLLER_GEN)

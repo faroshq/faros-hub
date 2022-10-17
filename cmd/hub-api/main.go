@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kcp-dev/kcp/pkg/cmd/help"
@@ -149,19 +148,7 @@ func main() {
 						return err
 					}
 
-					go func() {
-						for {
-							err := controllers.Run(ctx)
-							if err != nil {
-								klog.Errorf("Error running controllers: %v", err)
-							}
-							select {
-							case <-ctx.Done():
-								return
-							case <-time.After(1 * time.Second):
-							}
-						}
-					}()
+					go controllers.Run(ctx)
 					return nil
 				})
 			}
