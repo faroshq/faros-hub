@@ -1,0 +1,212 @@
+# All certificate objects are in order they are used
+# to derive other certificates.
+# Example CA->Issuer->Client certs
+---
+# Root issuer
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: pki-bootstrap
+spec:
+  selfSigned: {}
+---
+# Requestheader FrontProxy CA for proxy->shard mTLS communication
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: requestheader-client-ca
+spec:
+  isCA: true
+  commonName: requestheader-client-ca
+  secretName: requestheader-client-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pki-bootstrap
+    kind: Issuer
+    group: cert-manager.io
+---
+# Issuer using CA to sign client certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: requestheader-client-issuer
+spec:
+  ca:
+    secretName: requestheader-client-ca
+---
+# Client cert to connect proxy->shard using CA certs above
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: requestheader-front-proxy-client-cert
+spec:
+  secretName: requestheader-front-proxy-client-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - client auth
+  dnsNames:
+    - "front-proxy"
+  issuerRef:
+    name: requestheader-client-issuer
+
+# Client certs used in front proxy to connect to shards
+---
+# CA for client certs
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: client-ca
+spec:
+  isCA: true
+  commonName: client-ca
+  secretName: client-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pki-bootstrap
+    kind: Issuer
+    group: cert-manager.io
+---
+# Client cert issuer from CA above
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: client-issuer
+spec:
+  ca:
+    secretName: client-ca
+---
+# Client cert to connect proxy->shard using CA certs above
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kcp-admin-client-cert
+spec:
+  secretName: kcp-admin-client-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - "system:kcp:admin"
+      - "system:kcp:clusterworkspace:admin"
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  commonName: kcp-admin
+  usages:
+    - client auth
+  dnsNames:
+    - "front-proxy"
+  issuerRef:
+    name: client-issuer
+# Service certificates
+---
+# CA for shard serving certs
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: serving-ca
+spec:
+  isCA: true
+  commonName: serving-ca
+  secretName: serving-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pki-bootstrap
+    kind: Issuer
+    group: cert-manager.io
+---
+# Issuer for serving certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: serving-issuer
+spec:
+  ca:
+    secretName: serving-ca
+# Serving cert for shard/
+# TODO: This should be either wildcard or per-shard
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: shard-serving-cert
+spec:
+  secretName: shard-serving-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+  dnsNames:
+    - faros
+    - localhost
+    - "*.dev.faros.sh"
+  issuerRef:
+    name: serving-issuer
+
+# CA for service account signing and vertification key
+# signer key will be used to sign SA tokens
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: service-accounts-ca
+spec:
+  isCA: true
+  commonName: service-accounts-ca
+  secretName: service-accounts-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  issuerRef:
+    name: pki-bootstrap
+    kind: Issuer
+    group: cert-manager.io
+
+# Virtual workspaces secrets/certs
+---
+# server serving cert
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: virtual-workspaces
+spec:
+  secretName: virtual-workspaces-cert
+  duration: 2160h0m0s # 90d
+  renewBefore: 360h0m0s # 15d
+  subject:
+    organizations:
+      - faros
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+  dnsNames:
+    - faros
+    - localhost
+    - "*.dev.faros.sh"
+  issuerRef:
+    name: serving-issuer

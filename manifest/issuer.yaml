@@ -1,6 +1,32 @@
+# Root internal issuer for CA certs
+---
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: faros-pki-bootstrap
 spec:
   selfSigned: {}
+# Front facing certificate issuer. Should be valid certs in production
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: faros-front-proxy-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: faros-server-issuer
+spec:
+  ca:
+    secretName: faros-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: faros-requestheader-client-issuer
+spec:
+  ca:
+    secretName: faros-requestheader-client-ca

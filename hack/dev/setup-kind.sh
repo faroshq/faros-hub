@@ -24,17 +24,7 @@ export KUBECONFIG=./dev/faros.kubeconfig
 
 echo "Installing ingress"
 
-helm repo add nginx-stable https://helm.nginx.com/stable
-helm repo update
-
-helm upgrade -i ingress nginx-stable/nginx-ingress \
-  --kube-context "${KUBECTL_CONTEXT}" \
-  --namespace ingress \
-  --create-namespace \
-  --set controller.hostPort.enabled=true \
-  --set controller.service.type=NodePort \
-  --set controller.admissionWebhooks.networkPolicyEnabled=true \
-  --set controller.extraArgs.default-ssl-certificate=wayfinder-ingress/ingress-tls-default
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 echo "Installing cert-manager"
 

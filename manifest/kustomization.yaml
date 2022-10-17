@@ -2,11 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - etcd.yaml
-- issuer.yaml
-- faros.yaml
+- certificate.yaml
+- faros-deployment.yaml
+#- faros-front-proxy.yaml
 images:
 - name: controller
   newName: faros
 - name: faros
   newName: kind.local/hub-api-173d4ab6bcfe4f66947fbabf99d9de0c
-  newTag: 8581cdc7de54e7559c9edcf93bafa6463583ed3c9d150eafcea16726f2db3845
+  newTag: c67178b9601ff768fb3850f9deef2e2232847b4d4706c739d74935f539e9a679

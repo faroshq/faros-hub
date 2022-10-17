@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -112,19 +113,26 @@ func (c *controllers) Run(ctx context.Context) error {
 	}
 	time.Sleep(time.Second * 5)
 
-	rest, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
+	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
 	}
 
 	// bootstrap rest config for controllers
-	if kcpAPIsGroupPresent(rest) {
-		klog.Info("Looking up virtual workspace URL")
-		rest, err := restConfigForAPIExport(ctx, rest, c.config.ControllersAPIExport)
-		if err != nil {
+	if kcpAPIsGroupPresent(restConfig) {
+		var ctrlRestConfig *rest.Config
+		if err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+			klog.Info("looking up virtual workspace URL")
+			ctrlRestConfig, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersAPIExport)
+			if err != nil {
+				return false, nil
+			}
+			return true, nil
+		}); err != nil {
 			return err
 		}
-		c.ctrlRestConfig = rest
+
+		c.ctrlRestConfig = ctrlRestConfig
 	} else {
 		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
 	}
@@ -137,7 +145,7 @@ func (c *controllers) Run(ctx context.Context) error {
 		LeaderElection:          false,
 		LeaderElectionID:        "controllers.faros.sh",
 		LeaderElectionNamespace: "default",
-		LeaderElectionConfig:    rest,
+		LeaderElectionConfig:    restConfig,
 	}
 
 	mgr, err := kcp.NewClusterAwareManager(c.ctrlRestConfig, options)

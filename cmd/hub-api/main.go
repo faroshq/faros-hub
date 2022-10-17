@@ -4,7 +4,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -83,11 +82,6 @@ func main() {
 				return err
 			}
 
-			t := faroserver.NewTunneler()
-			serverOptions.Extra.AdditionalAPIHandlers = []func(h http.Handler) http.HandlerFunc{
-				t.WithCustomTunnels,
-			}
-
 			completed, err := serverOptions.Complete()
 			if err != nil {
 				return err
@@ -126,6 +120,9 @@ func main() {
 			if err != nil {
 				return err
 			}
+
+			t := faroserver.NewTunneler()
+			s.GenericControlPlane.GenericAPIServer.Handler.NonGoRestfulMux.HandleFunc("/services/faros-tunnels", t.CustomTunnels)
 
 			// Add hook to populate tunnels clients
 			// Register a post-start hook that connects to the api-server

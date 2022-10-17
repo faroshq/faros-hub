@@ -1,34 +1,23 @@
----
-apiVersion: route.openshift.io/v1
-kind: Route
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: faros-front-proxy
+  name: front-proxy-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
 spec:
-  host: faros
-  port:
-    targetPort: 8443
-  tls:
-    termination: passthrough
-  to:
-    kind: Service
-    name: faros-front-proxy
-    weight: 100
-  wildcardPolicy: None
+  rules:
+  - host: local.dev.faros.sh
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: faros-front-proxy
+            port:
+              number: 8443
 ---
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: faros-front-proxy-issuer
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    privateKeySecretRef:
-      name: faros-front-proxy-issuer-account-key
-    solvers:
-    - http01:
-        ingress:
-          serviceType: ClusterIP
----
+# Front TLS cert for proxy
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -47,10 +36,11 @@ spec:
   usages:
     - server auth
   dnsNames:
-    - "faros"
+    - local.dev.faros.sh
   issuerRef:
     name: faros-front-proxy-issuer
 ---
+# Client CA to connect through front proxy
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -66,43 +56,14 @@ spec:
     name: faros-pki-bootstrap
     kind: Issuer
     group: cert-manager.io
----
 apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: faros-client-issuer
-spec:
-  ca:
-    secretName: faros-client-ca
 ---
-apiVersion: cert-manager.io/v1
+# Client cert to connect proxy->shard
 kind: Certificate
 metadata:
   name: faros-front-proxy-faros-client-cert
 spec:
   secretName: faros-front-proxy-faros-client-cert
-  duration: 2160h0m0s # 90d
-  renewBefore: 360h0m0s # 15d
-  subject:
-    organizations:
-      - faros
-  privateKey:
-    algorithm: RSA
-    encoding: PKCS1
-    size: 2048
-  usages:
-    - client auth
-  dnsNames:
-    - "faros-front-proxy"
-  issuerRef:
-    name: faros-requestheader-client-issuer
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: faros-front-proxy-virtual-workspaces-client-cert
-spec:
-  secretName: faros-front-proxy-virtual-workspaces-client-cert
   duration: 2160h0m0s # 90d
   renewBefore: 360h0m0s # 15d
   subject:
@@ -138,11 +99,6 @@ metadata:
   name: faros-front-proxy-config
 data:
   path-mapping.yaml: |
-    - path: /services/
-      backend: https://faros:6444
-      backend_server_ca: /etc/virtual-workspaces/tls/ca.crt
-      proxy_client_cert: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces/tls.crt
-      proxy_client_key: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces/tls.key
     - path: /
       backend: https://faros:6443
       backend_server_ca: /etc/faros/tls/ca.crt
@@ -206,12 +162,8 @@ spec:
           mountPath: /etc/faros-front-proxy/client/tls
         - name: faros-ca
           mountPath: /etc/faros/tls
-        - name: faros-virtual-workspaces-ca
-          mountPath: /etc/virtual-workspaces/tls
         - name: faros-front-proxy-faros-client-cert
           mountPath: /etc/faros-front-proxy/requestheader-client/tls/faros
-        - name: faros-front-proxy-virtual-workspaces-client-cert
-          mountPath: /etc/faros-front-proxy/requestheader-client/tls/virtual-workspaces
       volumes:
       - name: faros-front-proxy-cert
         secret:
@@ -228,23 +180,9 @@ spec:
           items:
             - key: ca.crt
               path: ca.crt
-      - name: faros-virtual-workspaces-ca
-        secret:
-          secretName: faros-virtual-workspaces-cert
-          items:
-            - key: ca.crt
-              path: ca.crt
       - name: faros-front-proxy-faros-client-cert
         secret:
           secretName: faros-front-proxy-faros-client-cert
-          items:
-            - key: tls.crt
-              path: tls.crt
-            - key: tls.key
-              path: tls.key
-      - name: faros-front-proxy-virtual-workspaces-client-cert
-        secret:
-          secretName: faros-front-proxy-virtual-workspaces-client-cert
           items:
             - key: tls.crt
               path: tls.crt
