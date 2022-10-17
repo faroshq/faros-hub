@@ -17,6 +17,8 @@ limitations under the License.
 
 package v1alpha1
 
+type AccessExpansion interface{}
+
 type ContainerRuntimeExpansion interface{}
 
 type MonitoringExpansion interface{}

@@ -5,14 +5,14 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: networks.plugins.faros.sh
+  name: accesses.plugins.faros.sh
 spec:
   group: plugins.faros.sh
   names:
-    kind: Network
-    listKind: NetworkList
-    plural: networks
-    singular: network
+    kind: Access
+    listKind: AccessList
+    plural: accesses
+    singular: access
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Network is the Schema for the plugin API
+        description: Access is the Schema for the plugin API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,10 +37,10 @@ spec:
           metadata:
             type: object
           spec:
-            description: NetworkSpec defines the desired state of plugin
+            description: AccessSpec defines the desired state of plugin
             type: object
           status:
-            description: NetworkStatus defines the observed state of plugin
+            description: AccessStatus defines the observed state of plugin
             properties:
               conditions:
                 description: Current processing state of the Agent.

@@ -28,6 +28,7 @@ import (
 
 type PluginsV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	AccessesGetter
 	ContainerRuntimesGetter
 	MonitoringsGetter
 	NetworksGetter
@@ -38,6 +39,10 @@ type PluginsV1alpha1Interface interface {
 type PluginsV1alpha1Client struct {
 	restClient rest.Interface
 	cluster    v2.Name
+}
+
+func (c *PluginsV1alpha1Client) Accesses(namespace string) AccessInterface {
+	return newAccesses(c, namespace)
 }
 
 func (c *PluginsV1alpha1Client) ContainerRuntimes(namespace string) ContainerRuntimeInterface {

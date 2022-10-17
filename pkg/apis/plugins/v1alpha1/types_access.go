@@ -13,38 +13,38 @@ import (
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:object:root=true
 
-// Network is the Schema for the plugin API
-type Network struct {
+// Access is the Schema for the plugin API
+type Access struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   NetworkSpec   `json:"spec,omitempty"`
-	Status NetworkStatus `json:"status,omitempty"`
+	Spec   AccessSpec   `json:"spec,omitempty"`
+	Status AccessStatus `json:"status,omitempty"`
 }
 
-// NetworkSpec defines the desired state of plugin
-type NetworkSpec struct{}
+// AccessSpec defines the desired state of plugin
+type AccessSpec struct{}
 
-// NetworkStatus defines the observed state of plugin
-type NetworkStatus struct {
+// AccessStatus defines the observed state of plugin
+type AccessStatus struct {
 	// Current processing state of the Agent.
 	// +optional
 	Conditions conditionsv1alpha1.Conditions `json:"conditions,omitempty"`
 }
 
-func (in *Network) SetConditions(c conditionsv1alpha1.Conditions) {
+func (in *Access) SetConditions(c conditionsv1alpha1.Conditions) {
 	in.Status.Conditions = c
 }
 
-func (in *Network) GetConditions() conditionsv1alpha1.Conditions {
+func (in *Access) GetConditions() conditionsv1alpha1.Conditions {
 	return in.Status.Conditions
 }
 
-// NetworkList contains a list of plugins
+// AccessList contains a list of plugins
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
-type NetworkList struct {
+type AccessList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Network `json:"items"`
+	Items           []Access `json:"items"`
 }

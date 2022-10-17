@@ -23,6 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// Accesses returns a AccessInformer.
+	Accesses() AccessInformer
 	// ContainerRuntimes returns a ContainerRuntimeInformer.
 	ContainerRuntimes() ContainerRuntimeInformer
 	// Monitorings returns a MonitoringInformer.
@@ -42,6 +44,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// Accesses returns a AccessInformer.
+func (v *version) Accesses() AccessInformer {
+	return &accessInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // ContainerRuntimes returns a ContainerRuntimeInformer.

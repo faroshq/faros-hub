@@ -64,6 +64,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Edge().V1alpha1().Registrations().Informer()}, nil
 
 		// Group=plugins.faros.sh, Version=v1alpha1
+	case pluginsv1alpha1.SchemeGroupVersion.WithResource("accesses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Accesses().Informer()}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("containerruntimes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().ContainerRuntimes().Informer()}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("monitorings"):

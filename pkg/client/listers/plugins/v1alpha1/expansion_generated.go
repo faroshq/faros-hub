@@ -17,6 +17,14 @@ limitations under the License.
 
 package v1alpha1
 
+// AccessListerExpansion allows custom methods to be added to
+// AccessLister.
+type AccessListerExpansion interface{}
+
+// AccessNamespaceListerExpansion allows custom methods to be added to
+// AccessNamespaceLister.
+type AccessNamespaceListerExpansion interface{}
+
 // ContainerRuntimeListerExpansion allows custom methods to be added to
 // ContainerRuntimeLister.
 type ContainerRuntimeListerExpansion interface{}

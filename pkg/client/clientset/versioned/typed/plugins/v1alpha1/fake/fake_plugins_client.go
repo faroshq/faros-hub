@@ -27,6 +27,10 @@ type FakePluginsV1alpha1 struct {
 	*testing.Fake
 }
 
+func (c *FakePluginsV1alpha1) Accesses(namespace string) v1alpha1.AccessInterface {
+	return &FakeAccesses{c, namespace}
+}
+
 func (c *FakePluginsV1alpha1) ContainerRuntimes(namespace string) v1alpha1.ContainerRuntimeInterface {
 	return &FakeContainerRuntimes{c, namespace}
 }
