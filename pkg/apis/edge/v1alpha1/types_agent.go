@@ -5,10 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	AgentReady conditionsv1alpha1.ConditionType = "Ready"
-)
-
 // +crd
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -27,7 +23,19 @@ type Agent struct {
 }
 
 // AgentSpec defines the desired state of agent
-type AgentSpec struct{}
+type AgentSpec struct {
+	Plugins []PluginSpec `json:"plugins,omitempty"`
+}
+
+// PluginSpec defines the desired state of plugin
+type PluginSpec struct {
+	// Name of the plugin
+	Name string `json:"name,omitempty"`
+	// Version of the plugin
+	Version string `json:"version,omitempty"`
+	// Config of the plugin
+	Config string `json:"config,omitempty"`
+}
 
 // AgentStatus defines the observed state of Agent
 type AgentStatus struct {

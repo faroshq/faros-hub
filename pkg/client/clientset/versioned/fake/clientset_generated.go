@@ -18,17 +18,18 @@ limitations under the License.
 package fake
 
 import (
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/discovery"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	"k8s.io/client-go/testing"
-
 	clientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1"
 	fakeaccessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1/fake"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1"
 	fakeedgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1/fake"
+	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1"
+	fakepluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1/fake"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/discovery"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/testing"
 )
 
 // NewSimpleClientset returns a clientset that will respond with the provided objects.
@@ -89,4 +90,9 @@ func (c *Clientset) AccessV1alpha1() accessv1alpha1.AccessV1alpha1Interface {
 // EdgeV1alpha1 retrieves the EdgeV1alpha1Client
 func (c *Clientset) EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface {
 	return &fakeedgev1alpha1.FakeEdgeV1alpha1{Fake: &c.Fake}
+}
+
+// PluginsV1alpha1 retrieves the PluginsV1alpha1Client
+func (c *Clientset) PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface {
+	return &fakepluginsv1alpha1.FakePluginsV1alpha1{Fake: &c.Fake}
 }

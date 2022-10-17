@@ -38,6 +38,22 @@ spec:
             type: object
           spec:
             description: AgentSpec defines the desired state of agent
+            properties:
+              plugins:
+                items:
+                  description: PluginSpec defines the desired state of plugin
+                  properties:
+                    config:
+                      description: Config of the plugin
+                      type: string
+                    name:
+                      description: Name of the plugin
+                      type: string
+                    version:
+                      description: Version of the plugin
+                      type: string
+                  type: object
+                type: array
             type: object
           status:
             description: AgentStatus defines the observed state of Agent

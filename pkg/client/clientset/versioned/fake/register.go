@@ -18,14 +18,14 @@ limitations under the License.
 package fake
 
 import (
+	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
+	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
-	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 )
 
 var scheme = runtime.NewScheme()
@@ -34,6 +34,7 @@ var codecs = serializer.NewCodecFactory(scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
 	accessv1alpha1.AddToScheme,
 	edgev1alpha1.AddToScheme,
+	pluginsv1alpha1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

@@ -20,11 +20,10 @@ package v1alpha1
 import (
 	"net/http"
 
-	v2 "github.com/kcp-dev/logicalcluster/v2"
-	rest "k8s.io/client-go/rest"
-
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
+	v2 "github.com/kcp-dev/logicalcluster/v2"
+	rest "k8s.io/client-go/rest"
 )
 
 type EdgeV1alpha1Interface interface {

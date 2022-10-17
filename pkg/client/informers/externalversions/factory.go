@@ -22,15 +22,15 @@ import (
 	sync "sync"
 	time "time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	runtime "k8s.io/apimachinery/pkg/runtime"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	cache "k8s.io/client-go/tools/cache"
-
 	versioned "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	access "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/access"
 	edge "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/edge"
 	internalinterfaces "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/internalinterfaces"
+	plugins "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/plugins"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // SharedInformerOption defines the functional option type for SharedInformerFactory.
@@ -219,6 +219,7 @@ type SharedInformerFactory interface {
 
 	Access() access.Interface
 	Edge() edge.Interface
+	Plugins() plugins.Interface
 }
 
 func (f *sharedInformerFactory) Access() access.Interface {
@@ -227,4 +228,8 @@ func (f *sharedInformerFactory) Access() access.Interface {
 
 func (f *sharedInformerFactory) Edge() edge.Interface {
 	return edge.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Plugins() plugins.Interface {
+	return plugins.New(f, f.namespace, f.tweakListOptions)
 }
