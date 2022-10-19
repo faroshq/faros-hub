@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/faroshq/faros-hub/pkg/controllers/access/requests"
+	"github.com/faroshq/faros-hub/pkg/controllers/tenants/access/requests"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -16,8 +16,8 @@ import (
 
 // access controller is running in access api virtual workspace context
 
-func (c *controllers) runAccess(ctx context.Context) error {
-	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersFarosAccessAPIExportName)
+func (c *controllerManager) runAccess(ctx context.Context) error {
+	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
 	}
@@ -26,7 +26,7 @@ func (c *controllers) runAccess(ctx context.Context) error {
 	// bootstrap rest config for controllers
 	if kcpAPIsGroupPresent(restConfig) {
 		if err := wait.PollImmediateInfinite(time.Second*5, func() (bool, error) {
-			klog.Info("looking up virtual workspace URL - access")
+			klog.Info("looking up virtual workspace URL - access.faros.sh")
 			rest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosAccessAPIExportName)
 			if err != nil {
 				return false, nil

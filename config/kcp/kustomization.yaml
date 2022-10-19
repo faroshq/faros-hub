@@ -3,6 +3,7 @@ resources:
   - apiexport-access.yaml
   - apiexport-edge.yaml
   - apiexport-plugins.yaml
+  - apiexport-workspace.yaml
 
 configurations:
   - kustomizeconfig.yaml

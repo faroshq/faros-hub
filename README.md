@@ -4,6 +4,7 @@ Faros hub is Kubernetes native Edge device management control plane.
 It allows to manage edge devices in the way similar to Kubernetes.
 
 Faros hub will enable you to connect remote device to central hub and deploy plugins to it.
+
 ## Getting started
 
 Start by installing Faros hub on your Kubernetes cluster.
@@ -87,6 +88,8 @@ Anybody can write plugins and publish to faros marketplace.
 ## Important
 
 Project is in heavy development. It is not ready for production use.
+Evolving architecture overview can be found here:
+https://miro.com/app/board/o9J_lob-CMw=/?share_link_id=60410961009
 
 ## Getting started
 

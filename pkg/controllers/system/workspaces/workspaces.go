@@ -3,8 +3,8 @@ package workspaces
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/logicalcluster/v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
@@ -42,7 +43,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(req.ClusterName))
 
 	logger.Info("Getting Request")
-	var request tenancyv1alpha1.ClusterWorkspace
+	var request tenancyv1alpha1.Workspace
 	if err := r.Get(ctx, req.NamespacedName, &request); err != nil {
 		if errors.IsNotFound(err) {
 			// Normal - was deleted
@@ -52,8 +53,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	requestCopy := request.DeepCopy()
-
-	spew.Dump(requestCopy)
+	conditions.MarkTrue(requestCopy, conditionsv1alpha1.ReadyCondition)
+	if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -61,6 +64,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 // SetupWithManager sets up the controller with the Manager.
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&tenancyv1alpha1.ClusterWorkspace{}).
+		For(&tenancyv1alpha1.Workspace{}).
 		Complete(r)
 }

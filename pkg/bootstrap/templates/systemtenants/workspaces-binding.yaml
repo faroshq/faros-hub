@@ -1,0 +1,16 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: tenancy.faros.sh
+spec:
+  permissionClaims:
+  - group: tenancy.faros.sh
+    resource: "workspaces"
+    state: Accepted
+  - group: ""
+    resource: "secrets"
+    state: Accepted
+  reference:
+    workspace:
+      exportName: tenancy.faros.sh
+      path: root:faros-system:controllers

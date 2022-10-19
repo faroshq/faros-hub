@@ -10,3 +10,4 @@ resources:
 - plugins.faros.sh_monitorings.yaml
 - plugins.faros.sh_networks.yaml
 - plugins.faros.sh_notifications.yaml
+- tenancy.faros.sh_workspaces.yaml

@@ -4,20 +4,20 @@ metadata:
   name: edge.faros.sh
 spec:
   latestResourceSchemas:
-    - today.agents.edge.faros.sh
-    - today.registrations.edge.faros.sh
+  - today.agents.edge.faros.sh
+  - today.registrations.edge.faros.sh
   permissionClaims:
-    - group: "edge.faros.sh"
-      resource: "registrations"
-    - group: "edge.faros.sh"
-      resource: "agents"
-    - group: ""
-      resource: "secrets"
-    - group: ""
-      resource: "serviceaccounts"
-    - group: ""
-      resource: "configmaps"
-    - group: "rbac.authorization.k8s.io"
-      resource: "roles"
-    - group: "rbac.authorization.k8s.io"
-      resource: "rolebindings"
+  - group: "edge.faros.sh"
+    resource: "registrations"
+  - group: "edge.faros.sh"
+    resource: "agents"
+  - group: ""
+    resource: "secrets"
+  - group: ""
+    resource: "serviceaccounts"
+  - group: ""
+    resource: "configmaps"
+  - group: "rbac.authorization.k8s.io"
+    resource: "roles"
+  - group: "rbac.authorization.k8s.io"
+    resource: "rolebindings"

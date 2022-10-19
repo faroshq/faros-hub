@@ -24,6 +24,7 @@ import (
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/tenancy/v1alpha1"
 	v2 "github.com/kcp-dev/logicalcluster/v2"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -62,6 +63,7 @@ type Interface interface {
 	AccessV1alpha1() accessv1alpha1.AccessV1alpha1Interface
 	EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface
 	PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface
+	TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -78,6 +80,7 @@ type scopedClientset struct {
 	accessV1alpha1  *accessv1alpha1.AccessV1alpha1Client
 	edgeV1alpha1    *edgev1alpha1.EdgeV1alpha1Client
 	pluginsV1alpha1 *pluginsv1alpha1.PluginsV1alpha1Client
+	tenancyV1alpha1 *tenancyv1alpha1.TenancyV1alpha1Client
 }
 
 // AccessV1alpha1 retrieves the AccessV1alpha1Client
@@ -93,6 +96,11 @@ func (c *Clientset) EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface {
 // PluginsV1alpha1 retrieves the PluginsV1alpha1Client
 func (c *Clientset) PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface {
 	return pluginsv1alpha1.NewWithCluster(c.pluginsV1alpha1.RESTClient(), c.cluster)
+}
+
+// TenancyV1alpha1 retrieves the TenancyV1alpha1Client
+func (c *Clientset) TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface {
+	return tenancyv1alpha1.NewWithCluster(c.tenancyV1alpha1.RESTClient(), c.cluster)
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -151,6 +159,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.tenancyV1alpha1, err = tenancyv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -175,6 +187,7 @@ func New(c rest.Interface) *Clientset {
 	cs.accessV1alpha1 = accessv1alpha1.New(c)
 	cs.edgeV1alpha1 = edgev1alpha1.New(c)
 	cs.pluginsV1alpha1 = pluginsv1alpha1.New(c)
+	cs.tenancyV1alpha1 = tenancyv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &Clientset{scopedClientset: &cs}

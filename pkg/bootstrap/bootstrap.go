@@ -19,6 +19,7 @@ import (
 
 type Bootstraper interface {
 	CreateWorkspace(ctx context.Context, name string) error
+	BootstrapSystemTenantAssets(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsCRD(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsKCP(ctx context.Context, workspace string) error
 }
@@ -106,4 +107,8 @@ func (b *bootstrap) DeployKustomizeAssetsKCP(ctx context.Context, workspace stri
 
 func (b *bootstrap) CreateWorkspace(ctx context.Context, name string) error {
 	return b.createNamedWorkspace(ctx, name)
+}
+
+func (b *bootstrap) BootstrapSystemTenantAssets(ctx context.Context, workspace string) error {
+	return b.bootstrapSystemTenantAssets(ctx, workspace)
 }

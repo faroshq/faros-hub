@@ -8,7 +8,7 @@ import (
 	"time"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,6 +22,7 @@ import (
 
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
 	"github.com/faroshq/faros-hub/pkg/config"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
@@ -37,6 +38,7 @@ func init() {
 	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
 	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kcptenancyv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
 }
 
@@ -45,7 +47,7 @@ type Controllers interface {
 	Run(ctx context.Context) error
 }
 
-type controllers struct {
+type controllerManager struct {
 	config        *config.ControllerConfig
 	clientFactory utilkubernetes.ClientFactory
 	bootstraper   bootstrap.Bootstraper
@@ -62,14 +64,14 @@ func New(c *config.ControllerConfig) (Controllers, error) {
 		return nil, err
 	}
 
-	return &controllers{
+	return &controllerManager{
 		config:        c,
 		clientFactory: cf,
 		bootstraper:   b,
 	}, nil
 }
 
-func (c *controllers) WaitForAPIReady(ctx context.Context) error {
+func (c *controllerManager) WaitForAPIReady(ctx context.Context) error {
 	// Wait for API server to report healthy
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
@@ -98,7 +100,7 @@ func (c *controllers) WaitForAPIReady(ctx context.Context) error {
 	}
 }
 
-func (c *controllers) Run(ctx context.Context) error {
+func (c *controllerManager) Run(ctx context.Context) error {
 	// bootstrap will set missing ctrlRestConfig and deploy kcp wide resources
 	if err := c.bootstrap(ctx); err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
@@ -113,14 +115,23 @@ func (c *controllers) Run(ctx context.Context) error {
 	eg.Go(func() error {
 		return c.runAccess(ctx)
 	})
+	eg.Go(func() error {
+		return c.runSystem(ctx)
+	})
 
 	return eg.Wait()
 }
 
-func (c *controllers) bootstrap(ctx context.Context) error {
+func (c *controllerManager) bootstrap(ctx context.Context) error {
 	// create controllers workspace
-	if err := c.bootstraper.CreateWorkspace(ctx, c.config.ControllersWorkspace); err != nil {
-		return err
+	for _, w := range []string{
+		c.config.TenantsWorkspacePrefix,
+		c.config.ControllersTenantWorkspace,
+		c.config.ControllersWorkspace,
+	} {
+		if err := c.bootstraper.CreateWorkspace(ctx, w); err != nil {
+			return err
+		}
 	}
 	// create assets for controller workspace being able to access all "workspaces"
 	// and implement their requests
@@ -128,6 +139,11 @@ func (c *controllers) bootstrap(ctx context.Context) error {
 		return err
 	}
 	if err := c.bootstraper.DeployKustomizeAssetsKCP(ctx, c.config.ControllersWorkspace); err != nil {
+		return err
+	}
+
+	// create assets for controller tenant workspace being able to access use apis
+	if err := c.bootstraper.BootstrapSystemTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
 		return err
 	}
 

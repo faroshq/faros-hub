@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/faroshq/faros-hub/pkg/controllers/tenants/edge/registration"
+	"github.com/faroshq/faros-hub/pkg/controllers/system/workspaces"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -14,20 +14,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 )
 
-// edge controller is running in edge api virtual workspace context
+// runSystem controller is running in system workspace and is responsible for
+// managing workspaces and tenants
 
-func (c *controllerManager) runEdge(ctx context.Context) error {
+func (c *controllerManager) runSystem(ctx context.Context) error {
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
 	}
 
-	var edgeRest *rest.Config
+	var rest *rest.Config
 	// bootstrap rest config for controllers
 	if kcpAPIsGroupPresent(restConfig) {
 		if err := wait.PollImmediateInfinite(time.Second*5, func() (bool, error) {
-			klog.Info("looking up virtual workspace URL - edge.faros.sh")
-			edgeRest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosEdgeAPIExportName)
+			klog.Info("looking up virtual workspace URL - tenancy.faros.sh")
+			rest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosTenancyAPIExportName)
 			if err != nil {
 				return false, nil
 			}
@@ -42,26 +43,27 @@ func (c *controllerManager) runEdge(ctx context.Context) error {
 
 	options := ctrl.Options{
 		Scheme:                  scheme,
-		MetricsBindAddress:      ":8082",
+		MetricsBindAddress:      ":8080",
 		Port:                    9443,
-		HealthProbeBindAddress:  ":8083",
+		HealthProbeBindAddress:  ":8081",
 		LeaderElection:          false,
-		LeaderElectionID:        "edge.faros.sh",
+		LeaderElectionID:        "tenancy.faros.sh",
 		LeaderElectionNamespace: "default",
-		LeaderElectionConfig:    edgeRest,
+		LeaderElectionConfig:    rest,
 	}
 
-	mgr, err := kcp.NewClusterAwareManager(edgeRest, options)
+	mgr, err := kcp.NewClusterAwareManager(rest, options)
 	if err != nil {
 		klog.Error(err, "unable to start manager")
 		return err
 	}
 
-	if err = (&registration.Reconciler{
+	if err = (&workspaces.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Config: c.config,
 	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "registration.edge.faros.sh")
+		klog.Error(err, "unable to create controller", "workspaces.tenancy.faros.sh")
 		return err
 	}
 
@@ -74,7 +76,7 @@ func (c *controllerManager) runEdge(ctx context.Context) error {
 		return err
 	}
 
-	klog.Info("starting edge manager")
+	klog.Info("starting requests manager")
 
 	return mgr.Start(ctx)
 
