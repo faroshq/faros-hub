@@ -59,9 +59,10 @@ func (c *controllerManager) runSystem(ctx context.Context) error {
 	}
 
 	if err = (&workspaces.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Config: c.config,
+		Client:        mgr.GetClient(),
+		Scheme:        mgr.GetScheme(),
+		Config:        c.config,
+		ClientFactory: c.clientFactory,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "workspaces.tenancy.faros.sh")
 		return err

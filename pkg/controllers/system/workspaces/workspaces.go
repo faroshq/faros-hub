@@ -22,6 +22,8 @@ import (
 // created for all faros workspaces. In the future it will be responsible for
 // lifecycle those bindings too.
 
+var finalizerName = "workspaces.tenancy.faros.sh/finalizer"
+
 // Reconciler reconciles an object
 type Reconciler struct {
 	client.Client
@@ -52,10 +54,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
-	requestCopy := request.DeepCopy()
-	conditions.MarkTrue(requestCopy, conditionsv1alpha1.ReadyCondition)
-	if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
-		return ctrl.Result{}, err
+	if request.DeletionTimestamp.IsZero() {
+		result, err := r.createOrUpdate(ctx, logger, request.DeepCopy())
+		if err != nil {
+			requestCopy := request.DeepCopy()
+			conditions.MarkFalse(
+				requestCopy,
+				conditionsv1alpha1.ReadyCondition,
+				err.Error(),
+				conditionsv1alpha1.ConditionSeverityError,
+				"Error configuring Workspace: %v",
+				err,
+			)
+			if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
+				return result, err
+			}
+		}
+	} else {
+		//	return r.delete(ctx, logger, registration.DeepCopy())
 	}
 
 	return ctrl.Result{}, nil

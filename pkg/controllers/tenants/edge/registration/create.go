@@ -22,6 +22,7 @@ import (
 )
 
 func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, registration *edgev1alpha1.Registration) (ctrl.Result, error) {
+	// TODO: move to webhook
 	if !controllerutil.ContainsFinalizer(registration, finalizerName) {
 		controllerutil.AddFinalizer(registration, finalizerName)
 		if err := r.Update(ctx, registration); err != nil {
@@ -31,7 +32,6 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, reg
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	logger.Info("Getting registration")
 	registrationOwnersReferences := []metav1.OwnerReference{{
 		APIVersion: workloadv1alpha1.SchemeGroupVersion.String(),
 		Kind:       edgev1alpha1.RegistrationKind,

@@ -3,11 +3,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/cmd/help"
 	"github.com/kcp-dev/kcp/pkg/embeddedetcd"
 	kcpfeatures "github.com/kcp-dev/kcp/pkg/features"
@@ -28,9 +30,11 @@ import (
 	"k8s.io/component-base/version"
 	"k8s.io/klog"
 
+	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/root"
 	farosconfig "github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/controllers"
 	faroserver "github.com/faroshq/faros-hub/pkg/server"
+	bootstraputils "github.com/faroshq/faros-hub/pkg/util/bootstrap"
 )
 
 var allInOne bool
@@ -131,6 +135,20 @@ func main() {
 				return err
 			})
 
+			// based on https://github.com/kcp-dev/kcp/blob/124785e6e911c0d564db08667b985718a37c18f2/pkg/server/server.go
+			// Add hook for root bootstrap
+			s.AddPostStartHook("bootstrap-faros-workspace-types", func(ctx genericapiserver.PostStartHookContext) error {
+				if s.Options.Extra.ShardName == tenancyv1alpha1.RootShard {
+					if err := root.Bootstrap(goContext(ctx),
+						s.BootstrapApiExtensionsClusterClient.Cluster(tenancyv1alpha1.RootCluster).Discovery(),
+						s.BootstrapDynamicClusterClient.Cluster(tenancyv1alpha1.RootCluster),
+						bootstraputils.ReplaceOption()); err != nil {
+						return err // don't klog.Fatal. This only happens when context is cancelled.
+					}
+				}
+				return nil
+			})
+
 			// Start the controllers in a goroutine
 			// Would be better not to do this in production
 			if allInOne {
@@ -206,4 +224,16 @@ func main() {
 	}
 
 	os.Exit(cli.Run(cmd))
+}
+
+// goContext turns the PostStartHookContext into a context.Context for use in routines that may or may not
+// run inside of a post-start-hook. The k8s APIServer wrote the post-start-hook context code before contexts
+// were part of the Go stdlib.
+func goContext(parent genericapiserver.PostStartHookContext) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func(done <-chan struct{}) {
+		<-done
+		cancel()
+	}(parent.StopCh)
+	return ctx
 }
