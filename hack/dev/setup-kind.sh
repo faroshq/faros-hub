@@ -40,3 +40,16 @@ helm install \
   --create-namespace \
   --version v1.9.1
 
+
+echo "Install dex"
+
+kubectl create namespace dex
+kubectl -n dex create secret tls dex.dev.faros.sh.tls --cert=hack/dev/dex/ssl/cert.pem --key=hack/dev/dex/ssl/key.pem
+
+kubectl -n dex create secret \
+    generic github-client \
+    --from-literal=client-id=$FAROS_DEX_GITHUB_CLIENT_ID \
+    --from-literal=client-secret=$FAROS_DEX_GITHUB_CLIENT_SECRET
+
+kubectl -n dex create secret tls dex-tls --key hack/dev/dex/ssl/key.pem --cert hack/dev/dex/ssl/cert.pem
+kubectl apply -f ./hack/dev/dex/dex.yaml

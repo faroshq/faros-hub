@@ -65,3 +65,9 @@ deploy-kind:
 
 run-with-oidc:
 	./hack/dev/run-with-oidc.sh
+
+install-dex:
+	go install github.com/dexidp/dex/cmd/dex
+
+run-dex:
+	dex serve hack/dev/dex.config.yaml

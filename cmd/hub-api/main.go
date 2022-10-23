@@ -65,7 +65,7 @@ func main() {
 	}
 
 	serverOptions := options.NewOptions(rootDir)
-	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(2)
+	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(12)
 
 	startCmd := &cobra.Command{
 		Use:   "start",

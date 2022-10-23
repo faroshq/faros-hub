@@ -1,10 +1,10 @@
 #!/bin/bash
 
 source .env
-go run ./cmd/hub-api \
+go run ./cmd/hub-api start \
     --oidc-issuer-url=$FAROS_OIDC_ISSUER_URL \
     --oidc-client-id=$FAROS_OIDC_CLIENT_ID \
-    --oidc-groups-claim=$FAROS_ODIC_GROUPS_CLAIM \
+    --oidc-ca-file=$FAROS_OIDC_CA_FILE \
+    --oidc-issuer-url=$FAROS_OIDC_ISSUER_URL \
     --oidc-username-claim=$FAROS_OIDC_USERNAME_CLAIM \
-    --oidc-username-prefix=$FAROS_OIDC_USERNAME_PREFIX \
-    --oidc-groups-prefix=$FAROS_OIDC_GROUP_PREFIX
+    --oidc-groups-claim=$FAROS_ODIC_GROUPS_CLAIM
