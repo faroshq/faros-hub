@@ -40,7 +40,6 @@ rules:
   - workspaces/content
   resourceNames:
   - controllers
-  - faros-system
   verbs:
   - admin
 EOF
@@ -59,14 +58,13 @@ subjects:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: workspace-admin
+  name: faros-system-workspace-admin
 EOF
 
 ```
 export TOKEN=<ID token from login app>
 curl -H "Authorization: Bearer $TOKEN" -k https://192.168.1.138:6443/clusters/root:faros-system:controllers
 ```
-
 cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
