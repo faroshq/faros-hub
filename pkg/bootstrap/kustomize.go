@@ -81,6 +81,7 @@ func (b *bootstrap) deployComponents(ctx context.Context, workspace, dir string)
 				time.Sleep(time.Second)
 				goto retry
 			}
+			fmt.Printf("Failed to create %s : %s \n", resource.GetName(), err.Error())
 			return err
 		}
 	}

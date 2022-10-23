@@ -23,6 +23,7 @@ import (
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -74,6 +75,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Networks().Informer()}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("notifications"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Notifications().Informer()}, nil
+
+		// Group=tenancy.faros.sh, Version=v1alpha1
+	case tenancyv1alpha1.SchemeGroupVersion.WithResource("workspaces"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Tenancy().V1alpha1().Workspaces().Informer()}, nil
 
 	}
 

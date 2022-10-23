@@ -19,6 +19,7 @@ import (
 
 type Bootstraper interface {
 	CreateWorkspace(ctx context.Context, name string) error
+	BootstrapSystemTenantAssets(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsCRD(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsKCP(ctx context.Context, workspace string) error
 }
@@ -51,7 +52,7 @@ func (b *bootstrap) DeployKustomizeAssetsCRD(ctx context.Context, workspace stri
 	defer os.RemoveAll(tmpDir)
 
 	for _, name := range AssetNames() {
-		if strings.HasPrefix(name, "crd") {
+		if strings.HasPrefix(name, "crds") {
 			data, err := Asset(name)
 			if err != nil {
 				return err
@@ -66,7 +67,7 @@ func (b *bootstrap) DeployKustomizeAssetsCRD(ctx context.Context, workspace stri
 		}
 	}
 
-	err = b.deployComponents(ctx, workspace, tmpDir+"/crd")
+	err = b.deployComponents(ctx, workspace, tmpDir+"/crds")
 	if err != nil {
 		return err
 	}
@@ -106,4 +107,8 @@ func (b *bootstrap) DeployKustomizeAssetsKCP(ctx context.Context, workspace stri
 
 func (b *bootstrap) CreateWorkspace(ctx context.Context, name string) error {
 	return b.createNamedWorkspace(ctx, name)
+}
+
+func (b *bootstrap) BootstrapSystemTenantAssets(ctx context.Context, workspace string) error {
+	return b.bootstrapSystemTenantAssets(ctx, workspace)
 }

@@ -2,6 +2,98 @@ apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
 metadata:
   creationTimestamp: null
+  name: today.accesses.plugins.faros.sh
+spec:
+  group: plugins.faros.sh
+  names:
+    kind: Access
+    listKind: AccessList
+    plural: accesses
+    singular: access
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: Access is the Schema for the plugin API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: AccessSpec defines the desired state of plugin
+          type: object
+        status:
+          description: AccessStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
   name: today.agents.edge.faros.sh
 spec:
   group: edge.faros.sh
@@ -34,12 +126,441 @@ spec:
           type: object
         spec:
           description: AgentSpec defines the desired state of agent
+          properties:
+            plugins:
+              items:
+                description: PluginSpec defines the desired state of plugin
+                properties:
+                  config:
+                    description: Config of the plugin
+                    type: string
+                  name:
+                    description: Name of the plugin
+                    type: string
+                  version:
+                    description: Version of the plugin
+                    type: string
+                type: object
+              type: array
           type: object
         status:
           description: AgentStatus defines the observed state of Agent
           properties:
             conditions:
               description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: today.containerruntimes.plugins.faros.sh
+spec:
+  group: plugins.faros.sh
+  names:
+    kind: ContainerRuntime
+    listKind: ContainerRuntimeList
+    plural: containerruntimes
+    singular: containerruntime
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: ContainerRuntime is the Schema for the plugin API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: ContainerRuntimeStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+        status:
+          description: ContainerRuntimeStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: today.monitorings.plugins.faros.sh
+spec:
+  group: plugins.faros.sh
+  names:
+    kind: Monitoring
+    listKind: MonitoringList
+    plural: monitorings
+    singular: monitoring
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: Monitoring is the Schema for the plugin API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: NetworkSpec defines the desired state of plugin
+          type: object
+        status:
+          description: NetworkStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: today.networks.plugins.faros.sh
+spec:
+  group: plugins.faros.sh
+  names:
+    kind: Network
+    listKind: NetworkList
+    plural: networks
+    singular: network
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: Network is the Schema for the plugin API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: NetworkSpec defines the desired state of plugin
+          type: object
+        status:
+          description: NetworkStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: today.notifications.plugins.faros.sh
+spec:
+  group: plugins.faros.sh
+  names:
+    kind: Notification
+    listKind: NotificationList
+    plural: notifications
+    singular: notification
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: Notification is the Schema for the plugin API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: NotificationSpec defines the desired state of plugin
+          type: object
+        status:
+          description: NotificationStatus defines the observed state of plugin
+          properties:
+            conditions:
+              description: Current processing state of the plugin.
               items:
                 description: Condition defines an observation of a object operational
                   state.
@@ -281,6 +802,98 @@ spec:
             syncTarget:
               description: The name of the SyncTarget that this Request is bound to.
               type: string
+          type: object
+      type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIResourceSchema
+metadata:
+  creationTimestamp: null
+  name: today.workspaces.tenancy.faros.sh
+spec:
+  group: tenancy.faros.sh
+  names:
+    kind: Workspace
+    listKind: WorkspaceList
+    plural: workspaces
+    singular: workspace
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      description: Workspace is the Schema for the Workspace API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: WorkspaceSpec defines the desired state of workspace
+          type: object
+        status:
+          description: WorkspaceStatus defines the observed state of Workspace
+          properties:
+            conditions:
+              description: Current processing state of the Agent.
+              items:
+                description: Condition defines an observation of a object operational
+                  state.
+                properties:
+                  lastTransitionTime:
+                    description: Last time the condition transitioned from one status
+                      to another. This should be when the underlying condition changed.
+                      If that is not known, then using the time when the API field
+                      changed is acceptable.
+                    format: date-time
+                    type: string
+                  message:
+                    description: A human readable message indicating details about
+                      the transition. This field may be empty.
+                    type: string
+                  reason:
+                    description: The reason for the condition's last transition in
+                      CamelCase. The specific API may choose whether or not this field
+                      is considered a guaranteed API. This field may not be empty.
+                    type: string
+                  severity:
+                    description: Severity provides an explicit classification of Reason
+                      code, so the users or machines can immediately understand the
+                      current situation and act accordingly. The Severity field MUST
+                      be set only when Status=False.
+                    type: string
+                  status:
+                    description: Status of the condition, one of True, False, Unknown.
+                    type: string
+                  type:
+                    description: Type of condition in CamelCase or in foo.example.com/CamelCase.
+                      Many .condition.type values are consistent across resources
+                      like Available, but because arbitrary conditions can be useful
+                      (see .node.status.conditions), the ability to deconflict is
+                      important.
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
           type: object
       type: object
     served: true

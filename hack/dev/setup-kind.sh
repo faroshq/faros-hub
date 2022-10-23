@@ -25,6 +25,8 @@ export KUBECONFIG=./dev/faros.kubeconfig
 echo "Installing ingress"
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl label nodes faros-control-plane ingress-ready="true"
+kubectl label nodes faros-control-plane node-role.kubernetes.io/control-plane-
 
 echo "Installing cert-manager"
 

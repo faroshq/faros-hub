@@ -25,6 +25,8 @@ import (
 	fakeedgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1/fake"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1"
 	fakepluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1/fake"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/tenancy/v1alpha1"
+	faketenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/tenancy/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -95,4 +97,9 @@ func (c *Clientset) EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface {
 // PluginsV1alpha1 retrieves the PluginsV1alpha1Client
 func (c *Clientset) PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface {
 	return &fakepluginsv1alpha1.FakePluginsV1alpha1{Fake: &c.Fake}
+}
+
+// TenancyV1alpha1 retrieves the TenancyV1alpha1Client
+func (c *Clientset) TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface {
+	return &faketenancyv1alpha1.FakeTenancyV1alpha1{Fake: &c.Fake}
 }

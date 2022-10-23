@@ -1,0 +1,19 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: access.faros.sh
+spec:
+  permissionClaims:
+  - group: "access.faros.sh"
+    resource: "requests"
+    state: Accepted
+  - group: ""
+    resource: "secrets"
+    state: Accepted
+  - group: ""
+    resource: "serviceaccounts"
+    state: Accepted
+  reference:
+    workspace:
+      exportName: access.faros.sh
+      path: root:faros-system:controllers

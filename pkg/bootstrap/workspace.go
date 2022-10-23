@@ -8,12 +8,39 @@ import (
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	"github.com/kcp-dev/logicalcluster/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
 )
 
 func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) error {
+	// create nested workspaces if requested one does not have pattern created
+	parent, exists := logicalcluster.New(workspace).Parent()
+	if exists {
+		var rest *rest.Config
+		var err error
+		if parent.String() == string(tenancyv1alpha1.RootWorkspaceTypeName) {
+			rest, err = b.clientFactory.GetRootRestConfig()
+		} else {
+			rest, err = b.clientFactory.GetChildWorkspaceRestConfig(ctx, parent.String())
+		}
+		if err != nil {
+			return err
+		}
+		client, err := kcpclient.NewForConfig(rest)
+		if err != nil {
+			return err
+		}
+		_, err = client.TenancyV1beta1().Workspaces().Get(ctx, parent.String(), metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			if err := b.createNamedWorkspace(ctx, parent.String()); err != nil {
+				return err
+			}
+		}
+	}
+
 	rest, err := b.clientFactory.GetChildWorkspaceRestConfig(ctx, workspace)
 	if err != nil {
 		return err
@@ -25,6 +52,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	separatorIndex := strings.LastIndex(workspace, ":")
+
 	var structuredWorkspaceType tenancyv1alpha1.ClusterWorkspaceTypeReference
 	ws, err := client.TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{

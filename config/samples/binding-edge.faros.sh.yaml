@@ -1,0 +1,31 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: edge.faros.sh
+spec:
+  permissionClaims:
+  - group: "edge.faros.sh"
+    resource: "registrations"
+    state: Accepted
+  - group: "edge.faros.sh"
+    resource: "agents"
+    state: Accepted
+  - group: ""
+    resource: "secrets"
+    state: Accepted
+  - group: ""
+    resource: "serviceaccounts"
+    state: Accepted
+  - group: ""
+    resource: "configmaps"
+    state: Accepted
+  - group: "rbac.authorization.k8s.io"
+    resource: "roles"
+    state: Accepted
+  - group: "rbac.authorization.k8s.io"
+    resource: "rolebindings"
+    state: Accepted
+  reference:
+    workspace:
+      exportName: edge.faros.sh
+      path: root:compute:controllers

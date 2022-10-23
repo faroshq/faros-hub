@@ -27,6 +27,7 @@ import (
 	edge "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/edge"
 	internalinterfaces "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/internalinterfaces"
 	plugins "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/plugins"
+	tenancy "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/tenancy"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -220,6 +221,7 @@ type SharedInformerFactory interface {
 	Access() access.Interface
 	Edge() edge.Interface
 	Plugins() plugins.Interface
+	Tenancy() tenancy.Interface
 }
 
 func (f *sharedInformerFactory) Access() access.Interface {
@@ -232,4 +234,8 @@ func (f *sharedInformerFactory) Edge() edge.Interface {
 
 func (f *sharedInformerFactory) Plugins() plugins.Interface {
 	return plugins.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Tenancy() tenancy.Interface {
+	return tenancy.New(f, f.namespace, f.tweakListOptions)
 }

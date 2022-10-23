@@ -1,0 +1,12 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: tenancy.faros.sh
+spec:
+  latestResourceSchemas:
+  - today.workspaces.tenancy.faros.sh
+  permissionClaims:
+  - group: "tenancy.faros.sh"
+    resource: "workspaces"
+  - group: ""
+    resource: "secrets"
