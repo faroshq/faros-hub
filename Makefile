@@ -63,3 +63,5 @@ delete-kind:
 deploy-kind:
 	./hack/dev/deploy-kind.sh
 
+run-with-oidc:
+	./hack/dev/run-with-oidc.sh
