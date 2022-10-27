@@ -31,8 +31,8 @@ cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: faros-system-workspace-admin
-  clusterName: root:faros-system
+  name: workspace-admin
+  clusterName: root:faros
 rules:
 - apiGroups:
   - tenancy.kcp.dev
@@ -51,10 +51,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cluster-admin
-  clusterName: root:faros-system
+  clusterName: root:faros
 subjects:
 - kind: User
-  name: mangirdas@judeikis.lt
+  name: faros-sso:mangirdas@judeikis.lt
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -64,36 +64,3 @@ EOF
 ```
 export TOKEN=<ID token from login app>
 curl -H "Authorization: Bearer $TOKEN" -k https://192.168.1.138:6443/clusters/root:faros-system:controllers
-```
-cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: workspace-admin
-  clusterName: root:faros-system
-rules:
-- apiGroups:
-  - tenancy.kcp.dev
-  resources:
-  - workspaces/content
-  resourceNames:
-  - controllers
-  verbs:
-  - admin
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: admin
-  clusterName: root:faros-system
-subjects:
-- kind: User
-  name: mangirdas@judeikis.lt
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: workspace-admin
-EOF
-```

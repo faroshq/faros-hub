@@ -15,3 +15,4 @@ for development, something went wrong :)
 
 1. Setup kind with `make setup-kind`
 2. Deploy stack with `make deploy-kind`
+

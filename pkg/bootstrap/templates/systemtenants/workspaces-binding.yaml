@@ -13,4 +13,4 @@ spec:
   reference:
     workspace:
       exportName: tenancy.faros.sh
-      path: root:faros-system:controllers
+      path: root:faros:service:controllers

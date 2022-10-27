@@ -117,6 +117,9 @@ data:
     - id: faros
       redirectURIs:
       - 'http://127.0.0.1:5555/callback'
+      - 'http://localhost:8000'
+      - 'https://localhost:6443/faros.sh/oidc/callback'
+      - 'https://dex.dev.faros.sh/callback'
       name: 'Faros App'
       secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 

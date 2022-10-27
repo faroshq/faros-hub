@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -254,7 +255,7 @@ func (a *app) handleLogin(w http.ResponseWriter, r *http.Request) {
 	if connectorID != "" {
 		authCodeURL = authCodeURL + "&connector_id=" + connectorID
 	}
-
+	spew.Dump(authCodeURL)
 	http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
 }
 

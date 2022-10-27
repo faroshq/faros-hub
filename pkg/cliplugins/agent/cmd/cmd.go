@@ -12,7 +12,7 @@ import (
 var (
 	agentExample = `
 	# Ensure a agent is running on the specified agebt target.
-	%[1]s workload agent <registration-name> -o agent.kubeconfig
+	%[1]s <registration-name> -o agent.kubeconfig
 	KUBECONFIG=<pcluster-config> <agent_image>
 `
 )
