@@ -1,13 +1,28 @@
-apiVersion: apis.kcp.dev/v1alpha1
-kind: APIBinding
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: access.faros.sh
-spec:
-  reference:
-    workspace:
-      exportName: access.faros.sh
-      path: root:compute:controllers
-  permissionClaims:
-  - group: access.faros.sh
-    resource: kubeconfigrequests
-    state: Accepted
+  name: workspace-admin
+  clusterName: root
+rules:
+- apiGroups:
+  - tenancy.kcp.dev
+  resources:
+  - workspaces/content
+  resourceNames:
+  - faros
+  verbs:
+  - admin
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin
+  clusterName: root
+subjects:
+- kind: User
+  name: faros-sso:mangirdas@judeikis.lt
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: faros-system-workspace-admin

@@ -4,11 +4,11 @@ metadata:
   name: faros
 spec:
   defaultAPIBindings:
-  - path: root:faros-system:controllers
+  - path: root:faros:service:controllers
     exportName: access.faros.sh
-  - path: root:faros-system:controllers
+  - path: root:faros:service:controllers
     exportName: edge.faros.sh
-  - path: root:faros-system:controllers
+  - path: root:faros:service:controllers
     exportName: plugins.faros.sh
   defaultChildren:
     types:

@@ -3,6 +3,8 @@ package registration
 import (
 	"context"
 
+	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/logicalcluster/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,11 +47,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
+	var result ctrl.Result
+	var err error
 	if registration.DeletionTimestamp.IsZero() {
-		return r.createOrUpdate(ctx, logger, registration.DeepCopy())
+		result, err = r.createOrUpdate(ctx, logger, registration.DeepCopy())
 	} else {
-		return r.delete(ctx, logger, registration.DeepCopy())
+		result, err = r.delete(ctx, logger, registration.DeepCopy())
 	}
+	if err != nil {
+		registrationCopy := registration.DeepCopy()
+		conditions.MarkFalse(
+			registrationCopy,
+			conditionsv1alpha1.ReadyCondition,
+			err.Error(),
+			conditionsv1alpha1.ConditionSeverityError,
+			"Error configuring Registration: %v",
+			err,
+		)
+		if err := r.Status().Patch(ctx, registrationCopy, client.MergeFrom(&registration)); err != nil {
+			return result, err
+		}
+	}
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

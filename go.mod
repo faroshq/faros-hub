@@ -4,24 +4,28 @@ go 1.18
 
 require (
 	github.com/aojea/rwconn v0.1.1
+	github.com/coreos/go-oidc v2.1.0+incompatible
+	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-bindata/go-bindata/v3 v3.1.3
 	github.com/go-logr/logr v1.2.3
 	github.com/google/go-cmp v0.5.8
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/sessions v1.2.1
 	github.com/joho/godotenv v1.4.0
 	github.com/kcp-dev/kcp v0.0.0-20220930134359-229f337a54d9
 	github.com/kcp-dev/kcp/pkg/apis v0.0.0-20220930134359-229f337a54d9
 	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/sirupsen/logrus v1.8.1
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.7.1
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
+	golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b
+	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 	golang.org/x/tools v0.1.12
 	k8s.io/api v0.25.0
@@ -42,7 +46,7 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.81.0 // indirect
+	cloud.google.com/go/compute v1.7.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
@@ -62,7 +66,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/coredns/caddy v1.1.1 // indirect
 	github.com/coredns/coredns v1.9.3 // indirect
-	github.com/coreos/go-oidc v2.1.0+incompatible // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
@@ -90,6 +93,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
@@ -162,7 +166,6 @@ require (
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094 // indirect
 	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
@@ -170,12 +173,12 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	gonum.org/v1/gonum v0.6.2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
+	google.golang.org/genproto v0.0.0-20220616135557-88e70c0c3a90 // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/square/go-jose.v2 v2.2.2 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/cloud-provider v0.0.0 // indirect
@@ -198,8 +201,9 @@ require (
 
 replace (
 	github.com/kcp-dev/apimachinery => github.com/kcp-dev/apimachinery v0.0.0-20221012200555-6e7aed6fa0d5
-	github.com/kcp-dev/kcp => github.com/faroshq/kcp v0.0.0-20221014120802-116b6afa9d17
-	github.com/kcp-dev/kcp/pkg/apis => github.com/faroshq/kcp/pkg/apis v0.0.0-20221014120802-116b6afa9d17
+	github.com/kcp-dev/kcp => github.com/faroshq/kcp v0.0.0-20221025074609-86159690c7aa
+	github.com/kcp-dev/kcp/pkg/apis => github.com/faroshq/kcp/pkg/apis v0.0.0-20221025074609-86159690c7aa
+	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.0
 	k8s.io/api => github.com/kcp-dev/kubernetes/staging/src/k8s.io/api v0.0.0-20220915135949-eeba459ad2a1
 	k8s.io/apiextensions-apiserver => github.com/kcp-dev/kubernetes/staging/src/k8s.io/apiextensions-apiserver v0.0.0-20220915135949-eeba459ad2a1
 	k8s.io/apimachinery => github.com/kcp-dev/kubernetes/staging/src/k8s.io/apimachinery v0.0.0-20220915135949-eeba459ad2a1

@@ -54,27 +54,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, err
 	}
 
+	var result ctrl.Result
+	var err error
 	if request.DeletionTimestamp.IsZero() {
-		result, err := r.createOrUpdate(ctx, logger, request.DeepCopy())
-		if err != nil {
-			requestCopy := request.DeepCopy()
-			conditions.MarkFalse(
-				requestCopy,
-				conditionsv1alpha1.ReadyCondition,
-				err.Error(),
-				conditionsv1alpha1.ConditionSeverityError,
-				"Error configuring Workspace: %v",
-				err,
-			)
-			if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
-				return result, err
-			}
-		}
+		result, err = r.createOrUpdate(ctx, logger, request.DeepCopy())
 	} else {
 		//	return r.delete(ctx, logger, registration.DeepCopy())
 	}
-
-	return ctrl.Result{}, nil
+	if err != nil {
+		requestCopy := request.DeepCopy()
+		conditions.MarkFalse(
+			requestCopy,
+			conditionsv1alpha1.ReadyCondition,
+			err.Error(),
+			conditionsv1alpha1.ConditionSeverityError,
+			"Error configuring Workspace: %v",
+			err,
+		)
+		if err := r.Status().Patch(ctx, requestCopy, client.MergeFrom(&request)); err != nil {
+			return result, err
+		}
+	}
+	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

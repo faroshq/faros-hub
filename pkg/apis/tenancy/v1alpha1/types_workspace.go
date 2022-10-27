@@ -24,7 +24,10 @@ type Workspace struct {
 
 // WorkspaceSpec defines the desired state of workspace
 type WorkspaceSpec struct {
+	// Description is a user readable description of the workspace
 	Description string `json:"description,omitempty"`
+	// Members is a list of user emails who are members of this workspace
+	Members []string `json:"members,omitempty"`
 }
 
 // WorkspaceStatus defines the observed state of Workspace

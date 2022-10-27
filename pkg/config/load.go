@@ -1,6 +1,9 @@
 package config
 
 import (
+	"fmt"
+
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,6 +25,11 @@ func LoadController() (*ControllerConfig, error) {
 	// load root rest config
 	restConfig := ctrl.GetConfigOrDie()
 	c.RestConfig = restConfig
+
+	if c.OIDCAuthSessionKey == "" {
+		fmt.Println("FAROS_OIDC_AUTH_SESSION_KEY not supplied, generating random one")
+		c.OIDCAuthSessionKey = uuid.Must(uuid.NewUUID()).String()
+	}
 
 	return c, err
 }

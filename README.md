@@ -104,12 +104,21 @@ go run ./cmd/hub-api start --all-in-one
 
 This will start hub-api, reconciler.
 
-Create first workpace/virtual cluster:
+Create first workspace/virtual cluster:
 
 ```bash
 export KUBECONFIG=.faros/admin.kubeconfig
-kubectl kcp workspace use root
-kubectl kcp workspace create tenant1 --enter
+# service:tenants workspace is responsible for providing tenants and workspaces
+kubectl kcp workspace use root:faros:service:tenants
+kubectl create namespace location
+kubectl apply -f ./config/samples/tenants_v1alpha1_workspace.yaml
+# You should see workspace created and reconciled
+kubectl get workspace -n location -o yaml
+
+# check if you can access it. If we running with IDP provider, you will need to login and generate
+# new kubeconfig
+go run ./cmd/kubectl-faros/ login setup root:faros:tenants:location:edge --kubeconfig edge1.kubeconfig
+
 ```
 
 Controller will run in tenant `root:compute:controllers` so for now this name

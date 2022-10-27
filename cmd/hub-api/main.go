@@ -5,10 +5,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/cmd/help"
 	"github.com/kcp-dev/kcp/pkg/embeddedetcd"
@@ -65,7 +66,7 @@ func main() {
 	}
 
 	serverOptions := options.NewOptions(rootDir)
-	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(2)
+	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(12)
 
 	startCmd := &cobra.Command{
 		Use:   "start",
@@ -83,6 +84,21 @@ func main() {
 			// run as early as possible to avoid races later when some components (e.g. grpc) start early using klog
 			if err := serverOptions.GenericControlPlane.Logs.ValidateAndApply(kcpfeatures.DefaultFeatureGate); err != nil {
 				return err
+			}
+
+			c, err := farosconfig.LoadController()
+			if err != nil {
+				return err
+			}
+			t, err := faroserver.NewServer(c)
+			if err != nil {
+				return err
+			}
+
+			serverOptions.Extra.AdditionalAPIHandlers = []func(h http.Handler) http.HandlerFunc{
+				t.CustomTunnels(),
+				t.OIDCLogin(),
+				t.OIDCCallback(),
 			}
 
 			completed, err := serverOptions.Complete()
@@ -124,9 +140,6 @@ func main() {
 				return err
 			}
 
-			t := faroserver.NewTunneler()
-			s.GenericControlPlane.GenericAPIServer.Handler.NonGoRestfulMux.HandleFunc("/services/faros-tunnels", t.CustomTunnels)
-
 			// Add hook to populate tunnels clients
 			// Register a post-start hook that connects to the api-server
 			s.AddPostStartHook("connect-to-api", func(ctx genericapiserver.PostStartHookContext) error {
@@ -152,13 +165,9 @@ func main() {
 			// Start the controllers in a goroutine
 			// Would be better not to do this in production
 			if allInOne {
-				spew.Dump("All in one")
 				// Add hook to start controllers too
 				s.AddPostStartHook("run-faros-controllers", func(ctxP genericapiserver.PostStartHookContext) error {
-					c, err := farosconfig.LoadController()
-					if err != nil {
-						return err
-					}
+
 					c.RestConfig = ctxP.LoopbackClientConfig
 
 					controllers, err := controllers.New(c)
@@ -166,7 +175,15 @@ func main() {
 						return err
 					}
 
-					go controllers.Run(ctx)
+					go func() {
+						for {
+							err := controllers.Run(ctx)
+							if err != nil {
+								klog.Error(err)
+							}
+							time.Sleep(5 * time.Second)
+						}
+					}()
 					return nil
 				})
 			}

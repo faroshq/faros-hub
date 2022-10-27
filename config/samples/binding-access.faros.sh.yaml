@@ -16,4 +16,4 @@ spec:
   reference:
     workspace:
       exportName: access.faros.sh
-      path: root:faros-system:controllers
+      path: root:faros:service:controllers

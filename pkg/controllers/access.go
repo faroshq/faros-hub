@@ -42,9 +42,9 @@ func (c *controllerManager) runAccess(ctx context.Context) error {
 
 	options := ctrl.Options{
 		Scheme:                  scheme,
-		MetricsBindAddress:      ":8080",
+		MetricsBindAddress:      ":8083",
 		Port:                    9443,
-		HealthProbeBindAddress:  ":8081",
+		HealthProbeBindAddress:  ":8084",
 		LeaderElection:          false,
 		LeaderElectionID:        "access.faros.sh",
 		LeaderElectionNamespace: "default",
