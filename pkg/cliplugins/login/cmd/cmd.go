@@ -6,14 +6,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-var (
-	loginExample = `
-	# Login to faros with SSO
-	%[1]s
-`
-)
-
-// New provides a cobra command for workload operations.
+// New provides a cobra command for login
 func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 	loginOptions := plugin.NewLoginSetupOptions(streams)
 
@@ -35,6 +28,7 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 			return loginOptions.Run(c.Context())
 		},
 	}
+	loginOptions.BindFlags(cmd)
 
 	return cmd, nil
 }

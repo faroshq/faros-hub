@@ -16,8 +16,8 @@ import (
 )
 
 // OIDCLogin is a http handler for oidc login
-// /services/faros.sh/oidc/login
-func (s *server) OIDCLogin() func(http.Handler) http.HandlerFunc {
+// /faros.sh/oidc/login
+func (s *Service) oidcLogin() func(http.Handler) http.HandlerFunc {
 	return func(h http.Handler) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// fall through, faros tunnels URL start by /services/faros-tunnels
@@ -64,9 +64,9 @@ func (s *server) OIDCLogin() func(http.Handler) http.HandlerFunc {
 	}
 }
 
-// OIDCCallback is a http handler for oidc login callback
-// /services/faros.sh/oidc/callback
-func (s *server) OIDCCallback() func(http.Handler) http.HandlerFunc {
+// oidcCallback is a http handler for oidc login callback
+// /faros.sh/oidc/callback
+func (s *Service) oidcCallback() func(http.Handler) http.HandlerFunc {
 	return func(h http.Handler) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// fall through, faros tunnels URL start by /services/faros-tunnels
@@ -181,7 +181,7 @@ func (s *server) OIDCCallback() func(http.Handler) http.HandlerFunc {
 	}
 }
 
-func (s *server) oauth2Config(scopes []string) *oauth2.Config {
+func (s *Service) oauth2Config(scopes []string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     s.config.OIDCClientID,
 		ClientSecret: s.config.OIDCClientSecret,

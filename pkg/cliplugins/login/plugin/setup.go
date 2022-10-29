@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/faroshq/faros-hub/pkg/models"
@@ -14,30 +16,22 @@ import (
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/klog"
+	"sigs.k8s.io/yaml"
 )
 
 // LoginSetupOptions contains options for login via faros API
 type LoginSetupOptions struct {
 	*base.Options
 
-	// Name is the name of the workspace to switch to.
-	Name string
-	// Overwrite indicates the context should be updated if it already exists. This is required to perform the update.
-	Overwrite bool
-
-	// for testing
-	modifyConfig func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error
+	// ConfigFile of CLI config
+	ConfigFile string
 }
 
 // NewGenerateOptions returns a new GenerateOptions.
 func NewLoginSetupOptions(streams genericclioptions.IOStreams) *LoginSetupOptions {
 	return &LoginSetupOptions{
 		Options: base.NewOptions(streams),
-		modifyConfig: func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error {
-			return clientcmd.ModifyConfig(configAccess, *newConfig, true)
-		},
 	}
 }
 
@@ -45,7 +39,13 @@ func NewLoginSetupOptions(streams genericclioptions.IOStreams) *LoginSetupOption
 func (o *LoginSetupOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 
-	cmd.Flags().BoolVar(&o.Overwrite, "overwrite", o.Overwrite, "Overwrite the context if it already exists")
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		klog.Error("Failed to get user home directory")
+		homedir = "/tmp/"
+	}
+
+	cmd.Flags().StringVarP(&o.ConfigFile, "config", "c", filepath.Join(homedir, ".faros/config.yaml"), "Faros CLI config location")
 }
 
 // Complete ensures all dynamically populated fields are initialized.
@@ -54,20 +54,12 @@ func (o *LoginSetupOptions) Complete(args []string) error {
 		return err
 	}
 
-	if o.Name == "" && len(args) > 0 {
-		o.Name = args[0]
-	}
-
 	return nil
 }
 
 // Validate validates the inputs
 func (o *LoginSetupOptions) Validate() error {
 	var errs []error
-
-	if o.Name == "" {
-		errs = append(errs, errors.New("workspace name is required"))
-	}
 
 	if err := o.Options.Validate(); err != nil {
 		errs = append(errs, err)
@@ -78,7 +70,7 @@ func (o *LoginSetupOptions) Validate() error {
 
 // Run prepares initiated login flow via IDP
 func (o *LoginSetupOptions) Run(ctx context.Context) error {
-	fmt.Println("running login setup")
+	fmt.Println("Logging into Faros Hub...")
 
 	doneCh := make(chan struct{})
 	errCh := make(chan error)
@@ -116,7 +108,7 @@ func (o *LoginSetupOptions) Run(ctx context.Context) error {
 	// wait for the response
 	select {
 	case <-doneCh:
-		return o.configureKubeConfig(ctx, *response)
+		return o.configureCLI(ctx, *response)
 	case err := <-errCh:
 		return fmt.Errorf("trying to authorize the client: %s", err)
 
@@ -126,43 +118,31 @@ func (o *LoginSetupOptions) Run(ctx context.Context) error {
 
 }
 
-func (o *LoginSetupOptions) configureKubeConfig(ctx context.Context, response models.LoginResponse) error {
-	config, err := o.ClientConfig.RawConfig()
+func (o *LoginSetupOptions) configureCLI(ctx context.Context, response models.LoginResponse) error {
+	fmt.Printf("Persisting login configuration to %s \n", o.ConfigFile)
+	data, err := os.ReadFile(o.ConfigFile)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	base := filepath.Dir(o.ConfigFile)
+	err = os.MkdirAll(base, 0755)
 	if err != nil {
 		return err
 	}
 
-	// setup cluster
-	cluster, exists := config.Clusters[o.Name]
-	if !exists {
-		cluster = clientcmdapi.NewCluster()
+	config := models.NewCLIConfig()
+	err = yaml.Unmarshal(data, &config)
+	if err != nil {
+		return err
 	}
-	cluster.Server = response.ServerBaseURL + "/" + o.Name
-	if response.CertificateAuthorityData == "" {
-		cluster.InsecureSkipTLSVerify = true
-	} else {
-		cluster.CertificateAuthorityData = []byte(response.CertificateAuthorityData)
+
+	config.Spec.Token = response.RawIDToken
+	config.Spec.BaseURL = response.ServerBaseURL
+	config.Spec.Email = response.Email
+
+	data, err = yaml.Marshal(config)
+	if err != nil {
+		return err
 	}
-	config.Clusters[o.Name] = cluster
-
-	// setup user
-	user, exists := config.AuthInfos[o.Name]
-	if !exists {
-		user = clientcmdapi.NewAuthInfo()
-	}
-	user.Token = response.RawIDToken
-	config.AuthInfos[o.Name] = user
-
-	// setup context
-	context, exists := config.Contexts[o.Name]
-	if !exists {
-		context = clientcmdapi.NewContext()
-	}
-	context.Cluster = o.Name
-	context.AuthInfo = o.Name
-	config.Contexts[o.Name] = context
-
-	config.CurrentContext = o.Name
-
-	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &config)
+	return os.WriteFile(o.ConfigFile, data, 0644)
 }

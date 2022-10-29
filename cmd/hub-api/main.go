@@ -5,7 +5,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -89,16 +88,13 @@ func main() {
 			if err != nil {
 				return err
 			}
-			t, err := faroserver.NewServer(c)
+
+			t, err := faroserver.New(c)
 			if err != nil {
 				return err
 			}
 
-			serverOptions.Extra.AdditionalAPIHandlers = []func(h http.Handler) http.HandlerFunc{
-				t.CustomTunnels(),
-				t.OIDCLogin(),
-				t.OIDCCallback(),
-			}
+			serverOptions.Extra.AdditionalAPIHandlers = t.GetHandlers()
 
 			completed, err := serverOptions.Complete()
 			if err != nil {
