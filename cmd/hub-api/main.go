@@ -67,7 +67,6 @@ func main() {
 
 	serverOptions := options.NewOptions(rootDir)
 	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(12)
-
 	startCmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the control plane process",
@@ -239,7 +238,6 @@ func main() {
 	} else {
 		cmd.Version = v
 	}
-
 	os.Exit(cli.Run(cmd))
 }
 

@@ -158,9 +158,11 @@ func (s *server) OIDCCallback() func(http.Handler) http.HandlerFunc {
 			}
 
 			response := models.LoginResponse{
-				IDToken:    *idToken,
-				RawIDToken: rawIDToken,
-				Email:      claims.Email,
+				IDToken:                  *idToken,
+				RawIDToken:               rawIDToken,
+				Email:                    claims.Email,
+				CertificateAuthorityData: s.config.TenantsCertificateAuthorityData,
+				ServerBaseURL:            fmt.Sprintf("%s/clusters", s.config.ControllerExternalURL),
 			}
 
 			data, err := json.Marshal(response)

@@ -22,10 +22,6 @@ func LoadController() (*ControllerConfig, error) {
 		return c, err
 	}
 
-	// load root rest config
-	restConfig := ctrl.GetConfigOrDie()
-	c.RestConfig = restConfig
-
 	if c.OIDCAuthSessionKey == "" {
 		fmt.Println("FAROS_OIDC_AUTH_SESSION_KEY not supplied, generating random one")
 		c.OIDCAuthSessionKey = uuid.Must(uuid.NewUUID()).String()

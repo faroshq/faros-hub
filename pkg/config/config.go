@@ -28,6 +28,10 @@ type ControllerConfig struct {
 	// using homedir but I was not able to reproduce it in main kcp branch so I am not sure if it is fixed
 	TenantsWorkspacePrefix string `envconfig:"FAROS_TENANTS_WORKSPACE_PREFIX" yaml:"tenantsWorkspacePrefix,omitempty" default:"root:faros-tenants"`
 
+	// TenantsCertificateAuthorityData is the base64 encoded certificate authority data for the tenants KubeConfigs. If not set it will set
+	// skip TLS verification for the tenants KubeConfigs
+	TenantsCertificateAuthorityData string `envconfig:"FAROS_TENANTS_CA_DATA" yaml:"tenantsCertificateAuthorityData,omitempty" default:""`
+
 	// OIDC provider configuration. We will route user request to this provider and wait for callback to our API with credentials
 	OIDCIssuerURL      string `envconfig:"FAROS_OIDC_ISSUER_URL" yaml:"oidcIssuerURL,omitempty" default:"https://dex.dev.faros.sh"`
 	OIDCClientID       string `envconfig:"FAROS_OIDC_CLIENT_ID" yaml:"oidcClientID,omitempty" default:"faros"`
