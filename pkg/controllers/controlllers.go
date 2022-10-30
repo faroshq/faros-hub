@@ -143,7 +143,7 @@ func (c *controllerManager) bootstrap(ctx context.Context) error {
 	}
 
 	// create assets for controller tenant workspace being able to access use apis
-	if err := c.bootstraper.BootstrapSystemTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
+	if err := c.bootstraper.BootstrapServiceTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
 		return err
 	}
 

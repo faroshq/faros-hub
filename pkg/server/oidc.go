@@ -11,6 +11,7 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"github.com/davecgh/go-spew/spew"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/models"
 	"golang.org/x/oauth2"
 )
@@ -58,7 +59,7 @@ func (s *Service) oidcLogin() func(http.Handler) http.HandlerFunc {
 			} else {
 				authCodeURL = s.oauth2Config(scopes).AuthCodeURL(state, oauth2.AccessTypeOffline)
 			}
-			spew.Dump(authCodeURL)
+
 			http.Redirect(w, r, authCodeURL, http.StatusSeeOther)
 		})
 	}
@@ -154,6 +155,16 @@ func (s *Service) oidcCallback() func(http.Handler) http.HandlerFunc {
 			}
 			if err := idToken.Claims(&claims); err != nil {
 				http.Error(w, fmt.Sprintf("failed to parse claim: %v", err), http.StatusInternalServerError)
+				return
+			}
+
+			_, err = s.registerOrUpdateUser(ctx, &tenancyv1alpha1.User{
+				Spec: tenancyv1alpha1.UserSpec{
+					Email: claims.Email,
+				},
+			})
+			if err != nil {
+				http.Error(w, fmt.Sprintf("failed to register user: %v", err), http.StatusInternalServerError)
 				return
 			}
 

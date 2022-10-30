@@ -28,6 +28,7 @@ import (
 
 type TenancyV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	UsersGetter
 	WorkspacesGetter
 }
 
@@ -35,6 +36,10 @@ type TenancyV1alpha1Interface interface {
 type TenancyV1alpha1Client struct {
 	restClient rest.Interface
 	cluster    v2.Name
+}
+
+func (c *TenancyV1alpha1Client) Users() UserInterface {
+	return newUsers(c)
 }
 
 func (c *TenancyV1alpha1Client) Workspaces(namespace string) WorkspaceInterface {
