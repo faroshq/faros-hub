@@ -65,7 +65,7 @@ func main() {
 	}
 
 	serverOptions := options.NewOptions(rootDir)
-	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(12)
+	serverOptions.GenericControlPlane.Logs.Config.Verbosity = config.VerbosityLevel(2)
 	startCmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the control plane process",
@@ -139,7 +139,7 @@ func main() {
 			// Register a post-start hook that connects to the api-server
 			s.AddPostStartHook("connect-to-api", func(ctx genericapiserver.PostStartHookContext) error {
 				// Create a new client using the client config from our newly created api-server
-				err := t.SeedClients(ctx.LoopbackClientConfig)
+				err := t.Init(ctx.LoopbackClientConfig)
 				return err
 			})
 

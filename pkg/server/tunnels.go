@@ -2,60 +2,16 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"net"
 	"net/http"
-	"net/http/httputil"
-	"os"
 	"strings"
-	"time"
 
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 
 	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
-	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
-	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
 )
-
-// SeedClients will inject all api server clients with post-start-hook
-func (t *Service) SeedClients(rest *rest.Config) error {
-	p := newKubeConfigProxy(rest)
-
-	kcpClient, err := kcpclient.NewClusterForConfig(rest)
-	if err != nil {
-		return err
-	}
-
-	farosClient, err := farosclient.NewClusterForConfig(rest)
-	if err != nil {
-		return err
-	}
-
-	coreClient, err := kubernetes.NewClusterForConfig(rest)
-	if err != nil {
-		return err
-	}
-
-	proxy := &httputil.ReverseProxy{
-		Director:  p.director,
-		Transport: roundtripper.RoundTripperFunc(p.roundTripper),
-		//ErrorLog:  log.New(k.log.Writer(), "", 0),
-	}
-
-	t.proxy = proxy
-	t.kcpClient = kcpClient
-	t.farosClient = farosClient
-	t.coreClients = coreClient
-	t.seeded = true
-	return nil
-}
 
 // customTunnels is HTTP Handler that handles reverse connections and reverse proxy
 // https://host/faros.sh/tunnels/....
@@ -143,26 +99,4 @@ func (s *Service) customTunnels() func(http.Handler) http.HandlerFunc {
 	}
 }
 
-// return an HTTP client which trusts the provided root CAs.
-func httpClientForRootCAs(rootCAs string) (*http.Client, error) {
-	tlsConfig := tls.Config{RootCAs: x509.NewCertPool()}
-	rootCABytes, err := os.ReadFile(rootCAs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read root-ca: %v", err)
-	}
-	if !tlsConfig.RootCAs.AppendCertsFromPEM(rootCABytes) {
-		return nil, fmt.Errorf("no certs found in root CA file %q", rootCAs)
-	}
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tlsConfig,
-			Proxy:           http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
-	}, nil
-}
+

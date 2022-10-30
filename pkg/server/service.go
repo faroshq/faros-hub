@@ -1,15 +1,14 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"net/http/httputil"
 	"time"
 
-	"github.com/coreos/go-oidc"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/config"
-	"github.com/gorilla/sessions"
+	"github.com/faroshq/faros-hub/pkg/server/auth"
+	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -32,56 +31,22 @@ var _ Interface = &Service{}
 type Interface interface {
 	// GetHandlers returns a list of handlers that should be added to the HTTP server
 	GetHandlers() []func(h http.Handler) http.HandlerFunc
-	// SeedClients will inject all api server clients with post-start-hook
-	SeedClients(rest *rest.Config) error
+	// Init will inject all api server clients with post-start-hook
+	Init(rest *rest.Config) error
 }
 
 func New(config *config.ControllerConfig) (*Service, error) {
-	var client *http.Client
-	var err error
-	if config.OIDCCAFile != "" {
-		client, err = httpClientForRootCAs(config.OIDCCAFile)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if client == nil {
-		client = http.DefaultClient
-	}
-
-	redirectURL := config.ControllerExternalURL + defaultOIDCCallbackPathPrefix
-
-	ctx := oidc.ClientContext(context.Background(), client)
-
-	provider, err := oidc.NewProvider(ctx, config.OIDCIssuerURL)
-	if err != nil {
-		return nil, err
-	}
-	// Create an ID token parser, but only trust ID tokens issued to "example-app"
-	idTokenVerifier := provider.Verifier(&oidc.Config{
-		ClientID: config.OIDCClientID,
-	})
-
 	return &Service{
-		client:        client,
-		provider:      provider,
-		verifier:      idTokenVerifier,
-		redirectURL:   redirectURL,
-		config:        config,
-		oAuthSessions: sessions.NewCookieStore([]byte(config.OIDCAuthSessionKey)),
+		config: config,
 	}, nil
 }
 
 type Service struct {
-	config *config.ControllerConfig
+	config        *config.ControllerConfig
+	authenticator auth.Authenticator
 
 	// oidc tooling
-	oAuthSessions *sessions.CookieStore
-	provider      *oidc.Provider
-	verifier      *oidc.IDTokenVerifier
-	redirectURL   string
-	client        *http.Client
+	auth auth.Authenticator
 
 	// tunneling tooling
 	kcpClient   kcpclient.ClusterInterface
@@ -97,13 +62,53 @@ var (
 	defaultTunnelsPathPrefix      = "/faros.sh/tunnels"
 	defaultOIDCLoginPathPrefix    = "/faros.sh/oidc/login"
 	defaultOIDCCallbackPathPrefix = "/faros.sh/oidc/callback"
-	defaultWorkspaceManagement    = "/faros.sh/workspace"
+	defaultWorkspaceManagement    = "/faros.sh/workspaces"
 )
+
+// Init will inject all api server clients with post-start-hook
+func (s *Service) Init(rest *rest.Config) error {
+	p := newKubeConfigProxy(rest)
+
+	kcpClient, err := kcpclient.NewClusterForConfig(rest)
+	if err != nil {
+		return err
+	}
+
+	farosClient, err := farosclient.NewClusterForConfig(rest)
+	if err != nil {
+		return err
+	}
+
+	coreClient, err := kubernetes.NewClusterForConfig(rest)
+	if err != nil {
+		return err
+	}
+
+	proxy := &httputil.ReverseProxy{
+		Director:  p.director,
+		Transport: roundtripper.RoundTripperFunc(p.roundTripper),
+		//ErrorLog:  log.New(k.log.Writer(), "", 0),
+	}
+
+	authenticator, err := auth.NewAuthenticator(s.config, coreClient, farosClient, defaultOIDCCallbackPathPrefix)
+	if err != nil {
+		return err
+	}
+
+	s.proxy = proxy
+	s.kcpClient = kcpClient
+	s.farosClient = farosClient
+	s.coreClients = coreClient
+	s.authenticator = authenticator
+	s.seeded = true
+	return nil
+}
 
 func (s *Service) GetHandlers() []func(h http.Handler) http.HandlerFunc {
 	return []func(h http.Handler) http.HandlerFunc{
 		s.oidcCallback(),
 		s.oidcLogin(),
 		s.customTunnels(),
+		s.workspacesHandler(),
 	}
 }
