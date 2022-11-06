@@ -16,6 +16,9 @@ type Options struct {
 	*base.Options
 	// Output specifies output format
 	Output string
+
+	// TenantWorkspaceAPI is the API path for tenant workspaces
+	TenantWorkspaceAPI string
 }
 
 // NewOptions provides an instance of Options with default values.
@@ -39,6 +42,8 @@ func (o *Options) Complete() error {
 	if o.Output == "" {
 		o.Output = utilprint.FormatTable
 	}
+
+	o.TenantWorkspaceAPI = "/apis/faros.sh/workspaces"
 
 	switch o.Output {
 	case utilprint.FormatJSON, utilprint.FormatYAML, utilprint.FormatTable, utilprint.FormatJSONStream:

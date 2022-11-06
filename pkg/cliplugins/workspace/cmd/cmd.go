@@ -58,11 +58,33 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 		},
 	}
 
+	deleteWorkspacesOptions := plugin.NewDeleteWorkspacesOptions(streams)
+
+	deleteWorkspacesCmd := &cobra.Command{
+		Use:          "delete",
+		Short:        "Delete a workspaces",
+		SilenceUsage: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := deleteWorkspacesOptions.Complete(args); err != nil {
+				return err
+			}
+
+			if err := deleteWorkspacesOptions.Validate(); err != nil {
+				return err
+			}
+
+			return deleteWorkspacesOptions.Run(c.Context())
+		},
+	}
+
 	getWorkspacesOptions.BindFlags(getWorkspacesCmd)
 	cmd.AddCommand(getWorkspacesCmd)
 
 	createWorkspacesOptions.BindFlags(createWorkspacesCmd)
 	cmd.AddCommand(createWorkspacesCmd)
+
+	deleteWorkspacesOptions.BindFlags(deleteWorkspacesCmd)
+	cmd.AddCommand(deleteWorkspacesCmd)
 
 	return cmd, nil
 }

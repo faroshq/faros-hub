@@ -19,14 +19,9 @@ import (
 // GetWorkspacesOptions contains options for configuring faros workspaces
 type CreateWorkspacesOptions struct {
 	*base.Options
-
-	TenantWorkspaceAPI string
-
-	Name string
-
+	Name        string
 	Description string
-
-	Members []string
+	Members     []string
 }
 
 // NewCreateWorkspacesOptions returns a new NewCreateWorkspacesOptions.
@@ -54,8 +49,6 @@ func (o *CreateWorkspacesOptions) Complete(args []string) error {
 	if o.Name == "" && len(args) > 0 {
 		o.Name = args[0]
 	}
-
-	o.TenantWorkspaceAPI = "/apis/faros.sh/workspaces"
 
 	return nil
 }

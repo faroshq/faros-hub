@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +29,7 @@ var (
 // workspacesHandler is a http handler for workspaces operations
 // GET -  faros.sh/workspaces - list all workspaces for users
 // GET -  faros.sh/workspaces/<workspace> - get workspace details
+// DELETE - faros.sh/workspaces/<workspace> - delete a workspace
 // POST - faros.sh/workspaces - create new workspace
 func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 	return func(h http.Handler) http.HandlerFunc {
@@ -62,11 +62,9 @@ func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
 						return
 					}
-					spew.Dump(workspaces)
 					responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusOK, workspaces)
 					return
-				}
-				if len(parts) == 2 && parts[1] != "" { // workspace name - get workspace details
+				} else if len(parts) == 2 && parts[1] != "" { // workspace name - get workspace details
 					workspace, err := s.getWorkspace(ctx, *user, strings.TrimPrefix(parts[1], "/"))
 					if err != nil {
 						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
@@ -75,7 +73,6 @@ func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 					responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusOK, workspace)
 					return
 				}
-
 				// create
 			case http.MethodPost:
 				request := &tenancyv1alpha1.Workspace{}
@@ -102,6 +99,23 @@ func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 					return
 				}
 				responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusCreated, workspace)
+			case http.MethodDelete:
+				parts := strings.Split(r.URL.Path, defaultWorkspaceManagement)
+				if len(parts) == 2 && parts[1] != "" {
+					workspace, err := s.getWorkspace(ctx, *user, strings.TrimPrefix(parts[1], "/"))
+					if err != nil {
+						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+						return
+					}
+					err = s.deleteWorkspace(ctx, *user, workspace.Name)
+					if err != nil {
+						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+						return
+					}
+					responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusOK, workspace)
+					return
+				}
+
 			}
 		})
 	}
@@ -115,4 +129,9 @@ func (s *Service) listWorkspaces(ctx context.Context, user tenancyv1alpha1.User)
 func (s *Service) getWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) (*tenancyv1alpha1.Workspace, error) {
 	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
 	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
+}
+
+func (s *Service) deleteWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) error {
+	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
+	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
 }
