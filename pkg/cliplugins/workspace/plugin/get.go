@@ -3,15 +3,16 @@ package plugin
 import (
 	"context"
 	"net/url"
+	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/kcp-dev/kcp/pkg/cliplugins/base"
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
+	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
+	utilprint "github.com/faroshq/faros-hub/pkg/util/print"
 )
 
 // GetWorkspacesOptions contains options for configuring faros workspaces
@@ -19,6 +20,8 @@ type GetWorkspacesOptions struct {
 	*base.Options
 
 	TenantWorkspaceAPI string
+
+	Name string
 }
 
 // NewGetWorkspacesOptions returns a new GetWorkspacesOptions.
@@ -37,6 +40,10 @@ func (o *GetWorkspacesOptions) BindFlags(cmd *cobra.Command) {
 func (o *GetWorkspacesOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
+	}
+
+	if o.Name == "" && len(args) > 0 {
+		o.Name = args[0]
 	}
 
 	o.TenantWorkspaceAPI = "/apis/faros.sh/workspaces"
@@ -75,11 +82,33 @@ func (o *GetWorkspacesOptions) Run(ctx context.Context) error {
 
 	workspaces := &tenancyv1alpha1.WorkspaceList{}
 
-	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/workspaces/bob").Do(ctx).Into(workspaces)
+	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/workspaces").Do(ctx).Into(workspaces)
 	if err != nil {
 		return err
 	}
-	spew.Dump(workspaces)
 
-	return err
+	// drop managed fields
+	for i := range workspaces.Items {
+		workspaces.Items[i].ObjectMeta.ManagedFields = nil
+	}
+
+	if o.Output == utilprint.FormatTable {
+		table := utilprint.DefaultTable()
+		table.SetHeader([]string{"NAME", "MEMBERS", "DESCRIPTION", "STATUS", "AGE"})
+		for _, workspace := range workspaces.Items {
+			{
+				table.Append([]string{
+					workspace.Name,
+					strings.Join(workspace.Spec.Members, ","),
+					workspace.Spec.Description,
+					string(workspace.Status.Conditions[0].Status),
+					utilprint.Since(workspace.CreationTimestamp.Time).String()},
+				)
+			}
+		}
+		table.Render()
+		return nil
+	}
+
+	return utilprint.PrintWithFormat(workspaces, o.Output)
 }

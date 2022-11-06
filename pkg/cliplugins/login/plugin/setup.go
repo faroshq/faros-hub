@@ -16,9 +16,13 @@ import (
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog"
 	"sigs.k8s.io/yaml"
 )
+
+var kubeConfigAuthKey = "faros"
 
 // LoginSetupOptions contains options for login via faros API
 type LoginSetupOptions struct {
@@ -26,12 +30,18 @@ type LoginSetupOptions struct {
 
 	// ConfigFile of CLI config
 	ConfigFile string
+
+	// for testing
+	modifyConfig func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error
 }
 
 // NewGenerateOptions returns a new GenerateOptions.
 func NewLoginSetupOptions(streams genericclioptions.IOStreams) *LoginSetupOptions {
 	return &LoginSetupOptions{
 		Options: base.NewOptions(streams),
+		modifyConfig: func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error {
+			return clientcmd.ModifyConfig(configAccess, *newConfig, true)
+		},
 	}
 }
 
@@ -108,7 +118,7 @@ func (o *LoginSetupOptions) Run(ctx context.Context) error {
 	// wait for the response
 	select {
 	case <-doneCh:
-		return o.configureCLI(ctx, *response)
+		return o.configureKubeConfig(ctx, *response)
 	case err := <-errCh:
 		return fmt.Errorf("trying to authorize the client: %s", err)
 
@@ -118,6 +128,42 @@ func (o *LoginSetupOptions) Run(ctx context.Context) error {
 
 }
 
+func (o *LoginSetupOptions) configureKubeConfig(ctx context.Context, response models.LoginResponse) error {
+	config, err := o.ClientConfig.RawConfig()
+	if err != nil {
+		return err
+	}
+
+	// setup user
+	user, exists := config.AuthInfos[kubeConfigAuthKey]
+	if !exists {
+		user = clientcmdapi.NewAuthInfo()
+	}
+	user.Token = response.RawIDToken
+	config.AuthInfos[kubeConfigAuthKey] = user
+
+	// setup cluster
+	config.Clusters[kubeConfigAuthKey] = &clientcmdapi.Cluster{
+		Server: response.ServerBaseURL,
+	}
+	if response.CertificateAuthorityData != "" {
+		config.Clusters[kubeConfigAuthKey].CertificateAuthorityData = []byte(response.CertificateAuthorityData)
+	} else {
+		config.Clusters[kubeConfigAuthKey].InsecureSkipTLSVerify = true
+	}
+	config.Contexts[kubeConfigAuthKey] = &clientcmdapi.Context{
+		Cluster:  kubeConfigAuthKey,
+		AuthInfo: kubeConfigAuthKey,
+	}
+	config.CurrentContext = kubeConfigAuthKey
+
+	fmt.Print("Saving configuration...")
+
+	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &config)
+}
+
+// configureCLI configures CLI config.
+// TODO: Not used now. Avoid if possible in favor of kubeconfig
 func (o *LoginSetupOptions) configureCLI(ctx context.Context, response models.LoginResponse) error {
 	fmt.Printf("Persisting login configuration to %s \n", o.ConfigFile)
 	data, err := os.ReadFile(o.ConfigFile)

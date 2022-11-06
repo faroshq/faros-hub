@@ -39,8 +39,30 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 		},
 	}
 
+	createWorkspacesOptions := plugin.NewCreateWorkspacesOptions(streams)
+
+	createWorkspacesCmd := &cobra.Command{
+		Use:          "create",
+		Short:        "Create a workspaces",
+		SilenceUsage: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := createWorkspacesOptions.Complete(args); err != nil {
+				return err
+			}
+
+			if err := createWorkspacesOptions.Validate(); err != nil {
+				return err
+			}
+
+			return createWorkspacesOptions.Run(c.Context())
+		},
+	}
+
 	getWorkspacesOptions.BindFlags(getWorkspacesCmd)
 	cmd.AddCommand(getWorkspacesCmd)
+
+	createWorkspacesOptions.BindFlags(createWorkspacesCmd)
+	cmd.AddCommand(createWorkspacesCmd)
 
 	return cmd, nil
 }

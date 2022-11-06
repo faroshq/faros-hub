@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode"
 
-	"github.com/google/uuid"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 )
@@ -20,7 +21,14 @@ const (
 // registerOrUpdateUser will register or update user in the system when user is authenticated
 func (s *Service) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha1.User) (*tenancyv1alpha1.User, error) {
 	if user.Name == "" {
-		user.Name = uuid.New().String()
+		// Hack to it does not start with a number
+		// https://github.com/kcp-dev/kcp/blob/main/pkg/server/filters/filters.go#L52
+		for {
+			user.Name = string(uuid.NewUUID())
+			if !unicode.IsDigit(rune(user.Name[0])) {
+				break
+			}
+		}
 	}
 
 	// we will be selecting based on labels, but k8s does not allow symbols like '@' in labels

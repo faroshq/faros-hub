@@ -59,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if request.DeletionTimestamp.IsZero() {
 		result, err = r.createOrUpdate(ctx, logger, request.DeepCopy())
 	} else {
-		//	return r.delete(ctx, logger, registration.DeepCopy())
+		return r.delete(ctx, logger, request.DeepCopy())
 	}
 	if err != nil {
 		requestCopy := request.DeepCopy()

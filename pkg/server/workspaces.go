@@ -2,15 +2,29 @@ package server
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apiserver/pkg/endpoints/handlers/negotiation"
+	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/strings/slices"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
+)
+
+var (
+	scheme       = runtime.NewScheme()
+	codecs       = serializer.NewCodecFactory(scheme)
+	limit  int64 = 1024 * 1024 * 10
 )
 
 // workspacesHandler is a http handler for workspaces operations
@@ -32,34 +46,62 @@ func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return
 			}
+
 			if !authenticated {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 
 			switch r.Method {
+			// list/get
 			case http.MethodGet:
 				parts := strings.Split(r.URL.Path, defaultWorkspaceManagement)
 				if len(parts) == 2 && parts[1] == "" { // no workspace name - list all workspaces
-					_, err := s.listWorkspaces(ctx, *user)
+					workspaces, err := s.listWorkspaces(ctx, *user)
 					if err != nil {
-						klog.Error(err)
-						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+						return
 					}
+					spew.Dump(workspaces)
+					responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusOK, workspaces)
 					return
 				}
 				if len(parts) == 2 && parts[1] != "" { // workspace name - get workspace details
-					//err := s.getWorkspace(w, r, user, strings.TrimPrefix(parts[1], "/"))
-					//////////if err != nil {
-					////////////////////	klog.Error(err)
-					////////////////////	http.Error(w, "Internal server error", http.StatusInternalServerError)
-					//////////}
-					//return
+					workspace, err := s.getWorkspace(ctx, *user, strings.TrimPrefix(parts[1], "/"))
+					if err != nil {
+						responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+						return
+					}
+					responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusOK, workspace)
+					return
 				}
 
+				// create
 			case http.MethodPost:
-				spew.Dump(user)
+				request := &tenancyv1alpha1.Workspace{}
+				limitedReader := &io.LimitedReader{R: r.Body, N: limit}
+				body, err := ioutil.ReadAll(limitedReader)
+				if err != nil {
+					responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+					return
+				}
+				if err := runtime.DecodeInto(codecs.UniversalDecoder(), body, request); err != nil {
+					responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+					return
+				}
 
+				request.Namespace = user.Name
+				if !slices.Contains(request.Spec.Members, user.Spec.Email) {
+					request.Spec.Members = append(request.Spec.Members, user.Spec.Email)
+				}
+
+				cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
+				workspace, err := s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Create(ctx, request, metav1.CreateOptions{})
+				if err != nil {
+					responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
+					return
+				}
+				responsewriters.WriteObjectNegotiated(codecs, negotiation.DefaultEndpointRestrictions, tenancyv1alpha1.SchemeGroupVersion, w, r, http.StatusCreated, workspace)
 			}
 		})
 	}
@@ -68,4 +110,9 @@ func (s *Service) workspacesHandler() func(http.Handler) http.HandlerFunc {
 func (s *Service) listWorkspaces(ctx context.Context, user tenancyv1alpha1.User) (*tenancyv1alpha1.WorkspaceList, error) {
 	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
 	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
+}
+
+func (s *Service) getWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) (*tenancyv1alpha1.Workspace, error) {
+	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
+	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
 }

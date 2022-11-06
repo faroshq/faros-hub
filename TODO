@@ -1,5 +1,5 @@
-- [ ] Add user controller to create namespaces for each new user
-- [ ] Add delete code for workspaces
+- [x] Add user controller to create namespaces for each new user
+- [x] Add delete code for workspaces
 - [ ] Add delete code for registrations
 - [ ] Add delete code for agents
 - [ ] Add faros workspace get,create,delete workspaces commands

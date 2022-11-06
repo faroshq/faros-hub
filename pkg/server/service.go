@@ -6,13 +6,30 @@ import (
 	"time"
 
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
-	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/server/auth"
 	"github.com/faroshq/faros-hub/pkg/util/roundtripper"
+	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+
+	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
+	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
+	"github.com/faroshq/faros-hub/pkg/config"
 )
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(kcptenancyv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
+}
 
 type contextKey int
 

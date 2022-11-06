@@ -92,13 +92,14 @@ func NewAuthenticator(cfg *config.ControllerConfig, coreClient kubernetes.Cluste
 	})
 
 	da := &AuthenticatorImpl{
-		config:      cfg,
-		farosClient: farosClient,
-		coreClient:  coreClient,
-		verifier:    verifier,
-		provider:    provider,
-		client:      client,
-		redirectURL: redirectURL,
+		config:        cfg,
+		farosClient:   farosClient,
+		coreClient:    coreClient,
+		verifier:      verifier,
+		provider:      provider,
+		client:        client,
+		redirectURL:   redirectURL,
+		oAuthSessions: sessions.NewCookieStore([]byte(cfg.OIDCAuthSessionKey)),
 	}
 	return da, nil
 }

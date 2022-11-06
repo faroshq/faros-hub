@@ -28,6 +28,10 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main
 kubectl label nodes faros-control-plane ingress-ready="true"
 kubectl label nodes faros-control-plane node-role.kubernetes.io/control-plane-
 
+echo "Waiting for the ingress controller to become ready..."
+kubectl --context "${KUBECTL_CONTEXT}" -n ingress-nginx wait --for=condition=Ready pod -l app.kubernetes.io/component=controller --timeout=5m
+
+
 echo "Installing cert-manager"
 
 helm repo add jetstack https://charts.jetstack.io
@@ -43,6 +47,10 @@ helm install \
 
 echo "Install dex"
 
+
+# TODO: Automate this so it check and not regenerated certs each time
+#source hack/dev/dex/ssl.sh
+
 kubectl create namespace dex
 kubectl -n dex create secret tls dex.dev.faros.sh.tls --cert=hack/dev/dex/ssl/cert.pem --key=hack/dev/dex/ssl/key.pem
 
@@ -52,5 +60,5 @@ kubectl -n dex create secret \
     --from-literal=client-id=$GITHUB_CLIENT_ID \
     --from-literal=client-secret=$GITHUB_CLIENT_SECRET
 
-kubectl -n dex create secret tls dex-tls --key hack/dev/dex/ssl/key.pem --cert hack/dev/dex/ssl/cert.pem
+kubectl -n dex create secret tls dex-tls --cert=hack/dev/dex/ssl/cert.pem --key=hack/dev/dex/ssl/key.pem
 kubectl apply -f ./hack/dev/dex/dex.yaml

@@ -56,7 +56,6 @@ lint:
 setup-kind:
 	./hack/dev/setup-kind.sh
 
-
 delete-kind:
 	./hack/dev/delete-kind.sh
 
