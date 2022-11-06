@@ -6,11 +6,11 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/systemtenants"
+	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/servicetenants"
 	bootstraputils "github.com/faroshq/faros-hub/pkg/util/bootstrap"
 )
 
-func (b *bootstrap) bootstrapSystemTenantAssets(ctx context.Context, workspace string) error {
+func (b *bootstrap) bootstrapServiceTenantAssets(ctx context.Context, workspace string) error {
 	rest, err := b.clientFactory.GetWorkspaceRestConfig(ctx, workspace)
 	if err != nil {
 		return err
@@ -26,5 +26,5 @@ func (b *bootstrap) bootstrapSystemTenantAssets(ctx context.Context, workspace s
 		return err
 	}
 
-	return systemtenants.Bootstrap(ctx, discoveryClient, dynamicClient, bootstraputils.ReplaceOption())
+	return servicetenants.Bootstrap(ctx, discoveryClient, dynamicClient, bootstraputils.ReplaceOption())
 }

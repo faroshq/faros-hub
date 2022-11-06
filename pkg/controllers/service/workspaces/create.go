@@ -15,7 +15,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -36,10 +36,12 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, wor
 	}
 
 	workspaceOwnersReferences := []metav1.OwnerReference{{
-		APIVersion: tenancyv1alpha1.SchemeGroupVersion.String(),
-		Kind:       tenancyv1alpha1.WorkspaceKind,
-		Name:       workspace.Name,
-		UID:        workspace.UID,
+		APIVersion:         tenancyv1alpha1.SchemeGroupVersion.String(),
+		Kind:               tenancyv1alpha1.WorkspaceKind,
+		Name:               workspace.Name,
+		BlockOwnerDeletion: pointer.BoolPtr(true),
+		Controller:         pointer.BoolPtr(true),
+		UID:                workspace.UID,
 	}}
 
 	workspacePath := r.getWorkspaceName(workspace)
@@ -83,11 +85,11 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, wor
 		},
 	}
 
-	_, err = kcpClient.TenancyV1beta1().Workspaces().Get(ctx, ws.Name, metav1.GetOptions{})
+	kcpWorkspace, err := kcpClient.TenancyV1beta1().Workspaces().Get(ctx, ws.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
 		logger.Error(err, "creating workspace", "workspace-name", workspace.Name)
-		_, err := kcpClient.TenancyV1beta1().Workspaces().Create(ctx, ws, metav1.CreateOptions{})
+		kcpWorkspace, err = kcpClient.TenancyV1beta1().Workspaces().Create(ctx, ws, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create Workspace: %s", err)
 		}
@@ -197,6 +199,7 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, wor
 
 	patch := client.MergeFrom(workspace.DeepCopy())
 	conditions.MarkTrue(workspace, conditionsv1alpha1.ReadyCondition)
+	workspace.Status.WorkspaceURL = kcpWorkspace.Status.URL
 
 	if err := r.Status().Patch(ctx, workspace, patch); err != nil {
 		return ctrl.Result{}, err
@@ -229,20 +232,10 @@ func mergeOwnerReference(ownerReferences, newOwnerReferences []metav1.OwnerRefer
 }
 
 func (r *Reconciler) createOrUpdateClusterRole(ctx context.Context, clusterRole *rbacv1.ClusterRole, cluster logicalcluster.Name, owners []metav1.OwnerReference) (ctrl.Result, error) {
-	rootRestConfig, err := r.ClientFactory.GetRootRestConfig()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	coreClient, err := kubernetes.NewClusterForConfig(rootRestConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	currentClusterRole, err := coreClient.Cluster(cluster).RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{})
+	currentClusterRole, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoles().Get(ctx, clusterRole.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
-		_, err := coreClient.Cluster(cluster).RbacV1().ClusterRoles().Create(ctx, clusterRole, metav1.CreateOptions{})
+		_, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoles().Create(ctx, clusterRole, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create the ClusterRole %s", err)
 		}
@@ -250,7 +243,7 @@ func (r *Reconciler) createOrUpdateClusterRole(ctx context.Context, clusterRole 
 		currentClusterRole.Rules = clusterRole.Rules
 		currentClusterRole.ResourceVersion = ""
 		currentClusterRole.OwnerReferences = mergeOwnerReference(clusterRole.OwnerReferences, owners)
-		_, err := coreClient.Cluster(cluster).RbacV1().ClusterRoles().Update(ctx, currentClusterRole, metav1.UpdateOptions{})
+		_, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoles().Update(ctx, currentClusterRole, metav1.UpdateOptions{})
 		if err != nil {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to update the ClusterRole %s", err)
 		}
@@ -262,20 +255,10 @@ func (r *Reconciler) createOrUpdateClusterRole(ctx context.Context, clusterRole 
 }
 
 func (r *Reconciler) createOrUpdateClusterRoleBinding(ctx context.Context, clusterRoleBinding *rbacv1.ClusterRoleBinding, cluster logicalcluster.Name, owners []metav1.OwnerReference) (ctrl.Result, error) {
-	rootRestConfig, err := r.ClientFactory.GetRootRestConfig()
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	coreClient, err := kubernetes.NewClusterForConfig(rootRestConfig)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	currentClusterRoleBinding, err := coreClient.Cluster(cluster).RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
+	currentClusterRoleBinding, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
-		_, err := coreClient.Cluster(cluster).RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
+		_, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create the ClusterRoleBindings %s", err)
 		}
@@ -284,7 +267,7 @@ func (r *Reconciler) createOrUpdateClusterRoleBinding(ctx context.Context, clust
 		currentClusterRoleBinding.Subjects = clusterRoleBinding.Subjects
 		currentClusterRoleBinding.ResourceVersion = ""
 		currentClusterRoleBinding.OwnerReferences = mergeOwnerReference(clusterRoleBinding.OwnerReferences, owners)
-		_, err := coreClient.Cluster(cluster).RbacV1().ClusterRoleBindings().Update(ctx, clusterRoleBinding, metav1.UpdateOptions{})
+		_, err := r.CoreClients.Cluster(cluster).RbacV1().ClusterRoleBindings().Update(ctx, clusterRoleBinding, metav1.UpdateOptions{})
 		if err != nil {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to update the ClusterRoleBindings %s", err)
 		}

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/faroshq/faros-hub/pkg/controllers/system/workspaces"
+	"github.com/faroshq/faros-hub/pkg/controllers/service/users"
+	"github.com/faroshq/faros-hub/pkg/controllers/service/workspaces"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,13 +60,34 @@ func (c *controllerManager) runSystem(ctx context.Context) error {
 		return err
 	}
 
+	restRoot, err := c.clientFactory.GetRootRestConfig()
+	if err != nil {
+		return err
+	}
+
+	coreClient, err := kubernetes.NewClusterForConfig(restRoot)
+	if err != nil {
+		return err
+	}
+
 	if err = (&workspaces.Reconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		Config:        c.config,
 		ClientFactory: c.clientFactory,
+		CoreClients:   coreClient,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "workspaces.tenancy.faros.sh")
+		return err
+	}
+
+	if err = (&users.Reconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Config:      c.config,
+		CoreClients: coreClient,
+	}).SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller", "users.tenancy.faros.sh")
 		return err
 	}
 

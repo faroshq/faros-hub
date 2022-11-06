@@ -11,6 +11,7 @@ import (
 	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"golang.org/x/sync/errgroup"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -40,6 +41,7 @@ func init() {
 	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(kcptenancyv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(corev1.AddToScheme(scheme))
 }
 
 type Controllers interface {
@@ -143,7 +145,7 @@ func (c *controllerManager) bootstrap(ctx context.Context) error {
 	}
 
 	// create assets for controller tenant workspace being able to access use apis
-	if err := c.bootstraper.BootstrapSystemTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
+	if err := c.bootstraper.BootstrapServiceTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
 		return err
 	}
 

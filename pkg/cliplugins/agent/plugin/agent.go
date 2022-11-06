@@ -11,31 +11,25 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
-	"github.com/kcp-dev/kcp/pkg/cliplugins/base"
 	"github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 
 	edgevalpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
+	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
 )
 
 //go:embed *.yaml
 var embeddedResources embed.FS
-
-const (
-	SyncerSecretConfigKey   = "kubeconfig"
-	SyncerIDPrefix          = "kcp-syncer-"
-	MaxSyncTargetNameLength = validation.DNS1123SubdomainMaxLength - (9 + len(SyncerIDPrefix))
-)
 
 // GenerateOptions contains options for configuring a Agent and its corresponding process.
 type GenerateOptions struct {
@@ -61,7 +55,7 @@ func NewGenerateOptions(streams genericclioptions.IOStreams) *GenerateOptions {
 func (o *GenerateOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 
-	cmd.Flags().StringVarP(&o.OutputFile, "output-file", "o", o.OutputFile, "The manifest file to be created and applied to the physical cluster. Use - for stdout.")
+	cmd.Flags().StringVarP(&o.OutputFile, "file", "f", o.OutputFile, "The manifest file to be created and applied to the physical cluster. Use - for stdout.")
 	cmd.Flags().StringVarP(&o.RegistrationName, "registration", "r", o.RegistrationName, "Registration name to be used for agent.")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "default", "Namespace name")
 
@@ -121,6 +115,8 @@ func (o *GenerateOptions) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("current URL %q does not point to cluster workspace", config.Host)
 	}
+
+	spew.Dump(configURL, currentClusterName)
 
 	// Compose the agent's upstream configuration server URL without any path. This is
 	// required so long as the API importer and agent expect to require cluster clients.

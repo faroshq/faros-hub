@@ -77,6 +77,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Notifications().Informer()}, nil
 
 		// Group=tenancy.faros.sh, Version=v1alpha1
+	case tenancyv1alpha1.SchemeGroupVersion.WithResource("users"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Tenancy().V1alpha1().Users().Informer()}, nil
 	case tenancyv1alpha1.SchemeGroupVersion.WithResource("workspaces"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Tenancy().V1alpha1().Workspaces().Informer()}, nil
 

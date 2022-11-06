@@ -1,4 +1,4 @@
-package systemtenants
+package servicetenants
 
 import (
 	"context"

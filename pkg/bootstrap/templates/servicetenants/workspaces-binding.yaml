@@ -7,6 +7,9 @@ spec:
   - group: tenancy.faros.sh
     resource: "workspaces"
     state: Accepted
+  - group: tenancy.faros.sh
+    resource: "users"
+    state: Accepted
   - group: ""
     resource: "secrets"
     state: Accepted

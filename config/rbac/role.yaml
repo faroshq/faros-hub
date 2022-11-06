@@ -32,14 +32,6 @@ rules:
   - patch
   - update
 - apiGroups:
-  - apis.kcp.dev
-  resources:
-  - apiexports
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
   - edge.faros.sh
   resources:
   - agent

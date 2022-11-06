@@ -10,8 +10,11 @@ import (
 
 var GroupName = "tenancy.faros.sh"
 
-// WorkspaceKind is the kind for a Registration
+// WorkspaceKind is the kind for a Workspace
 const WorkspaceKind = "Workspace"
+
+// UserKind is the kind for a User
+const UserKind = "User"
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
@@ -36,6 +39,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&Workspace{},
 		&WorkspaceList{},
+		&User{},
+		&UserList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

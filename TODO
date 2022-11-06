@@ -1,0 +1,17 @@
+- [x] Add user controller to create namespaces for each new user
+- [x] Add delete code for workspaces
+- [ ] Add delete code for registrations
+- [ ] Add delete code for agents
+- [ ] Add CA for all kubeconfig generations. Now some are insecure some with certs. Even for dev we should be consistent
+- [x] Add faros workspace get,create,delete workspaces commands
+- [ ] Add E2E tests framework
+- [ ] Add plugin runner and machinery
+- [x] Add plugins API
+- [ ] Add plugins runner (go plugins) to edge-agent
+- [x] Add CLI for workspace provisioning
+- [ ] Add OIDC provider example
+- [ ] Add user management pattern (system workspace) with binding provisioning
+- [ ] Add image and binary builds for hub-api and edge-agent, and controllers
+- [x] Add automatic binding management for new workspaces
+- [x] Improve bootstrap (now failing on updates)
+- [ ] Add HA deployment pattern (helm-chart)

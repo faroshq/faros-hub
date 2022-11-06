@@ -25,7 +25,7 @@ $(KUSTOMIZE): ## Download kustomize locally if necessary.
 	touch $(KUSTOMIZE) # we download an "old" file, so make will re-download to refresh it unless we make it newer than the owning dir
 
 manifests:  ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases | true
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crds/bases | true
 	make generate
 
 .PHONY: apiresourceschemas
@@ -55,7 +55,6 @@ lint:
 
 setup-kind:
 	./hack/dev/setup-kind.sh
-
 
 delete-kind:
 	./hack/dev/delete-kind.sh
