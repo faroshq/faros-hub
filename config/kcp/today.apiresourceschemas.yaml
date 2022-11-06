@@ -1006,6 +1006,9 @@ spec:
                 - type
                 type: object
               type: array
+            workspaceURL:
+              description: WorkspaceURL is the URL of the workspace
+              type: string
           type: object
       type: object
     served: true

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"unicode"
 
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +24,7 @@ func (s *Service) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha
 		// https://github.com/kcp-dev/kcp/blob/main/pkg/server/filters/filters.go#L52
 		for {
 			user.Name = string(uuid.NewUUID())
-			if !unicode.IsDigit(rune(user.Name[0])) {
+			if user.Name[0] > '9' {
 				break
 			}
 		}

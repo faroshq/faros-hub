@@ -135,7 +135,8 @@ kubectl create -f config/samples/binding.yaml
 Create first agent:
 
 ```bash
-go run ./cmd/kubectl-faros agent generate agent1 -o agent1.kubeconfig
+kubectl create namespace default
+go run ./cmd/kubectl-faros agent generate agent1 -f agent1.kubeconfig
 ```
 
 This will create `Registration` object in `root:tenant1` namespace.
@@ -149,7 +150,6 @@ Open new terminal and run agent with generated kubeconfig:
 export FAROS_AGENT_NAME=agent1
 export FAROS_AGENT_NAMESPACE=default # default kubernetes namespace
 export KUBECONFIG=agent1.kubeconfig
-
 go run ./cmd/edge-agent
 ```
 

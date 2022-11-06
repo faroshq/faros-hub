@@ -21,7 +21,6 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 	}
 
 	getWorkspacesOptions := plugin.NewGetWorkspacesOptions(streams)
-
 	getWorkspacesCmd := &cobra.Command{
 		Use:          "get",
 		Short:        "Get a workspaces",
@@ -40,7 +39,6 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 	}
 
 	createWorkspacesOptions := plugin.NewCreateWorkspacesOptions(streams)
-
 	createWorkspacesCmd := &cobra.Command{
 		Use:          "create",
 		Short:        "Create a workspaces",
@@ -59,7 +57,6 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 	}
 
 	deleteWorkspacesOptions := plugin.NewDeleteWorkspacesOptions(streams)
-
 	deleteWorkspacesCmd := &cobra.Command{
 		Use:          "delete",
 		Short:        "Delete a workspaces",
@@ -77,6 +74,24 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 		},
 	}
 
+	useWorkspacesOptions := plugin.NewUseWorkspacesOptions(streams)
+	useWorkspacesCmd := &cobra.Command{
+		Use:          "use",
+		Short:        "Use a workspaces",
+		SilenceUsage: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := useWorkspacesOptions.Complete(args); err != nil {
+				return err
+			}
+
+			if err := useWorkspacesOptions.Validate(); err != nil {
+				return err
+			}
+
+			return useWorkspacesOptions.Run(c.Context())
+		},
+	}
+
 	getWorkspacesOptions.BindFlags(getWorkspacesCmd)
 	cmd.AddCommand(getWorkspacesCmd)
 
@@ -85,6 +100,9 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 
 	deleteWorkspacesOptions.BindFlags(deleteWorkspacesCmd)
 	cmd.AddCommand(deleteWorkspacesCmd)
+
+	useWorkspacesOptions.BindFlags(useWorkspacesCmd)
+	cmd.AddCommand(useWorkspacesCmd)
 
 	return cmd, nil
 }

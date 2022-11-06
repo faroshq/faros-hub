@@ -35,6 +35,9 @@ type WorkspaceStatus struct {
 	// Current processing state of the Agent.
 	// +optional
 	Conditions conditionsv1alpha1.Conditions `json:"conditions,omitempty"`
+
+	// WorkspaceURL is the URL of the workspace
+	WorkspaceURL string `json:"workspaceURL,omitempty"`
 }
 
 func (in *Workspace) SetConditions(c conditionsv1alpha1.Conditions) {

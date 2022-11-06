@@ -85,11 +85,11 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, wor
 		},
 	}
 
-	_, err = kcpClient.TenancyV1beta1().Workspaces().Get(ctx, ws.Name, metav1.GetOptions{})
+	kcpWorkspace, err := kcpClient.TenancyV1beta1().Workspaces().Get(ctx, ws.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
 		logger.Error(err, "creating workspace", "workspace-name", workspace.Name)
-		_, err := kcpClient.TenancyV1beta1().Workspaces().Create(ctx, ws, metav1.CreateOptions{})
+		kcpWorkspace, err = kcpClient.TenancyV1beta1().Workspaces().Create(ctx, ws, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create Workspace: %s", err)
 		}
@@ -199,6 +199,7 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, wor
 
 	patch := client.MergeFrom(workspace.DeepCopy())
 	conditions.MarkTrue(workspace, conditionsv1alpha1.ReadyCondition)
+	workspace.Status.WorkspaceURL = kcpWorkspace.Status.URL
 
 	if err := r.Status().Patch(ctx, workspace, patch); err != nil {
 		return ctrl.Result{}, err
