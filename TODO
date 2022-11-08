@@ -5,7 +5,6 @@
 - [ ] Add CA for all kubeconfig generations. Now some are insecure some with certs. Even for dev we should be consistent
 - [x] Add faros workspace get,create,delete workspaces commands
 - [ ] Add E2E tests framework
-- [ ] Add plugin runner and machinery
 - [x] Add plugins API
 - [ ] Add plugins runner (go plugins) to edge-agent
 - [x] Add CLI for workspace provisioning
