@@ -179,12 +179,4 @@ status:
 
 # Roadmap
 
-- [x] Add plugins API
-- [ ] Add plugins runner (go plugins) to edge-agent
-- [ ] Add CLI for workspace provisioning
-- [ ] Add OIDC provider example
-- [ ] Add user management pattern (system workspace) with binding provisioning
-- [ ] Add image and binary builds for hub-api and edge-agent, and controllers
-- [x] Add automatic binding management for new workspaces
-- [ ] Improve bootstrap (now failing on updates)
-- [ ] Add HA deployment pattern (helm-chart)
+See TODO file
