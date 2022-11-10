@@ -16,7 +16,7 @@ CLUSTER_NAME=faros
 if ! kind get clusters | grep -w -q "${CLUSTER_NAME}"; then
 kind create cluster --name faros \
      --kubeconfig ./dev/faros.kubeconfig \
-     --config ./hack/dev/config.yaml
+     --config ./hack/dev/kind/config.yaml
 else
     echo "Cluster already exists"
 fi
