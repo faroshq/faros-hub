@@ -14,3 +14,4 @@
 - [x] Add automatic binding management for new workspaces
 - [x] Improve bootstrap (now failing on updates)
 - [ ] Add HA deployment pattern (helm-chart)
+- [ ] Split KCP to run as component so faros is just built ontop using controllers and right workspaces

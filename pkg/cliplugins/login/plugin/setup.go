@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
@@ -19,7 +20,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog"
-	"sigs.k8s.io/yaml"
 )
 
 var kubeConfigAuthKey = "faros"
@@ -142,12 +142,17 @@ func (o *LoginSetupOptions) configureKubeConfig(ctx context.Context, response mo
 	user.Token = response.RawIDToken
 	config.AuthInfos[kubeConfigAuthKey] = user
 
+	ca, err := base64.StdEncoding.DecodeString(response.CertificateAuthorityData)
+	if err != nil {
+		return err
+	}
+
 	// setup cluster
 	config.Clusters[kubeConfigAuthKey] = &clientcmdapi.Cluster{
 		Server: response.ServerBaseURL,
 	}
 	if response.CertificateAuthorityData != "" {
-		config.Clusters[kubeConfigAuthKey].CertificateAuthorityData = []byte(response.CertificateAuthorityData)
+		config.Clusters[kubeConfigAuthKey].CertificateAuthorityData = ca
 	} else {
 		config.Clusters[kubeConfigAuthKey].InsecureSkipTLSVerify = true
 	}
@@ -157,38 +162,7 @@ func (o *LoginSetupOptions) configureKubeConfig(ctx context.Context, response mo
 	}
 	config.CurrentContext = kubeConfigAuthKey
 
-	fmt.Print("Saving configuration...")
+	fmt.Print("Saving configuration...\n")
 
 	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &config)
-}
-
-// configureCLI configures CLI config.
-// TODO: Not used now. Avoid if possible in favor of kubeconfig
-func (o *LoginSetupOptions) configureCLI(ctx context.Context, response models.LoginResponse) error {
-	fmt.Printf("Persisting login configuration to %s \n", o.ConfigFile)
-	data, err := os.ReadFile(o.ConfigFile)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	base := filepath.Dir(o.ConfigFile)
-	err = os.MkdirAll(base, 0755)
-	if err != nil {
-		return err
-	}
-
-	config := models.NewCLIConfig()
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		return err
-	}
-
-	config.Spec.Token = response.RawIDToken
-	config.Spec.BaseURL = response.ServerBaseURL
-	config.Spec.Email = response.Email
-
-	data, err = yaml.Marshal(config)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(o.ConfigFile, data, 0644)
 }

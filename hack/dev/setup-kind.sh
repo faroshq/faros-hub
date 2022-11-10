@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source .env
 
 if [ ! -f "/usr/local/bin/kind" ]; then
  echo "Installing KIND"
@@ -39,6 +40,7 @@ helm repo update
 
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.crds.yaml
 helm install \
+  --wait \
   cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
@@ -47,18 +49,27 @@ helm install \
 
 echo "Install dex"
 
+[ ! -d "./dev/dex-chart" ] && git clone https://github.com/faroshq/dex-helm-charts -b master ./dev/dex-chart
 
-# TODO: Automate this so it check and not regenerated certs each time
-#source hack/dev/dex/ssl.sh
+helm upgrade -i dex ./dev/dex-chart/charts/dex \
+     --values ./hack/dev/dex/values.yaml \
+     --create-namespace \
+     --namespace dex \
+     --wait \
+     --set config.connectors[0].config.clientSecret=$GITHUB_CLIENT_SECRET \
+     --set config.connectors[0].config.clientID=$GITHUB_CLIENT_ID
 
-kubectl create namespace dex
-kubectl -n dex create secret tls dex.dev.faros.sh.tls --cert=hack/dev/dex/ssl/cert.pem --key=hack/dev/dex/ssl/key.pem
+echo "Install KCP"
 
-source .env
-kubectl -n dex create secret \
-    generic github-client \
-    --from-literal=client-id=$GITHUB_CLIENT_ID \
-    --from-literal=client-secret=$GITHUB_CLIENT_SECRET
+# HACK to trust the dex CA
+kubectl create namespace kcp
+kubectl get secret dex-pki-ca -n dex -o yaml \
+| sed s/"namespace: dex"/"namespace: kcp"/\
+| kubectl apply -n kcp -f - | true
 
-kubectl -n dex create secret tls dex-tls --cert=hack/dev/dex/ssl/cert.pem --key=hack/dev/dex/ssl/key.pem
-kubectl apply -f ./hack/dev/dex/dex.yaml
+[ ! -d "./dev/kcp-chart" ] && git clone https://github.com/faroshq/helm-charts.git -b faros ./dev/kcp-chart
+
+helm upgrade -i kcp ./dev/kcp-chart/charts/kcp \
+     --values ./hack/dev/kcp/values.yaml \
+     --namespace kcp
+

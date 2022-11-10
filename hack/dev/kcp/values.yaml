@@ -1,0 +1,24 @@
+externalHostname: kcp.dev.faros.sh
+kcp:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  tokenAuth:
+    enabled: true
+kcpFrontProxy:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  v: "4"
+  ingress:
+    enabled: true
+virtualWorkspaces:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  v: "4"
+oidc:
+  issuerUrl: https://dex.dex:5554
+  clientId: faros
+  groupClaim: groups
+  usernameClaim: email
+  usernamePrefix: faros-sso
+  groupsPrefix: faros-sso
+  caSecretName: dex-pki-ca

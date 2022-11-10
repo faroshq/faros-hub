@@ -1,26 +1,23 @@
-# Development nodes
+# Development notes
 
 ```
-# setup KIND test cluster
-./hack/dev/setup-kind.sh
+# setup KIND test cluster. Cluster will host external tooling for development
+make setup-kind
 
-# create workspace and sync target for the cluster in questions
+# Run faros locally using OIDC inside the cluster. See `docs/dev-idp.md` for more details
+make run-with-oidc
 
-go run ./cmd/kubectl-faros/ workspace use root
-go run ./cmd/kubectl-faros/ workspace create clusters --enter
-go run ./cmd/kubectl-faros/ workspace create dev-env --enter
-go run ./cmd/kubectl-faros/ workload sync kind --syncer-image ghcr.io/kcp-dev/kcp/syncer:main -o syncer-kind-main.yaml
-```
+# login with CLI:
+go run ./cmd/kubectl-faros/ login
 
-# Deploy syncer
+# Once logged in you can create new workspace for the user:
+go run ./cmd/kubectl-faros/ workspace create my-workspace
 
-```
-KUBECONFIG=./dev/cluster.kubeconfig kubectl apply -f "syncer-kind-main.yaml"
+# If you want to observe what is happening in the cluster you can use:
+# Make sure you not override current kubeconfig from command above
+export KUBECONFIG=.faros/admin.kubeconfig
+kubectl kcp workspace tree
 
-# Access virtual workspaces, objects
+# Set kubeconfig to new workspace
+go run ./cmd/kubectl-faros/ workspace use my-workspace
 
-kubectl --server=https://localhost:6443/services/syncer-tunnels/clusters/root:clusters:dev-env/apis/workload.kcp.dev/v1alpha1/synctargets/kin
-d/proxy get deployments -A
-
-kubectl --server=https://localhost:6443/services/syncer-tunnels/clusters/root:clusters:dev-env/apis/workload.kcp.dev/v1alpha1/synctargets/kind/proxy get deployments -A
-```
