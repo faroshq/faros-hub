@@ -11,10 +11,9 @@ kcpFrontProxy:
   ingress:
     enabled: true
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
       nginx.ingress.kubernetes.io/use-regex: "true"
     paths:
-    - path: /kcp.dev/(.*)
+    - path: /(.*)
       pathType: Prefix
       backend:
         service:
