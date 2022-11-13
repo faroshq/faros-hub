@@ -73,3 +73,9 @@ helm upgrade -i kcp ./dev/kcp-chart/charts/kcp \
      --values ./hack/dev/kcp/values.yaml \
      --namespace kcp
 
+echo "Install Faros"
+
+helm upgrade -i faros ./charts/faros-dev \
+     --values ./hack/dev/faros/values.yaml \
+     --namespace kcp
+
