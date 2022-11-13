@@ -25,7 +25,9 @@ export KUBECONFIG=./dev/faros.kubeconfig
 
 echo "Installing ingress"
 
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+#kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+# Fork of the above to add http2
+kubectl apply -f https://gist.githubusercontent.com/mjudeikis/dd91434af0049378b4a24d021cceef38/raw/413600fe604bea2ccf4dcc2bd52375ebf863f35b/deploy
 kubectl label nodes faros-control-plane ingress-ready="true"
 kubectl label nodes faros-control-plane node-role.kubernetes.io/control-plane-
 
@@ -79,3 +81,6 @@ helm upgrade -i faros ./charts/faros-dev \
      --values ./hack/dev/faros/values.yaml \
      --namespace kcp
 
+echo "Starting reverse dialer for local development"
+
+go run ./cmd/reverse-proxy/ --clientUpstreamUrl=https://localhost:30443 client

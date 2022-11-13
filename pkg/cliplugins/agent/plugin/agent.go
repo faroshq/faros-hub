@@ -11,7 +11,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
@@ -115,8 +114,6 @@ func (o *GenerateOptions) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("current URL %q does not point to cluster workspace", config.Host)
 	}
-
-	spew.Dump(configURL, currentClusterName)
 
 	// Compose the agent's upstream configuration server URL without any path. This is
 	// required so long as the API importer and agent expect to require cluster clients.

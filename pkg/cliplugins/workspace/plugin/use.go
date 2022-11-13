@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -92,8 +91,6 @@ func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	spew.Dump(workspace)
-
 	// Get raw config and add new cluster and context to it
 	rawConfig, err := o.ClientConfig.RawConfig()
 	if err != nil {
@@ -122,8 +119,6 @@ func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
 	}
 
 	rawConfig.CurrentContext = workspace.Name
-
-	spew.Dump(rawConfig)
 
 	fmt.Println("Using workspace", workspace.Name)
 	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &rawConfig)

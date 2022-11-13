@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/aojea/h2rev2"
-	"github.com/davecgh/go-spew/spew"
 	"golang.org/x/net/http2"
 
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -22,11 +21,12 @@ import (
 type Client struct {
 	upstreamURL    string
 	downstreamURL  string
+	clientID       string
 	upstreamClient *http.Client
 	tlsConfig      *tls.Config
 }
 
-func New(upstreamURL, downstreamURL, clientCertFile, clientCertKeyFile, servingCertFile string) (*Client, error) {
+func New(upstreamURL, downstreamURL, clientCertFile, clientCertKeyFile, clientID string) (*Client, error) {
 	certFile, err := ioutil.ReadFile(clientCertFile)
 	if err != nil {
 		return nil, err
@@ -37,19 +37,8 @@ func New(upstreamURL, downstreamURL, clientCertFile, clientCertKeyFile, servingC
 		return nil, err
 	}
 
-	servingFile, err := ioutil.ReadFile(servingCertFile)
-	if err != nil {
-		return nil, err
-	}
-
-	servingCert, err := x509.ParseCertificate(servingFile)
-	if err != nil {
-		return nil, err
-	}
-
 	pool := x509.NewCertPool()
 	pool.AddCert(clientCert)
-	pool.AddCert(servingCert)
 
 	keyFile, err := ioutil.ReadFile(clientCertKeyFile)
 	if err != nil {
@@ -71,7 +60,8 @@ func New(upstreamURL, downstreamURL, clientCertFile, clientCertKeyFile, servingC
 				PrivateKey: key,
 			},
 		},
-		ServerName: "proxy",
+		ServerName:         "faros",
+		InsecureSkipVerify: true,
 	}
 
 	upstreamClient := &http.Client{
@@ -83,6 +73,7 @@ func New(upstreamURL, downstreamURL, clientCertFile, clientCertKeyFile, servingC
 	return &Client{
 		upstreamURL:    upstreamURL,
 		downstreamURL:  downstreamURL,
+		clientID:       clientID,
 		upstreamClient: upstreamClient,
 		tlsConfig:      tlsConfig,
 	}, nil
@@ -119,7 +110,7 @@ func (c *Client) startTunneler(ctx context.Context) error {
 	logger = logger.WithValues("to", c.downstreamURL).WithValues("from", c.upstreamURL)
 	logger.Info("connecting to destination URL")
 
-	l, err := h2rev2.NewListener(c.upstreamClient, c.upstreamURL, "bob")
+	l, err := h2rev2.NewListener(c.upstreamClient, c.upstreamURL, c.clientID)
 	if err != nil {
 		panic(err)
 	}
@@ -144,7 +135,6 @@ func (c *Client) startTunneler(ctx context.Context) error {
 	clientDownstream := http.DefaultClient
 	proxy.Transport = clientDownstream.Transport
 
-	spew.Dump("listener done")
 	// reverse proxy the request coming from the reverse connection to the apiserver
 	server := &http.Server{Handler: proxy}
 	defer server.Close()

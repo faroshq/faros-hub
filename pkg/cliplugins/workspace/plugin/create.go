@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -84,7 +83,6 @@ func (o *CreateWorkspacesOptions) Run(ctx context.Context) error {
 
 	farosClient, err := farosclient.NewForConfig(config)
 	if err != nil {
-		spew.Dump(err)
 		return err
 	}
 
@@ -106,7 +104,7 @@ func (o *CreateWorkspacesOptions) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error creating patch: %v", err)
 	}
-	spew.Dump(workspace)
+
 	err = farosClient.RESTClient().Post().Body(patch).AbsPath("/faros.sh/workspaces").Do(ctx).Into(&workspace)
 	if err != nil {
 		return err
