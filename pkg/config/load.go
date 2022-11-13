@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -26,6 +28,17 @@ func LoadController() (*ControllerConfig, error) {
 		fmt.Println("FAROS_OIDC_AUTH_SESSION_KEY not supplied, generating random one")
 		c.OIDCAuthSessionKey = uuid.Must(uuid.NewUUID()).String()
 	}
+
+	if _, err := os.Stat(c.TenantsCertificateAuthorityFile); os.IsNotExist(err) {
+		return c, fmt.Errorf("tenants certificate authority file %s does not exist", c.TenantsCertificateAuthorityFile)
+	}
+
+	caServerCert, err := ioutil.ReadFile(c.TenantsCertificateAuthorityFile)
+	if err != nil {
+		return c, fmt.Errorf("failed to read tenants certificate authority file %s", c.TenantsCertificateAuthorityFile)
+	}
+
+	c.TenantsCertificateAuthorityFileData = caServerCert
 
 	return c, err
 }

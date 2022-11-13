@@ -1,0 +1,39 @@
+externalHostname: kcp.dev.faros.sh
+kcp:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  tokenAuth:
+    enabled: true
+kcpFrontProxy:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  v: "4"
+  ingress:
+    enabled: true
+    paths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: kcp-front-proxy
+          port:
+            number: 8443
+    - path: /faros.sh
+      pathType: Prefix
+      backend:
+        service:
+          name: faros-api
+          port:
+            number: 8443
+virtualWorkspaces:
+  image: ghcr.io/kcp-dev/kcp
+  tag: latest
+  v: "4"
+oidc:
+  issuerUrl: https://dex.dex:5554
+  clientId: faros
+  groupClaim: groups
+  usernameClaim: email
+  usernamePrefix: faros-sso
+  groupsPrefix: faros-sso
+  caSecretName: dex-pki-ca

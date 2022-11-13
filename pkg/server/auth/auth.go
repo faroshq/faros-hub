@@ -235,7 +235,7 @@ func (a *AuthenticatorImpl) OIDCCallback(w http.ResponseWriter, r *http.Request)
 		IDToken:                  *idToken,
 		RawIDToken:               rawIDToken,
 		Email:                    claims.Email,
-		CertificateAuthorityData: a.config.TenantsCertificateAuthorityData,
+		CertificateAuthorityData: base64.StdEncoding.EncodeToString(a.config.TenantsCertificateAuthorityFileData),
 		ServerBaseURL:            fmt.Sprintf("%s/clusters", a.config.ControllerExternalURL),
 	}
 
