@@ -10,19 +10,22 @@ kcpFrontProxy:
   v: "4"
   ingress:
     enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/use-regex: "true"
     paths:
-    - path: /
+    - path: /kcp.dev/(.*)
       pathType: Prefix
       backend:
         service:
           name: kcp-front-proxy
           port:
             number: 8443
-    - path: /faros.sh
+    - path: /faros.sh/(.*)
       pathType: Prefix
       backend:
         service:
-          name: faros-api
+          name: faros
           port:
             number: 8443
 virtualWorkspaces:

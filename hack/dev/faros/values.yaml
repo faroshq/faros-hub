@@ -3,3 +3,5 @@ service:
   type: ClusterIP
   port: 8443
   name: faros
+nodeService:
+  enabled: true

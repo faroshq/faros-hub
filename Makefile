@@ -1,4 +1,4 @@
-REPO ?= quay.io/faroshq/kcp-potatoes-service
+REPO ?= quay.io/faroshq/
 TAG_NAME ?= $(shell git describe --tags --abbrev=0)
 LOCALBIN ?= $(shell pwd)/bin
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
@@ -6,6 +6,7 @@ GO_INSTALL = ./hack/go-install.sh
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 TOOLS_DIR=hack/tools
 TOOLS_GOBIN_DIR := $(abspath $(TOOLS_DIR))
+KO_DOCKER_REPO ?= ${REPO}
 
 KUSTOMIZE_VERSION ?= v3.8.7
 CONTROLLER_GEN_VER := v0.10.0
@@ -59,14 +60,8 @@ setup-kind:
 delete-kind:
 	./hack/dev/delete-kind.sh
 
-deploy-kind:
-	./hack/dev/deploy-kind.sh
-
 run-with-oidc:
 	./hack/dev/run-with-oidc.sh
 
-install-dex:
-	go install github.com/dexidp/dex/cmd/dex
-
-run-dex:
-	dex serve hack/dev/dex.config.yaml
+images:
+	KO_DOCKER_REPO=${KO_DOCKER_REPO} ko build --sbom=none -B --platform=linux/amd64 -t latest -t latest ./cmd/*

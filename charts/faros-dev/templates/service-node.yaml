@@ -1,16 +1,19 @@
+{{- if .Values.nodeService.enabled -}}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "faros-dev.fullname" . }}
+  name: {{ include "faros-dev.fullname" . }}-node
   labels:
     {{- include "faros-dev.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: NodePort
   ports:
-    - port: {{ .Values.service.port }}
+    - port: {{ .Values.nodeService.ports.http.port }}
       targetPort: http
       protocol: TCP
       name: http
+      nodePort: {{ .Values.nodeService.ports.http.nodePort }}
   selector:
     {{- include "faros-dev.selectorLabels" . | nindent 4 }}
+{{- end }}
