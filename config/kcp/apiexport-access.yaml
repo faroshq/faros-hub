@@ -6,9 +6,9 @@ spec:
   latestResourceSchemas:
     - today.requests.access.faros.sh
   permissionClaims:
-  - group: "access.faros.sh"
-    resource: "requests"
   - group: ""
     resource: "secrets"
+    all: true
   - group: ""
     resource: "serviceaccounts"
+    all: true

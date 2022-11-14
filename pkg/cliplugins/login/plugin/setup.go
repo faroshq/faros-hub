@@ -109,7 +109,7 @@ func (o *LoginSetupOptions) Run(ctx context.Context) error {
 		}
 	}()
 
-	url := fmt.Sprintf("https://localhost:6443/faros.sh/oidc/login?redirect_uri=http://localhost:%d", l.Addr().(*net.TCPAddr).Port)
+	url := fmt.Sprintf("https://kcp.dev.faros.sh/faros.sh/api/v1alpha1/oidc/login?redirect_uri=http://localhost:%d", l.Addr().(*net.TCPAddr).Port)
 
 	if err := open.Run(url); err != nil {
 		return fmt.Errorf("trying to open web browser, error: %s", err)

@@ -2,7 +2,7 @@
 
 hostname=$(cat ./hack/dev/kcp/values.yaml | grep externalHostname | cut -d" " -f2-)
 
-cat << EOF > auth-token.kubeconfig
+cat << EOF > kcp.kubeconfig
 apiVersion: v1
 clusters:
 - cluster:
@@ -26,5 +26,5 @@ EOF
 
 echo "Kubeconfig file created at auth-token.kubeconfig"
 echo ""
-echo "export KUBECONFIG=auth-token.kubeconfig"
+echo "export KUBECONFIG=kcp.kubeconfig"
 echo ""

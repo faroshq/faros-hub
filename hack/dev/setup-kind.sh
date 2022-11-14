@@ -15,13 +15,13 @@ CLUSTER_NAME=faros
 
 if ! kind get clusters | grep -w -q "${CLUSTER_NAME}"; then
 kind create cluster --name faros \
-     --kubeconfig ./dev/faros.kubeconfig \
+     --kubeconfig ./faros.kubeconfig \
      --config ./hack/dev/kind/config.yaml
 else
     echo "Cluster already exists"
 fi
 
-export KUBECONFIG=./dev/faros.kubeconfig
+export KUBECONFIG=./faros.kubeconfig
 
 echo "Installing ingress"
 
@@ -32,6 +32,8 @@ kubectl label nodes faros-control-plane ingress-ready="true"
 kubectl label nodes faros-control-plane node-role.kubernetes.io/control-plane-
 
 echo "Waiting for the ingress controller to become ready..."
+# Pods will not show imeediately, so we need to wait for them to show up
+sleep 5
 kubectl --context "${KUBECTL_CONTEXT}" -n ingress-nginx wait --for=condition=Ready pod -l app.kubernetes.io/component=controller --timeout=5m
 
 
@@ -80,6 +82,9 @@ echo "Install Faros"
 helm upgrade -i faros ./charts/faros-dev \
      --values ./hack/dev/faros/values.yaml \
      --namespace kcp
+
+echo "Generate KCP admin kubeconfig"
+./hack/dev/generate-admin-kubeconfig.sh
 
 echo "Starting reverse dialer for local development"
 

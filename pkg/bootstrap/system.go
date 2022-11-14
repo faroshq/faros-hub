@@ -3,8 +3,11 @@ package bootstrap
 import (
 	"context"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/kcp-dev/logicalcluster/v2"
 
 	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/servicetenants"
 	bootstraputils "github.com/faroshq/faros-hub/pkg/util/bootstrap"
@@ -26,5 +29,14 @@ func (b *bootstrap) bootstrapServiceTenantAssets(ctx context.Context, workspace 
 		return err
 	}
 
-	return servicetenants.Bootstrap(ctx, discoveryClient, dynamicClient, bootstraputils.ReplaceOption())
+	tenantsCluster := logicalcluster.New(b.config.ControllersWorkspace)
+
+	export, err := b.kcpClient.Cluster(tenantsCluster).ApisV1alpha1().APIExports().Get(ctx, "tenancy.faros.sh", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	return servicetenants.Bootstrap(ctx, discoveryClient, dynamicClient, bootstraputils.ReplaceOption(
+		"IDENTITY", export.Status.IdentityHash,
+	))
 }

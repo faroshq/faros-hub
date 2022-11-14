@@ -61,7 +61,7 @@ func New(c *config.ControllerConfig) (Controllers, error) {
 		return nil, err
 	}
 
-	cf, err := utilkubernetes.NewClientFactory(c.RestConfig)
+	cf, err := utilkubernetes.NewClientFactory(c.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (c *controllerManager) WaitForAPIReady(ctx context.Context) error {
 
 	for {
 		h := utilhttp.GetInsecureClient()
-		res, err := h.Get(c.config.RestConfig.Host + "/healthz")
+		res, err := h.Get(c.config.KCPClusterRestConfig.Host + "/healthz")
 		switch {
 		case err != nil:
 			klog.Infof("Waiting for API server to report healthy: %v", err)

@@ -2,6 +2,7 @@ externalHostname: kcp.dev.faros.sh
 kcp:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
+  v: "8"
   tokenAuth:
     enabled: true
 kcpFrontProxy:
@@ -32,7 +33,7 @@ virtualWorkspaces:
   tag: latest
   v: "4"
 oidc:
-  issuerUrl: https://dex.dex:5554
+  issuerUrl: https://dex.dev.faros.sh
   clientId: faros
   groupClaim: groups
   usernameClaim: email

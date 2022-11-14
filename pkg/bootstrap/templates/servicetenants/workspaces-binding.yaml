@@ -6,12 +6,17 @@ spec:
   permissionClaims:
   - group: tenancy.faros.sh
     resource: "workspaces"
+    all: true
     state: Accepted
+    identityHash: IDENTITY
   - group: tenancy.faros.sh
     resource: "users"
+    all: true
     state: Accepted
+    identityHash: IDENTITY
   - group: ""
     resource: "secrets"
+    all: true
     state: Accepted
   reference:
     workspace:
