@@ -10,7 +10,9 @@ import (
 // TODO: move to faros-hub repo
 type Interface interface {
 	// Name returns the name of the plugin.
-	Name(ctx context.Context) (string, error)
+	GetName(ctx context.Context) (string, error)
+	// GetAPIResourceSchema returns the schema of the API resource.
+	GetAPIResourceSchema(ctx context.Context) ([]byte, error)
 	// Init initializes the plugin.
 	Init(ctx context.Context, name, namespace string, config *rest.Config) error
 	// Run runs the plugin.

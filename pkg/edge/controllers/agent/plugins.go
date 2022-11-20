@@ -13,9 +13,9 @@ import (
 
 func (r *Reconciler) loadPlugin(plugin edgev1alpha1.PluginSpec) (plugins.Interface, error) {
 	path := filepath.Join(r.Config.PluginsDir, pluginFileName(plugin))
-	return utilplugins.Load(path, plugin.Name)
+	return utilplugins.Load(path)
 }
 
 func pluginFileName(plugin edgev1alpha1.PluginSpec) string {
-	return fmt.Sprintf("%s-%s-%s.so", plugin.Name, plugin.Version, runtime.GOARCH)
+	return fmt.Sprintf("%s-%s-%s", plugin.Name, plugin.Version, runtime.GOARCH)
 }

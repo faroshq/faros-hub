@@ -47,7 +47,7 @@ codegen: $(CONTROLLER_GEN) generate ## Run the codegenerators
 protoc:
 	protoc -I pkg/plugins/proto/ pkg/plugins/proto/plugin.proto --go_out=plugins=grpc:pkg/plugins/proto/
 
-generate:
+generate: protoc
 	go generate ./...
 
 lint:

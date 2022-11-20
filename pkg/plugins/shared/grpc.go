@@ -16,13 +16,22 @@ type GRPCClient struct {
 	client proto.PluginInterfaceClient
 }
 
-func (m *GRPCClient) Name(ctx context.Context) (string, error) {
-	resp, err := m.client.Name(ctx, &proto.Empty{})
+func (m *GRPCClient) GetName(ctx context.Context) (string, error) {
+	resp, err := m.client.GetName(ctx, &proto.Empty{})
 	if err != nil {
 		return "", err
 	}
 
 	return resp.Name, nil
+}
+
+func (m *GRPCClient) GetAPIResourceSchema(ctx context.Context) ([]byte, error) {
+	resp, err := m.client.GetAPIResourceSchema(ctx, &proto.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Schema, nil
 }
 
 func (m *GRPCClient) Init(ctx context.Context, name, namespace string, config *rest.Config) error {
@@ -67,9 +76,14 @@ type GRPCServer struct {
 	broker *plugin.GRPCBroker
 }
 
-func (m *GRPCServer) Name(ctx context.Context, req *proto.Empty) (*proto.GetNameResponse, error) {
-	name, err := m.Impl.Name(ctx)
+func (m *GRPCServer) GetName(ctx context.Context, req *proto.Empty) (*proto.GetNameResponse, error) {
+	name, err := m.Impl.GetName(ctx)
 	return &proto.GetNameResponse{Name: name}, err
+}
+
+func (m *GRPCServer) GetAPIResourceSchema(ctx context.Context, req *proto.Empty) (*proto.GetAPIResourceSchemaResponse, error) {
+	data, err := m.Impl.GetAPIResourceSchema(ctx)
+	return &proto.GetAPIResourceSchemaResponse{Schema: data}, err
 }
 
 func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.Empty, error) {

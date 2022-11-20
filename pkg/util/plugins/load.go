@@ -3,12 +3,14 @@ package plugins
 import (
 	"fmt"
 	"os"
-	goplugin "plugin"
+	"os/exec"
 
-	"github.com/faroshq/faros-hub/pkg/plugins"
+	farosplugins "github.com/faroshq/faros-hub/pkg/plugins"
+	"github.com/faroshq/faros-hub/pkg/plugins/shared"
+	"github.com/hashicorp/go-plugin"
 )
 
-func Load(path, name string) (plugins.Interface, error) {
+func Load(path string) (farosplugins.Interface, error) {
 	fs, err := os.Stat(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to stat plugin file: %s", err)
@@ -17,24 +19,33 @@ func Load(path, name string) (plugins.Interface, error) {
 		return nil, fmt.Errorf("%s points to an empty file", path)
 	}
 
-	plug, err := goplugin.Open(path)
+	// Start by launching the plugin process.
+	client := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig: shared.Handshake,
+		Plugins:         shared.PluginMap,
+		Cmd:             exec.Command("sh", "-c", path),
+		AllowedProtocols: []plugin.Protocol{
+			plugin.ProtocolNetRPC, plugin.ProtocolGRPC},
+	})
+	//defer client.Kill()
+
+	// Connect via RPC
+	rpcClient, err := client.Client()
 	if err != nil {
-		return nil, fmt.Errorf("failed to open plugin file: %s", err)
+		fmt.Println("Error:", err.Error())
+		os.Exit(1)
 	}
 
-	//search for an exported Name should match the plugin name
-	_p, err := plug.Lookup(name)
+	// Request the plugin
+	raw, err := rpcClient.Dispense("plugin")
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		fmt.Println("Error:", err.Error())
+		os.Exit(1)
 	}
 
-	// check that loaded p is type Interface
-	p, ok := _p.(plugins.Interface)
-	if !ok {
-		fmt.Println("The module have wrong type")
-		os.Exit(-1)
-	}
+	// We should have a Counter store now! This feels like a normal interface
+	// implementation but is in fact over an RPC connection.
+	p := raw.(farosplugins.Interface)
 
 	return p, nil
 }
