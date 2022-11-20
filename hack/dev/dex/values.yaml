@@ -60,5 +60,9 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
+service:
+  ports:
+    https:
+      port: 443
 https:
   enabled: true

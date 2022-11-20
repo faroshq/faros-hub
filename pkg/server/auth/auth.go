@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/coreos/go-oidc"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
@@ -376,7 +377,13 @@ func (a *AuthenticatorImpl) oauth2Config(scopes []string) *oauth2.Config {
 // TODO: This is not quite right place for this
 func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha1.User) (*tenancyv1alpha1.User, error) {
 	if user.Name == "" {
-		user.Name = uuid.New().String()
+		for {
+			user.Name = uuid.New().String()
+			// HACK: we can't start with digit for now. This will change in the future
+			if !unicode.IsDigit(rune(user.Name[0])) {
+				break
+			}
+		}
 	}
 
 	// we will be selecting based on labels, but k8s does not allow symbols like '@' in labels

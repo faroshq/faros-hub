@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kcp-dev/logicalcluster/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,6 +52,7 @@ func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
 	// list/get
 	case http.MethodGet:
 		parts := strings.Split(r.URL.Path, path.Join(pathAPIVersion, pathWorkspaces))
+		spew.Dump(parts)
 		if len(parts) == 2 && parts[1] == "" { // no workspace name - list all workspaces
 			workspaces, err := s.listWorkspaces(ctx, *user)
 			if err != nil {
@@ -114,16 +116,14 @@ func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) listWorkspaces(ctx context.Context, user tenancyv1alpha1.User) (*tenancyv1alpha1.WorkspaceList, error) {
-	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
-	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
+	spew.Dump(user)
+	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
 }
 
 func (s *Service) getWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) (*tenancyv1alpha1.Workspace, error) {
-	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
-	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
+	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (s *Service) deleteWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) error {
-	cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
-	return s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
+	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
 }

@@ -123,5 +123,9 @@ func (b *bootstrap) CreateWorkspace(ctx context.Context, name string) error {
 }
 
 func (b *bootstrap) BootstrapServiceTenantAssets(ctx context.Context, workspace string) error {
-	return b.bootstrapServiceTenantAssets(ctx, workspace)
+	err := b.bootstrapServiceTenantAssets(ctx, workspace)
+	if err != nil {
+		return err
+	}
+	return b.bootstrapRootTenantAssets(ctx)
 }

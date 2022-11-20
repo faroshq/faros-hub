@@ -86,7 +86,7 @@ func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
 
 	workspace := &tenancyv1alpha1.Workspace{}
 
-	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/workspaces/" + o.Name).Do(ctx).Into(workspace)
+	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
 	if err != nil {
 		return err
 	}

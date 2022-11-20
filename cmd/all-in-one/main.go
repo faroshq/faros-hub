@@ -5,10 +5,12 @@ import (
 	"flag"
 	"os"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/faroshq/faros-hub/pkg/config"
+	"github.com/faroshq/faros-hub/pkg/controllers"
 	"github.com/faroshq/faros-hub/pkg/server"
 	"k8s.io/klog/v2"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -35,14 +37,30 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	c, err := config.LoadAPI()
+	cc, err := config.LoadController()
 	if err != nil {
 		return err
 	}
 
-	server, err := server.New(c)
+	controllers, err := controllers.New(cc)
 	if err != nil {
 		return err
 	}
+
+	err = controllers.WaitForAPIReady(ctx)
+	if err != nil {
+		return err
+	}
+
+	ca, err := config.LoadAPI()
+	if err != nil {
+		return err
+	}
+
+	server, err := server.New(ca)
+	if err != nil {
+		return err
+	}
+	go controllers.Run(ctx)
 	return server.Run(ctx)
 }

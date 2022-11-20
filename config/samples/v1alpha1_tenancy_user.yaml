@@ -1,6 +1,6 @@
 apiVersion: tenancy.faros.sh/v1alpha1
 kind: User
 metadata:
-  name: 1random-user
+  name: user
 spec:
   email: mangirdas@judeikis.lt

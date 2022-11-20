@@ -17,6 +17,7 @@ import (
 	//kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	//workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	"github.com/kcp-dev/logicalcluster/v2"
 	"go.uber.org/zap"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -50,11 +51,13 @@ type Service struct {
 	server        *http.Server
 	router        *mux.Router
 	health        *health.Health
+	cluster       logicalcluster.Name
 
 	// tunneling tooling
 	kcpClient   kcpclient.ClusterInterface
 	farosClient farosclient.ClusterInterface
 	coreClients kubernetes.ClusterInterface
+
 	//proxy       *httputil.ReverseProxy
 }
 
@@ -90,6 +93,7 @@ func New(config *config.APIConfig) (*Service, error) {
 	s := &Service{
 		config: config,
 		//proxy:         proxy,
+		cluster:       logicalcluster.New(config.ControllersTenantWorkspace),
 		health:        health.New(),
 		kcpClient:     kcpClient,
 		farosClient:   farosClient,
