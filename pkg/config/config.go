@@ -59,6 +59,9 @@ type ControllerConfig struct {
 	// ControllersTenantWorkspace is name of workspace for global tenant management. Used in service management
 	ControllersTenantWorkspace string `envconfig:"FAROS_CONTROLLER_TENANT_WORKSPACE" yaml:"controllersTenantWorkspace,omitempty" default:"root:faros:service:tenants"`
 
+	// ControllersPluginsWorkspace is name of workspace for global plugins management. Used in service management
+	ControllersPluginsWorkspace string `envconfig:"FAROS_CONTROLLER_PLUGINS_WORKSPACE" yaml:"controllersPluginsWorkspace,omitempty" default:"root:faros:service:plugins"`
+
 	// TenantsWorkspacePrefix is prefix of workspace tenants are operating in
 	// TODO: Move under users once we can rebase to main. There is some bug in
 	// using homedir but I was not able to reproduce it in main kcp branch so I am not sure if it is fixed
@@ -79,11 +82,18 @@ type ControllerConfig struct {
 	KCPClusterKubeConfigPath string `envconfig:"FAROS_CONTROLLER_KCP_CLUSTER_KUBECONFIG" required:"true" default:"kcp.kubeconfig"`
 	// KCPClusterRestConfig is the rest config for the KCP cluster.
 	KCPClusterRestConfig *rest.Config `envconfig:"-"`
+
+	// PluginsDir is the directory where plugins are stored. Only stored plugins are loaded
+	// and can be used by agents. This is needed as plugins are delivering APIS and CRDs
+	// to be used by agents interacting with hub.
+	PluginsDir string `envconfig:"FAROS_PLUGINS_DIR" yaml:"pluginsDir,omitempty" default:"./plugins"`
 }
 
 type AgentConfig struct {
 	Name      string `envconfig:"FAROS_AGENT_NAME" yaml:"name,omitempty" default:""`
 	Namespace string `envconfig:"FAROS_AGENT_NAMESPACE" yaml:"namespace,omitempty" default:""`
+
+	PluginsDir string `envconfig:"FAROS_PLUGINS_DIR" yaml:"pluginsDir,omitempty" default:"./plugins"`
 
 	RestConfig *rest.Config `yaml:"-"`
 }

@@ -130,6 +130,7 @@ func (c *controllerManager) bootstrap(ctx context.Context) error {
 		c.config.TenantsWorkspacePrefix,
 		c.config.ControllersTenantWorkspace,
 		c.config.ControllersWorkspace,
+		c.config.ControllersPluginsWorkspace,
 	} {
 		if err := c.bootstraper.CreateWorkspace(ctx, w); err != nil {
 			return err
@@ -146,6 +147,11 @@ func (c *controllerManager) bootstrap(ctx context.Context) error {
 
 	// create assets for controller tenant workspace being able to access use apis
 	if err := c.bootstraper.BootstrapServiceTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
+		return err
+	}
+
+	// load plugins and create assets for each tenant
+	if err := c.bootstraper.LoadPlugins(ctx, c.config.ControllersPluginsWorkspace); err != nil {
 		return err
 	}
 

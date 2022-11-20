@@ -23,6 +23,8 @@ type Bootstraper interface {
 	BootstrapServiceTenantAssets(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsCRD(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsKCP(ctx context.Context, workspace string) error
+
+	LoadPlugins(ctx context.Context, workspace string) error
 }
 
 type bootstrap struct {

@@ -15,7 +15,6 @@ CONTROLLER_GEN_BIN := controller-gen
 CONTROLLER_GEN := $(TOOLS_DIR)/$(CONTROLLER_GEN_BIN)-$(CONTROLLER_GEN_VER)
 export CONTROLLER_GEN # so hack scripts can use it
 
-# KCP prefix
 #APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
 APIEXPORT_PREFIX = today
 
@@ -44,6 +43,9 @@ codegen: $(CONTROLLER_GEN) generate ## Run the codegenerators
 	go mod download
 	./hack/update-codegen.sh
 .PHONY: codegen
+
+protoc:
+	protoc -I pkg/plugins/proto/ pkg/plugins/proto/plugin.proto --go_out=plugins=grpc:pkg/plugins/proto/
 
 generate:
 	go generate ./...

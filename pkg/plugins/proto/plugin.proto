@@ -1,0 +1,29 @@
+syntax = "proto3";
+package proto;
+
+message GetNameResponse {
+    string name = 1;
+}
+
+message InitRequest {
+    string name = 1;
+    string namespace = 2;
+    bytes rest_config = 3;
+}
+
+message ErrorResponse {
+    string error = 1;
+}
+
+message GetResponse {
+    int64 value = 1;
+}
+
+message Empty {}
+
+service PluginInterface {
+    rpc Name(Empty) returns (GetNameResponse);
+    rpc Init(InitRequest) returns (Empty);
+    rpc Run(Empty) returns (Empty);
+    rpc Stop(Empty) returns (Empty);
+}
