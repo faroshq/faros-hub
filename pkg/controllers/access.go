@@ -3,9 +3,11 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/faroshq/faros-hub/pkg/controllers/tenants/access/requests"
+	"github.com/phayes/freeport"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -40,11 +42,16 @@ func (c *controllerManager) runAccess(ctx context.Context) error {
 		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
 	}
 
+	ports, err := freeport.GetFreePorts(2)
+	if err != nil {
+		return err
+	}
+
 	options := ctrl.Options{
 		Scheme:                  scheme,
-		MetricsBindAddress:      ":8085",
+		MetricsBindAddress:      ":" + strconv.Itoa(ports[0]),
 		Port:                    9443,
-		HealthProbeBindAddress:  ":8086",
+		HealthProbeBindAddress:  ":" + strconv.Itoa(ports[1]),
 		LeaderElection:          false,
 		LeaderElectionID:        "access.faros.sh",
 		LeaderElectionNamespace: "default",

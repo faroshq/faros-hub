@@ -15,3 +15,7 @@
 - [x] Improve bootstrap (now failing on updates)
 - [ ] Add HA deployment pattern (helm-chart)
 - [ ] Split KCP to run as component so faros is just built ontop using controllers and right workspaces
+- [ ] Add health for api endpoints curl -v localhost:8080/faros.sh/api/v1alpha1/healthz
+- [ ] Bootstrap permission claims currently have `all: true`. Scope down.
+- [ ] Move all bootstrap to "bootstrap golang" pattern
+- [ ] Tide-up config package. Use default KUBECONFIG loader for main config

@@ -1,5 +1,5 @@
 config:
-  issuer: https://dex.dex:5554
+  issuer: https://dex.dev.faros.sh
   storage:
     type: kubernetes
     config:
@@ -24,10 +24,11 @@ config:
   staticClients:
   - id: faros
     redirectURIs:
-    - 'http://127.0.0.1:5555/callback'
-    - 'http://localhost:8000'
-    - 'https://localhost:6443/faros.sh/oidc/callback'
-    - 'https://dex.dev.faros.sh/callback'
+    - http://127.0.0.1:5555/callback
+    - http://localhost:8000
+    - https://localhost:6443/faros.sh/oidc/callback
+    - https://kcp.dev.faros.sh/faros.sh/api/v1alpha1/oidc/callback
+    - https://dex.dev.faros.sh/callback
     name: 'Faros App'
     secret: ZXhhbXBsZS1hcHAtc2VjcmV0
 
@@ -50,9 +51,6 @@ ingress:
   enabled: true
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    #nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    #nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    #nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   tls:
     - hosts:
       - dex.dev.faros.sh
@@ -62,5 +60,9 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
+service:
+  ports:
+    https:
+      port: 443
 https:
   enabled: true

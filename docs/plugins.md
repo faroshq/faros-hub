@@ -8,6 +8,7 @@ plugins to edge devices and run them on the device with right context.
 - [ ] Network plugin (Wireguard)
 - [ ] Container runtime plugin (Docker, Podman)
 - [ ] Notifications plugin (Slack)
+- [ ] Storage plugin (FS, Rook, etc)
 - [ ] Metrics plugin (Prometheus)
 - [ ] Logging plugin (Fluentbit)
 - [ ] Remote access plugin (SSH, Proxy)

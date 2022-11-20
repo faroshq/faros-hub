@@ -64,4 +64,4 @@ run-with-oidc:
 	./hack/dev/run-with-oidc.sh
 
 images:
-	KO_DOCKER_REPO=${KO_DOCKER_REPO} ko build --sbom=none -B --platform=linux/amd64 -t latest -t latest ./cmd/*
+	KO_DOCKER_REPO=${KO_DOCKER_REPO} ko build --sbom=none -B --platform=linux/amd64 -t latest ./cmd/*

@@ -15,7 +15,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -71,6 +70,43 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, reg
 		}
 	default:
 		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to get the ServiceAccount %s", err)
+	}
+
+	// Dedicates secret name to the registration
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceName,
+			Namespace: registration.Namespace,
+			Annotations: map[string]string{
+				"kubernetes.io/service-account.name": resourceName,
+			},
+			OwnerReferences: registrationOwnersReferences,
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	}
+	err = r.Get(ctx, client.ObjectKey{
+		Namespace: secret.Namespace,
+		Name:      resourceName,
+	}, secret)
+	switch {
+	case apierrors.IsNotFound(err):
+		logger.Error(err, "creating secret", "name", resourceName)
+		err := r.Create(ctx, secret, &client.CreateOptions{})
+		if err != nil && !apierrors.IsAlreadyExists(err) {
+			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create Secret: %s", err)
+		}
+	case err == nil:
+		// service account already exist, merge owner references
+		secret.OwnerReferences = mergeOwnerReference(secret.OwnerReferences, registrationOwnersReferences)
+		secret.ResourceVersion = ""
+
+		logger.Info("updating secret", "name", resourceName)
+		err = r.Patch(ctx, secret, client.MergeFrom(secret.DeepCopy()), &client.PatchOptions{})
+		if err != nil {
+			return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to patch Secret %s", err)
+		}
+	default:
+		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to get the Secret %s", err)
 	}
 
 	// Create a cluster role that provides the agent the minimal permissions
@@ -159,34 +195,23 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, reg
 		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to create/update RoleBinding %s", err)
 	}
 
-	// Wait for the service account to be updated with the name of the token secret
-	tokenSecretName := ""
-	err = wait.PollImmediateWithContext(ctx, 100*time.Millisecond, 20*time.Second, func(ctx context.Context) (bool, error) {
-		err := r.Get(ctx, client.ObjectKey{Name: resourceName, Namespace: registration.Namespace}, &sa)
-		if err != nil {
-			logger.Info("failed to retrieve ServiceAccount", err)
-			return false, nil
-		}
-		if len(sa.Secrets) == 0 {
-			return false, nil
-		}
-		tokenSecretName = sa.Secrets[0].Name
-		return true, nil
-	})
-	if err != nil {
-		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("timed out waiting for token secret name to be set on ServiceAccount %s/%s", sa.Namespace, sa.Name)
-	}
-
 	// Retrieve the token that the agent will use to authenticate to kcp
 	tokenSecret := corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: tokenSecretName, Namespace: registration.Namespace}, &tokenSecret)
+	err = r.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: registration.Namespace}, &tokenSecret)
 	if err != nil {
 		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to retrieve Secret: %w", err)
 	}
-	saTokenBytes := tokenSecret.Data["token"]
-	if len(saTokenBytes) == 0 {
-		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("token secret %s/%s is missing a value for `token`", registration.Namespace, tokenSecretName)
+	saTokenBytes, ok := tokenSecret.Data["token"]
+	if !ok {
+		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to retrieve token from secret: %w", err)
 	}
+	if len(saTokenBytes) == 0 {
+		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("token secret %s/%s is missing a value for `token`", registration.Namespace, resourceName)
+	}
+	//caCrt, ok := tokenSecret.Data["ca.crt"]
+	//////if !ok {
+	//////	return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to retrieve ca.crt from secret: %w", err)
+	//}
 
 	patch := client.MergeFrom(registration.DeepCopy())
 	registration.Status.Token = string(saTokenBytes)

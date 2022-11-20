@@ -20,7 +20,7 @@ var (
 	clientCertFile      = flag.String("clientCertFile", "dev/proxy-client.crt", "file containing client certificate")
 	clientCertKeyFile   = flag.String("clientCertKeyFile", "dev/proxy-client.key", "file containing client key")
 	clientUpstreamURL   = flag.String("clientUpstreamUrl", "https://localhost:8443", "Server external address")
-	clientDownstreamURL = flag.String("clientDownstreamUrl", "http://localhost:9090", "Client forward address")
+	clientDownstreamURL = flag.String("clientDownstreamUrl", "http://localhost:8080", "Client forward address")
 	clientID            = flag.String("clientID", "faros-dev", "Client ID")
 )
 

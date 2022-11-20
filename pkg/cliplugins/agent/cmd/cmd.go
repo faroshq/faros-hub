@@ -34,7 +34,7 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 	generateOptions := plugin.NewGenerateOptions(streams)
 
 	generateAgentCmd := &cobra.Command{
-		Use:          "generate <agent-name> --registration <registration-name> -o <output-file>",
+		Use:          "generate <agent-name> --registration <registration-name> -f <output-file>",
 		Short:        "Create a agent config in faros to be deployed in agent and callback into faros",
 		Example:      fmt.Sprintf(agentExample, "kubectl faros agent generate"),
 		SilenceUsage: true,

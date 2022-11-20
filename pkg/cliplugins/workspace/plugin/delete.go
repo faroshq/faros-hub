@@ -77,7 +77,7 @@ func (o *DeleteWorkspacesOptions) Run(ctx context.Context) error {
 
 	workspace := &tenancyv1alpha1.Workspace{}
 
-	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/workspaces/" + o.Name).Do(ctx).Into(workspace)
+	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
 	if err != nil {
 		return err
 	}

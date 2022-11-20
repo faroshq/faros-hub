@@ -34,6 +34,9 @@ type RegistrationStatus struct {
 	// The token used to register the agent
 	// +required
 	Token string `json:"token,omitempty"`
+
+	// CA certificate used to validate the agent
+	CA string `json:"ca,omitempty"`
 }
 
 func (in *Registration) SetConditions(c conditionsv1alpha1.Conditions) {

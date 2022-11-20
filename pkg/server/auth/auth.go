@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/coreos/go-oidc"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
@@ -27,6 +27,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	utiltls "github.com/faroshq/faros-hub/pkg/util/tls"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 )
@@ -52,7 +54,7 @@ type Authenticator interface {
 var _ Authenticator = &AuthenticatorImpl{}
 
 type AuthenticatorImpl struct {
-	config *config.ControllerConfig
+	config *config.APIConfig
 
 	oAuthSessions *sessions.CookieStore
 	provider      *oidc.Provider
@@ -62,20 +64,35 @@ type AuthenticatorImpl struct {
 
 	farosClient farosclient.ClusterInterface
 	coreClient  kubernetes.ClusterInterface
+
+	cluster logicalcluster.Name
 }
 
-func NewAuthenticator(cfg *config.ControllerConfig, coreClient kubernetes.ClusterInterface, farosClient farosclient.ClusterInterface, callbackURLPrefix string) (*AuthenticatorImpl, error) {
+func NewAuthenticator(cfg *config.APIConfig, coreClient kubernetes.ClusterInterface, farosClient farosclient.ClusterInterface, callbackURLPrefix string) (*AuthenticatorImpl, error) {
 	var client *http.Client
 	var err error
-	if cfg.OIDCCAFile != "" {
-		client, err = httpClientForRootCAs(cfg.OIDCCAFile)
-		if err != nil {
-			return nil, err
-		}
+
+	hostingCoreClient, err := kubernetes.NewForConfig(cfg.HostingClusterRestConfig)
+	if err != nil {
+		return nil, err
 	}
 
-	if client == nil {
-		client = http.DefaultClient
+	secret, err := hostingCoreClient.CoreV1().Secrets(cfg.HostingClusterNamespace).Get(context.Background(), cfg.OIDCCASecretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	crt, ok := secret.Data["tls.crt"]
+	if !ok {
+		return nil, errors.New("oidc tls.crt not found in secret")
+	}
+	key, ok := secret.Data["tls.key"]
+	if !ok {
+		return nil, errors.New("oidc tls.key not found in secret")
+	}
+	client, err = httpClientForRootCAs(crt, key)
+	if err != nil {
+		return nil, err
 	}
 
 	redirectURL := cfg.ControllerExternalURL + callbackURLPrefix
@@ -100,6 +117,7 @@ func NewAuthenticator(cfg *config.ControllerConfig, coreClient kubernetes.Cluste
 		client:        client,
 		redirectURL:   redirectURL,
 		oAuthSessions: sessions.NewCookieStore([]byte(cfg.OIDCAuthSessionKey)),
+		cluster:       logicalcluster.New(cfg.ControllersTenantWorkspace),
 	}
 	return da, nil
 }
@@ -232,11 +250,10 @@ func (a *AuthenticatorImpl) OIDCCallback(w http.ResponseWriter, r *http.Request)
 	}
 
 	response := models.LoginResponse{
-		IDToken:                  *idToken,
-		RawIDToken:               rawIDToken,
-		Email:                    claims.Email,
-		CertificateAuthorityData: base64.StdEncoding.EncodeToString(a.config.TenantsCertificateAuthorityFileData),
-		ServerBaseURL:            fmt.Sprintf("%s/clusters", a.config.ControllerExternalURL),
+		IDToken:       *idToken,
+		RawIDToken:    rawIDToken,
+		Email:         claims.Email,
+		ServerBaseURL: fmt.Sprintf("%s/clusters", a.config.ControllerExternalURL),
 	}
 
 	data, err := json.Marshal(response)
@@ -309,18 +326,32 @@ func (a *AuthenticatorImpl) ParseJWTToken(ctx context.Context, token string) (us
 }
 
 // return an HTTP client which trusts the provided root CAs.
-func httpClientForRootCAs(rootCAs string) (*http.Client, error) {
-	tlsConfig := tls.Config{RootCAs: x509.NewCertPool()}
-	rootCABytes, err := os.ReadFile(rootCAs)
+func httpClientForRootCAs(crt, key []byte) (*http.Client, error) {
+	c, k, err := utiltls.CertificatePairFromBytes(crt, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read root-ca: %v", err)
+		return nil, err
 	}
-	if !tlsConfig.RootCAs.AppendCertsFromPEM(rootCABytes) {
-		return nil, fmt.Errorf("no certs found in root CA file %q", rootCAs)
+
+	pool := x509.NewCertPool()
+	pool.AddCert(c)
+
+	tlsConfig := &tls.Config{
+		RootCAs: pool,
+		Certificates: []tls.Certificate{
+			{
+				Certificate: [][]byte{
+					crt,
+				},
+				PrivateKey: k,
+			},
+		},
+		ServerName:         "faros",
+		InsecureSkipVerify: true,
 	}
+
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tlsConfig,
+			TLSClientConfig: tlsConfig,
 			Proxy:           http.ProxyFromEnvironment,
 			Dial: (&net.Dialer{
 				Timeout:   30 * time.Second,
@@ -346,7 +377,13 @@ func (a *AuthenticatorImpl) oauth2Config(scopes []string) *oauth2.Config {
 // TODO: This is not quite right place for this
 func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha1.User) (*tenancyv1alpha1.User, error) {
 	if user.Name == "" {
-		user.Name = uuid.New().String()
+		for {
+			user.Name = uuid.New().String()
+			// HACK: we can't start with digit for now. This will change in the future
+			if !unicode.IsDigit(rune(user.Name[0])) {
+				break
+			}
+		}
 	}
 
 	// we will be selecting based on labels, but k8s does not allow symbols like '@' in labels
@@ -359,7 +396,6 @@ func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tena
 
 	// TODO: Duplicate with f below
 	labelEmail := strings.Replace(user.Spec.Email, "@", "-at-", 1)
-	cluster := logicalcluster.New(a.config.ControllersTenantWorkspace)
 
 	if current != nil {
 		current.Spec = user.Spec
@@ -368,19 +404,19 @@ func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tena
 		}
 
 		current.Labels[UserLabel] = labelEmail
-		return a.farosClient.Cluster(cluster).TenancyV1alpha1().Users().Update(ctx, current, metav1.UpdateOptions{})
+		return a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().Update(ctx, current, metav1.UpdateOptions{})
 	} else {
 		user.Labels = map[string]string{
 			UserLabel: labelEmail,
 		}
-		user, err = a.farosClient.Cluster(cluster).TenancyV1alpha1().Users().Create(ctx, user, metav1.CreateOptions{})
+		user, err = a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().Create(ctx, user, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// provision user namespace
-	_, err = a.coreClient.Cluster(cluster).CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+	_, err = a.coreClient.Cluster(a.cluster).CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: user.Name,
 		},
@@ -402,9 +438,7 @@ func (a *AuthenticatorImpl) getUser(ctx context.Context, email string) (*tenancy
 	}
 
 	labelEmail := strings.Replace(email, "@", "-at-", 1)
-	cluster := logicalcluster.New(a.config.ControllersTenantWorkspace)
-
-	users, err := a.farosClient.Cluster(cluster).TenancyV1alpha1().Users().List(ctx, metav1.ListOptions{
+	users, err := a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", UserLabel, labelEmail),
 	})
 	if err != nil {

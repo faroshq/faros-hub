@@ -15,11 +15,13 @@ import (
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/kcp/pkg/cliplugins/helpers"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	edgevalpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
@@ -120,12 +122,13 @@ func (o *GenerateOptions) Run(ctx context.Context) error {
 	serverURL := configURL.Scheme + "://" + configURL.Host + "/clusters/" + currentClusterName.String()
 
 	input := templateInput{
-		AgentName:      o.AgentName,
-		ServerURL:      serverURL,
-		CAData:         base64.StdEncoding.EncodeToString(config.CAData),
-		Token:          token,
-		LogicalCluster: currentClusterName.String(),
-		Namespace:      o.Namespace,
+		AgentName:             o.AgentName,
+		ServerURL:             serverURL,
+		CAData:                base64.StdEncoding.EncodeToString(config.CAData),
+		InsecureSkipTLSVerify: config.Insecure,
+		Token:                 token,
+		LogicalCluster:        currentClusterName.String(),
+		Namespace:             o.Namespace,
 	}
 
 	resources, err := renderAgentResources(input)
@@ -135,16 +138,31 @@ func (o *GenerateOptions) Run(ctx context.Context) error {
 
 	_, err = outputFile.Write(resources)
 	if o.OutputFile != "-" {
-		fmt.Fprintf(o.Out, "\nWrote physical config to %s Use\n", o.OutputFile)
+		fmt.Fprintf(o.Out, "\nWrote agent config to %s Use\n", o.OutputFile)
 	}
 	return err
 }
 
 // enableAgentToRegister gets individual kubeconfig for registration object
 func (o *GenerateOptions) enableAgentToRegister(ctx context.Context, config *rest.Config) (saToken string, err error) {
-	farosclient, err := farosclient.NewForConfig(config)
+	farosClient, err := farosclient.NewForConfig(config)
 	if err != nil {
 		return "", fmt.Errorf("failed to create kcp client: %w", err)
+	}
+	coreClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", fmt.Errorf("failed to create k8s client: %w", err)
+	}
+
+	namespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: o.Namespace,
+		},
+	}
+
+	_, err = coreClient.CoreV1().Namespaces().Create(ctx, &namespace, metav1.CreateOptions{})
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		return "", fmt.Errorf("failed to create namespace: %w", err)
 	}
 
 	registrationName := o.RegistrationName
@@ -159,31 +177,32 @@ func (o *GenerateOptions) enableAgentToRegister(ctx context.Context, config *res
 		},
 	}
 
-	registration, err := farosclient.EdgeV1alpha1().Registrations(o.Namespace).Get(ctx, template.Name, metav1.GetOptions{})
+	registration, err := farosClient.EdgeV1alpha1().Registrations(o.Namespace).Get(ctx, template.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
 		fmt.Fprintf(o.Out, "Creating registration %s\n", registration.Name)
-		registration, err = farosclient.EdgeV1alpha1().Registrations(o.Namespace).Create(ctx, &template, metav1.CreateOptions{})
+		registration, err = farosClient.EdgeV1alpha1().Registrations(o.Namespace).Create(ctx, &template, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return "", fmt.Errorf("failed to create registration %q: %w", registration.Name, err)
 		}
-		// wait for registration to be ready
-		fmt.Fprintf(o.Out, "Waiting for registration %s to be ready\n", registration.Name)
-		err = wait.PollImmediateWithContext(ctx, 100*time.Millisecond, 20*time.Second, func(ctx context.Context) (bool, error) {
-			registration, err := farosclient.EdgeV1alpha1().Registrations(o.Namespace).Get(ctx, registration.Name, metav1.GetOptions{})
-			if err != nil {
-				fmt.Fprintf(o.ErrOut, "failed to retrieve Registration: %v", err)
-				return false, nil
-			}
-			return conditions.IsTrue(registration, conditionsv1alpha1.ReadyCondition), nil
-		})
-		return registration.Status.Token, err
-
 	case err == nil:
 		return registration.Status.Token, nil
 	default:
 		return "", fmt.Errorf("failed to create the ClusterRole %s", err)
 	}
+
+	// wait for registration to be ready
+	fmt.Fprintf(o.Out, "Waiting for registration %s to be ready\n", registration.Name)
+	err = wait.PollImmediateWithContext(ctx, 100*time.Millisecond, 20*time.Second, func(ctx context.Context) (bool, error) {
+		registration, err = farosClient.EdgeV1alpha1().Registrations(o.Namespace).Get(ctx, registration.Name, metav1.GetOptions{})
+		if err != nil {
+			fmt.Fprintf(o.ErrOut, "failed to retrieve Registration: %v", err)
+			return false, nil
+		}
+		return conditions.IsTrue(registration, conditionsv1alpha1.ReadyCondition) && registration.Status.Token != "", nil
+	})
+	return registration.Status.Token, err
+
 }
 
 // templateInput represents the external input required to render the resources to
@@ -196,6 +215,8 @@ type templateInput struct {
 	// CAData holds the PEM-encoded bytes of the ca certificate(s) a syncer will use to validate
 	// kcp's serving certificate
 	CAData string
+	// InsecureSkipTLSVerify controls whether a syncer verifies the server's certificate chain and host name
+	InsecureSkipTLSVerify bool
 	// Token is the service account token used to authenticate a syncer for access to a workspace
 	Token string
 	// Namespace is the name of the syncer namespace on the pcluster

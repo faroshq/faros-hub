@@ -1,9 +1,11 @@
 # Faros
 
 Faros hub is Kubernetes native Edge device management control plane.
-It allows to manage edge devices in the way similar to Kubernetes.
+It allows to manage edge IoT devices in the way similar to Kubernetes.
 
-Faros hub will enable you to connect remote device to central hub and deploy plugins to it.
+Faros hub will enable you to connect remote device to central hub and deploy
+plugin to them. Plugins is go-lang based application that can be used to
+communicate with device and send data to central hub.
 
 ## Getting started
 
@@ -43,7 +45,7 @@ spec:
     listenPort: 51820
     peers:
       - publicKey: "TBC"
-        allowedIPs: "
+        allowedIPs: ""
 ```
 
 Example for docker plugin in your workspace:
@@ -96,40 +98,27 @@ https://miro.com/app/board/o9J_lob-CMw=/?share_link_id=60410961009
 Currently project still needs [`kubectl-kcp`](https://github.com/kcp-dev/kcp) to be installed. It will be replaced
 by `kubectl-faros` in the future with opinionated configuration.
 
+To use `kind` tooling you will need to have pre-requisites configured, See `docs/dev-kind.md` for more details.
+
 Run Faros hub "all-in-one" configuration:
 
 ```bash
-go run ./cmd/hub-api start --all-in-one
+# create hosting kind cluster for tooling. This will install kcp, dex, cert-manager,
+# and local reverse dialer proxy for local development.
+make setup-kind
+# in separate terminal run local process to interact with reverse dialer proxy
+go run ./cmd/all-in-one
 ```
-
-This will start hub-api, reconciler.
 
 Create first workspace/virtual cluster:
 
 ```bash
-export KUBECONFIG=.faros/admin.kubeconfig
-# service:tenants workspace is responsible for providing tenants and workspaces
-kubectl kcp workspace use root:faros:service:tenants
-kubectl create namespace location
-kubectl apply -f ./config/samples/tenants_v1alpha1_workspace.yaml
-# You should see workspace created and reconciled
-kubectl get workspace -n location -o yaml
-
-# check if you can access it. If we running with IDP provider, you will need to login and generate
-# new kubeconfig
-go run ./cmd/kubectl-faros/ login setup root:faros:tenants:location:edge --kubeconfig edge1.kubeconfig
-
-```
-
-Controller will run in tenant `root:compute:controllers` so for now this name
-is reserved. It will be changed in the future.
-
-Create APIBinding for tenant1. This will be automated in the future.
-This allows faros controller to expose Faros API into virtual cluster without
-need to run it there.
-
-```bash
-kubectl create -f config/samples/binding.yaml
+# login to faros
+go run ./cmd/kubectl-faros login
+# create workspace
+go run ./cmd/kubectl-faros workspace create test
+# check if workspace is ready
+go run ./cmd/kubectl-faros workspace get
 ```
 
 Create first agent:
@@ -139,7 +128,7 @@ kubectl create namespace default
 go run ./cmd/kubectl-faros agent generate agent1 -f agent1.kubeconfig
 ```
 
-This will create `Registration` object in `root:tenant1` namespace.
+This will create `Registration` object in workspace and default namespace.
 `Registration` object is used to register agent with hub. It is backed by `serviceAccount`,
 `Role`, `RoleBinding` and `Secret` objects.
 
@@ -147,8 +136,7 @@ Same registration object can be used to register multiple agents.
 
 Open new terminal and run agent with generated kubeconfig:
 
-export FAROS_AGENT_NAME=agent1
-export FAROS_AGENT_NAMESPACE=default # default kubernetes namespace
+```bash
 export KUBECONFIG=agent1.kubeconfig
 go run ./cmd/edge-agent
 ```
@@ -156,7 +144,7 @@ go run ./cmd/edge-agent
 In the first terminal you should see Agent reporting to hub:
 
 ```bash
-[mjudeikis@unknown faros-hub]$ kubectl get agent agent -o yaml
+kubectl get agent agent -o yaml
 apiVersion: edge.faros.sh/v1alpha1
 kind: Agent
 metadata:
@@ -176,7 +164,6 @@ status:
     type: Ready
 ```
 
-
 # Roadmap
 
-See TODO file
+See [TODO](TODO.md) for more details.

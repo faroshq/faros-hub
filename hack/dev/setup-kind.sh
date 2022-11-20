@@ -15,13 +15,13 @@ CLUSTER_NAME=faros
 
 if ! kind get clusters | grep -w -q "${CLUSTER_NAME}"; then
 kind create cluster --name faros \
-     --kubeconfig ./dev/faros.kubeconfig \
+     --kubeconfig ./faros.kubeconfig \
      --config ./hack/dev/kind/config.yaml
 else
     echo "Cluster already exists"
 fi
 
-export KUBECONFIG=./dev/faros.kubeconfig
+export KUBECONFIG=./faros.kubeconfig
 
 echo "Installing ingress"
 
@@ -53,13 +53,19 @@ echo "Install dex"
 
 [ ! -d "./dev/dex-chart" ] && git clone https://github.com/faroshq/dex-helm-charts -b master ./dev/dex-chart
 
-helm upgrade -i dex ./dev/dex-chart/charts/dex \
+
+while ! helm upgrade -i dex ./dev/dex-chart/charts/dex \
      --values ./hack/dev/dex/values.yaml \
      --create-namespace \
      --namespace dex \
      --wait \
      --set config.connectors[0].config.clientSecret=$GITHUB_CLIENT_SECRET \
      --set config.connectors[0].config.clientID=$GITHUB_CLIENT_ID
+# we fail with network flakes, so lets retry. Once they goes through, it will be ok for the rest of calls
+do
+  echo "Try again"
+  sleep 5
+done
 
 echo "Install KCP"
 
@@ -73,6 +79,7 @@ kubectl get secret dex-pki-ca -n dex -o yaml \
 
 helm upgrade -i kcp ./dev/kcp-chart/charts/kcp \
      --values ./hack/dev/kcp/values.yaml \
+     --set kcp.hostAliases.values[0].ip=$(kubectl get svc dex -n dex -o json  | jq -r .spec.clusterIP) \
      --namespace kcp
 
 echo "Install Faros"
@@ -80,6 +87,13 @@ echo "Install Faros"
 helm upgrade -i faros ./charts/faros-dev \
      --values ./hack/dev/faros/values.yaml \
      --namespace kcp
+
+echo "Waiting for the kcp controller to become ready..."
+kubectl --context "${KUBECTL_CONTEXT}" -n kcp wait --for=condition=Ready pod -l app=kcp --timeout=5m
+
+
+echo "Generate KCP admin kubeconfig"
+./hack/dev/generate-admin-kubeconfig.sh
 
 echo "Starting reverse dialer for local development"
 

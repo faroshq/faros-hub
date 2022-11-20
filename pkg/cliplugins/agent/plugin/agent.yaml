@@ -5,6 +5,7 @@ clusters:
 - name: default-cluster
   cluster:
     certificate-authority-data: {{.CAData}}
+    insecure-skip-tls-verify: {{.InsecureSkipTLSVerify}}
     server: {{.ServerURL}}
 contexts:
 - name: default-context

@@ -8,6 +8,7 @@ import (
 
 	"github.com/faroshq/faros-hub/pkg/config"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 )
 
 // TODO: All this package should go away once we have a proper bootstrap
@@ -27,11 +28,22 @@ type Bootstraper interface {
 type bootstrap struct {
 	config *config.ControllerConfig
 
+	kcpClient     kcpclient.ClusterInterface
 	clientFactory utilkubernetes.ClientFactory
 }
 
 func New(config *config.ControllerConfig) (*bootstrap, error) {
-	cf, err := utilkubernetes.NewClientFactory(config.RestConfig)
+	cf, err := utilkubernetes.NewClientFactory(config.KCPClusterRestConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	rootRest, err := cf.GetRootRestConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kcpclient.NewClusterForConfig(rootRest)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +51,7 @@ func New(config *config.ControllerConfig) (*bootstrap, error) {
 	b := &bootstrap{
 		config:        config,
 		clientFactory: cf,
+		kcpClient:     client,
 	}
 
 	return b, nil
@@ -110,5 +123,9 @@ func (b *bootstrap) CreateWorkspace(ctx context.Context, name string) error {
 }
 
 func (b *bootstrap) BootstrapServiceTenantAssets(ctx context.Context, workspace string) error {
-	return b.bootstrapServiceTenantAssets(ctx, workspace)
+	err := b.bootstrapServiceTenantAssets(ctx, workspace)
+	if err != nil {
+		return err
+	}
+	return b.bootstrapRootTenantAssets(ctx)
 }

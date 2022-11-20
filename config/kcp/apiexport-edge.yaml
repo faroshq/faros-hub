@@ -7,17 +7,18 @@ spec:
   - today.agents.edge.faros.sh
   - today.registrations.edge.faros.sh
   permissionClaims:
-  - group: "edge.faros.sh"
-    resource: "registrations"
-  - group: "edge.faros.sh"
-    resource: "agents"
   - group: ""
     resource: "secrets"
+    all: true
   - group: ""
     resource: "serviceaccounts"
+    all: true
   - group: ""
     resource: "configmaps"
+    all: true
   - group: "rbac.authorization.k8s.io"
     resource: "roles"
+    all: true
   - group: "rbac.authorization.k8s.io"
     resource: "rolebindings"
+    all: true

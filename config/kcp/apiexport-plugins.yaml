@@ -10,13 +10,3 @@ spec:
     - today.networks.plugins.faros.sh
     - today.notifications.plugins.faros.sh
   permissionClaims:
-    - group: "plugins.faros.sh"
-      resource: "accesses"
-    - group: "plugins.faros.sh"
-      resource: "containerruntimes"
-    - group: "plugins.faros.sh"
-      resource: "monitorings"
-    - group: "plugins.faros.sh"
-      resource: "networks"
-    - group: "plugins.faros.sh"
-      resource: "notifications"

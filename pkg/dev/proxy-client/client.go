@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -129,7 +130,7 @@ func (c *Client) startTunneler(ctx context.Context) error {
 
 	director := proxy.Director
 	proxy.Director = func(req *http.Request) {
-		//req.URL.Path = strings.TrimPrefix(req.URL.Path, cmdTunnelProxy)
+		fmt.Printf(req.URL.Path)
 		director(req)
 	}
 	clientDownstream := http.DefaultClient

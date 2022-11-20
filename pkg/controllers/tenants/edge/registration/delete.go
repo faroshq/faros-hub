@@ -29,6 +29,17 @@ func (r *Reconciler) delete(ctx context.Context, logger logr.Logger, registratio
 		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to delete ServiceAccount: %s", err)
 	}
 
+	// Secret deletion
+	err = r.Delete(ctx, &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resourceName,
+			Namespace: registration.Namespace,
+		},
+	})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return ctrl.Result{RequeueAfter: time.Second * 30}, fmt.Errorf("failed to delete Secret: %s", err)
+	}
+
 	// Role deletion
 	err = r.Delete(ctx, &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{

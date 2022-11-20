@@ -2,19 +2,25 @@ externalHostname: kcp.dev.faros.sh
 kcp:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
+  v: "2"
   tokenAuth:
     enabled: true
+  hostAliases:
+    enabled: true
+    values:
+    - hostnames:
+      - dex.dev.faros.sh
+      ip: 127.0.0.1
 kcpFrontProxy:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "4"
+  v: "2"
   ingress:
     enabled: true
     annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
       nginx.ingress.kubernetes.io/use-regex: "true"
     paths:
-    - path: /kcp.dev/(.*)
+    - path: /(.*)
       pathType: Prefix
       backend:
         service:
@@ -31,12 +37,12 @@ kcpFrontProxy:
 virtualWorkspaces:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "4"
+  v: "2"
 oidc:
-  issuerUrl: https://dex.dex:5554
+  issuerUrl: https://dex.dev.faros.sh
   clientId: faros
   groupClaim: groups
   usernameClaim: email
-  usernamePrefix: faros-sso
-  groupsPrefix: faros-sso
+  usernamePrefix: "faros-sso:"
+  groupsPrefix: "faros-sso:"
   caSecretName: dex-pki-ca

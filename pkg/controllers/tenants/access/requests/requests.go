@@ -161,7 +161,7 @@ func (r *Reconciler) generateKubeConfig(ctx context.Context, request *accessv1al
 	path := fmt.Sprintf("/services/faros-tunnels/clusters/%s/apis/access.faros.sh/v1alpha1/namespaces/%s/access/%s/proxy",
 		cluster, request.Namespace, request.Name)
 
-	u, err := url.Parse(r.Config.RestConfig.Host)
+	u, err := url.Parse(r.Config.KCPClusterRestConfig.Host)
 	if err != nil {
 		return nil, err
 	}

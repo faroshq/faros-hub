@@ -2,7 +2,7 @@ apiVersion: tenancy.faros.sh/v1alpha1
 kind: Workspace
 metadata:
   name: edge
-  namespace: location
+  namespace: user
 spec:
   members:
   - mangirdas@judeikis.lt

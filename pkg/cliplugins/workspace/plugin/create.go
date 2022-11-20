@@ -105,7 +105,7 @@ func (o *CreateWorkspacesOptions) Run(ctx context.Context) error {
 		return fmt.Errorf("error creating patch: %v", err)
 	}
 
-	err = farosClient.RESTClient().Post().Body(patch).AbsPath("/faros.sh/workspaces").Do(ctx).Into(&workspace)
+	err = farosClient.RESTClient().Post().Body(patch).AbsPath("/faros.sh/api/v1alpha1/workspaces").Do(ctx).Into(&workspace)
 	if err != nil {
 		return err
 	}

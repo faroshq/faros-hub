@@ -7,9 +7,6 @@ spec:
   - today.workspaces.tenancy.faros.sh
   - today.users.tenancy.faros.sh
   permissionClaims:
-  - group: "tenancy.faros.sh"
-    resource: "workspaces"
-  - group: "tenancy.faros.sh"
-    resource: "users"
   - group: ""
     resource: "secrets"
+    all: true
