@@ -15,9 +15,6 @@ import (
 // mechanism in place. For now, we just deploy the components and create the
 // resources. Once resources are stable, we should move it to a proper code.
 
-//go:generate go run github.com/go-bindata/go-bindata/v3/go-bindata -pkg $GOPACKAGE -prefix ../../config/ -nometadata -o zz_$GOPACKAGE.go ../../config/...
-//go:generate go run golang.org/x/tools/cmd/goimports -local github.com/faroshq/faros-hub -e -w zz_$GOPACKAGE.go
-
 type Bootstraper interface {
 	CreateWorkspace(ctx context.Context, name string) error
 	BootstrapServiceTenantAssets(ctx context.Context, workspace string) error

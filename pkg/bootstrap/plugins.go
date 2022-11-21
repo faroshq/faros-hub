@@ -8,6 +8,7 @@ import (
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
@@ -35,6 +36,7 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) error {
 			return fmt.Errorf("failed to get plugin name: %w", err)
 		}
 
+		// Register APIResourceSchema for plugin
 		data, err := p.GetAPIResourceSchema(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get API resource schema for plugin %q: %w", name, err)
@@ -47,8 +49,25 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) error {
 		}
 
 		_, err = b.kcpClient.Cluster(cluster).ApisV1alpha1().APIResourceSchemas().Create(ctx, &schema, metav1.CreateOptions{})
-		if err != nil {
+		if err != nil && apierrors.IsConflict(err) {
 			return fmt.Errorf("failed to create API resource schema for plugin %q: %w", name, err)
+		}
+
+		// Register APIExport for plugin
+		data, err = p.GetAPIExportSchema(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get API export schema for plugin %q: %w", name, err)
+		}
+
+		var export apisv1alpha1.APIExport
+		err = yaml.Unmarshal(data, &export)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal API export schema for plugin %q: %w", name, err)
+		}
+
+		_, err = b.kcpClient.Cluster(cluster).ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
+		if err != nil && apierrors.IsConflict(err) {
+			return fmt.Errorf("failed to create API export schema for plugin %q: %w", name, err)
 		}
 	}
 

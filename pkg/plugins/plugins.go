@@ -13,6 +13,8 @@ type Interface interface {
 	GetName(ctx context.Context) (string, error)
 	// GetAPIResourceSchema returns the schema of the API resource.
 	GetAPIResourceSchema(ctx context.Context) ([]byte, error)
+	// GetAPIExportSchema returns the schema of the API export.
+	GetAPIExportSchema(ctx context.Context) ([]byte, error)
 	// Init initializes the plugin.
 	Init(ctx context.Context, name, namespace string, config *rest.Config) error
 	// Run runs the plugin.

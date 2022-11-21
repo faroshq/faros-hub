@@ -34,6 +34,15 @@ func (m *GRPCClient) GetAPIResourceSchema(ctx context.Context) ([]byte, error) {
 	return resp.Schema, nil
 }
 
+func (m *GRPCClient) GetAPIExportSchema(ctx context.Context) ([]byte, error) {
+	resp, err := m.client.GetAPIExportSchema(ctx, &proto.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Schema, nil
+}
+
 func (m *GRPCClient) Init(ctx context.Context, name, namespace string, config *rest.Config) error {
 	data, err := yaml.Marshal(config)
 	if err != nil {
@@ -84,6 +93,11 @@ func (m *GRPCServer) GetName(ctx context.Context, req *proto.Empty) (*proto.GetN
 func (m *GRPCServer) GetAPIResourceSchema(ctx context.Context, req *proto.Empty) (*proto.GetAPIResourceSchemaResponse, error) {
 	data, err := m.Impl.GetAPIResourceSchema(ctx)
 	return &proto.GetAPIResourceSchemaResponse{Schema: data}, err
+}
+
+func (m *GRPCServer) GetAPIExportSchema(ctx context.Context, req *proto.Empty) (*proto.GetAPIExportSchemaResponse, error) {
+	data, err := m.Impl.GetAPIResourceSchema(ctx)
+	return &proto.GetAPIExportSchemaResponse{Schema: data}, err
 }
 
 func (m *GRPCServer) Init(ctx context.Context, req *proto.InitRequest) (*proto.Empty, error) {
