@@ -115,9 +115,6 @@ func (c *controllerManager) Run(ctx context.Context) error {
 		return c.runEdge(ctx)
 	})
 	eg.Go(func() error {
-		return c.runAccess(ctx)
-	})
-	eg.Go(func() error {
 		return c.runSystem(ctx)
 	})
 
