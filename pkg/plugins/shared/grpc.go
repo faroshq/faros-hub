@@ -25,6 +25,15 @@ func (m *GRPCClient) GetName(ctx context.Context) (string, error) {
 	return resp.Name, nil
 }
 
+func (m *GRPCClient) GetVersion(ctx context.Context) (string, error) {
+	resp, err := m.client.GetVersion(ctx, &proto.Empty{})
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Version, nil
+}
+
 func (m *GRPCClient) GetAPIResourceSchema(ctx context.Context) ([]byte, error) {
 	resp, err := m.client.GetAPIResourceSchema(ctx, &proto.Empty{})
 	if err != nil {
@@ -88,6 +97,11 @@ type GRPCServer struct {
 func (m *GRPCServer) GetName(ctx context.Context, req *proto.Empty) (*proto.GetNameResponse, error) {
 	name, err := m.Impl.GetName(ctx)
 	return &proto.GetNameResponse{Name: name}, err
+}
+
+func (m *GRPCServer) GetVersion(ctx context.Context, req *proto.Empty) (*proto.GetVersionResponse, error) {
+	version, err := m.Impl.GetVersion(ctx)
+	return &proto.GetVersionResponse{Version: version}, err
 }
 
 func (m *GRPCServer) GetAPIResourceSchema(ctx context.Context, req *proto.Empty) (*proto.GetAPIResourceSchemaResponse, error) {

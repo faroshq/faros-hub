@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/faroshq/faros-hub/pkg/controllers/tenants/edge/agent"
 	"github.com/faroshq/faros-hub/pkg/controllers/tenants/edge/registration"
+	"github.com/faroshq/faros-hub/pkg/models"
 	"github.com/phayes/freeport"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
@@ -18,7 +20,7 @@ import (
 
 // edge controller is running in edge api virtual workspace context
 
-func (c *controllerManager) runEdge(ctx context.Context) error {
+func (c *controllerManager) runEdge(ctx context.Context, plugins models.PluginsList) error {
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
@@ -69,6 +71,15 @@ func (c *controllerManager) runEdge(ctx context.Context) error {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "registration.edge.faros.sh")
+		return err
+	}
+
+	if err = (&agent.Reconciler{
+		Client:  mgr.GetClient(),
+		Scheme:  mgr.GetScheme(),
+		Plugins: plugins,
+	}).SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller", "agent.edge.faros.sh")
 		return err
 	}
 

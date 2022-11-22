@@ -92,11 +92,16 @@ func (o *GetWorkspacesOptions) Run(ctx context.Context) error {
 		table.SetHeader([]string{"NAME", "MEMBERS", "DESCRIPTION", "STATUS", "AGE"})
 		for _, workspace := range workspaces.Items {
 			{
+				status := "Unknown"
+				if len(workspace.Status.Conditions) > 0 {
+					status = string(workspace.Status.Conditions[0].Type)
+				}
+
 				table.Append([]string{
 					workspace.Name,
 					strings.Join(workspace.Spec.Members, ","),
 					workspace.Spec.Description,
-					string(workspace.Status.Conditions[0].Status),
+					status,
 					utilprint.Since(workspace.CreationTimestamp.Time).String()},
 				)
 			}

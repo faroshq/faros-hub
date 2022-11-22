@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/faroshq/faros-hub/pkg/config"
+	"github.com/faroshq/faros-hub/pkg/models"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 )
@@ -21,7 +22,7 @@ type Bootstraper interface {
 	DeployKustomizeAssetsCRD(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsKCP(ctx context.Context, workspace string) error
 
-	LoadPlugins(ctx context.Context, workspace string) error
+	LoadPlugins(ctx context.Context, workspace string) (models.PluginsList, error)
 }
 
 type bootstrap struct {

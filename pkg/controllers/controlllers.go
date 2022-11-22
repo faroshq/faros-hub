@@ -26,6 +26,7 @@ import (
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
 	"github.com/faroshq/faros-hub/pkg/config"
+	"github.com/faroshq/faros-hub/pkg/models"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
 )
@@ -104,15 +105,17 @@ func (c *controllerManager) WaitForAPIReady(ctx context.Context) error {
 
 func (c *controllerManager) Run(ctx context.Context) error {
 	// bootstrap will set missing ctrlRestConfig and deploy kcp wide resources
-	if err := c.bootstrap(ctx); err != nil {
+	ctxT, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	plugins, err := c.bootstrap(ctxT)
+	if err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
-	time.Sleep(time.Second * 5)
 
 	eg := errgroup.Group{}
 
 	eg.Go(func() error {
-		return c.runEdge(ctx)
+		return c.runEdge(ctx, plugins)
 	})
 	eg.Go(func() error {
 		return c.runSystem(ctx)
@@ -121,7 +124,7 @@ func (c *controllerManager) Run(ctx context.Context) error {
 	return eg.Wait()
 }
 
-func (c *controllerManager) bootstrap(ctx context.Context) error {
+func (c *controllerManager) bootstrap(ctx context.Context) (models.PluginsList, error) {
 	// create controllers workspace
 	for _, w := range []string{
 		c.config.TenantsWorkspacePrefix,
@@ -130,29 +133,30 @@ func (c *controllerManager) bootstrap(ctx context.Context) error {
 		c.config.ControllersPluginsWorkspace,
 	} {
 		if err := c.bootstraper.CreateWorkspace(ctx, w); err != nil {
-			return err
+			return nil, err
 		}
 	}
 	// create assets for controller workspace being able to access all "workspaces"
 	// and implement their requests
 	if err := c.bootstraper.DeployKustomizeAssetsCRD(ctx, c.config.ControllersWorkspace); err != nil {
-		return err
+		return nil, err
 	}
 	if err := c.bootstraper.DeployKustomizeAssetsKCP(ctx, c.config.ControllersWorkspace); err != nil {
-		return err
+		return nil, err
 	}
 
 	// create assets for controller tenant workspace being able to access use apis
 	if err := c.bootstraper.BootstrapServiceTenantAssets(ctx, c.config.ControllersTenantWorkspace); err != nil {
-		return err
+		return nil, err
 	}
 
 	// load plugins and create assets for each tenant
-	if err := c.bootstraper.LoadPlugins(ctx, c.config.ControllersPluginsWorkspace); err != nil {
-		return err
+	plugins, err := c.bootstraper.LoadPlugins(ctx, c.config.ControllersPluginsWorkspace)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return plugins, nil
 }
 
 // restConfigForAPIExport returns a *rest.Config properly configured to communicate with the endpoint for the

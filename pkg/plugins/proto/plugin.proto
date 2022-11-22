@@ -5,6 +5,10 @@ message GetNameResponse {
     string name = 1;
 }
 
+message GetVersionResponse {
+    string version = 1;
+}
+
 message GetAPIResourceSchemaResponse {
     bytes schema = 1;
 }
@@ -23,6 +27,7 @@ message Empty {}
 
 service PluginInterface {
     rpc GetName(Empty) returns (GetNameResponse);
+    rpc GetVersion(Empty) returns (GetVersionResponse);
     rpc GetAPIResourceSchema(Empty) returns (GetAPIResourceSchemaResponse);
     rpc GetAPIExportSchema(Empty) returns (GetAPIExportSchemaResponse);
     rpc Init(InitRequest) returns (Empty);
