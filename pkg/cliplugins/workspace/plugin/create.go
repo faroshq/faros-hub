@@ -16,23 +16,23 @@ import (
 	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
 )
 
-// GetWorkspacesOptions contains options for configuring faros workspaces
-type CreateWorkspacesOptions struct {
+// GetOptions contains options for configuring faros workspaces
+type CreateOptions struct {
 	*base.Options
 	Name        string
 	Description string
 	Members     []string
 }
 
-// NewCreateWorkspacesOptions returns a new NewCreateWorkspacesOptions.
-func NewCreateWorkspacesOptions(streams genericclioptions.IOStreams) *CreateWorkspacesOptions {
-	return &CreateWorkspacesOptions{
+// NewCreateOptions returns a new NewCreateOptions.
+func NewCreateOptions(streams genericclioptions.IOStreams) *CreateOptions {
+	return &CreateOptions{
 		Options: base.NewOptions(streams),
 	}
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *CreateWorkspacesOptions) BindFlags(cmd *cobra.Command) {
+func (o *CreateOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 
 	cmd.Flags().StringArrayVarP(&o.Members, "members", "m", o.Members, "Additional members emails to add to the workspace")
@@ -41,7 +41,7 @@ func (o *CreateWorkspacesOptions) BindFlags(cmd *cobra.Command) {
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *CreateWorkspacesOptions) Complete(args []string) error {
+func (o *CreateOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -53,8 +53,8 @@ func (o *CreateWorkspacesOptions) Complete(args []string) error {
 	return nil
 }
 
-// Validate validates the WorkspacesOptions are complete and usable.
-func (o *CreateWorkspacesOptions) Validate() error {
+// Validate validates the Options are complete and usable.
+func (o *CreateOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -68,8 +68,8 @@ func (o *CreateWorkspacesOptions) Validate() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-// Run gets workspaces from tenant workspace api
-func (o *CreateWorkspacesOptions) Run(ctx context.Context) error {
+// Run gets  from tenant workspace api
+func (o *CreateOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err

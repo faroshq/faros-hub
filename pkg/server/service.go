@@ -19,16 +19,26 @@ import (
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"github.com/kcp-dev/logicalcluster/v2"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
+	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
 )
 
+var (
+	scheme       = runtime.NewScheme()
+	codecs       = serializer.NewCodecFactory(scheme)
+	limit  int64 = 1024 * 1024 * 10
+)
+
 func init() {
 	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(pluginsv1alpha1.AddToScheme(scheme))
 }
 
 var _ Interface = &Service{}
@@ -40,18 +50,20 @@ type Interface interface {
 const (
 	pathAPIVersion   = "/faros.sh/api/v1alpha1"
 	pathWorkspaces   = "/workspaces"
+	pathPlugins      = "/plugins"
 	pathOIDC         = "/oidc"
 	pathOIDCLogin    = "/oidc/login"
 	pathOIDCCallback = "/oidc/callback"
 )
 
 type Service struct {
-	config        *config.APIConfig
-	authenticator auth.Authenticator
-	server        *http.Server
-	router        *mux.Router
-	health        *health.Health
-	cluster       logicalcluster.Name
+	config         *config.APIConfig
+	authenticator  auth.Authenticator
+	server         *http.Server
+	router         *mux.Router
+	health         *health.Health
+	tenantsCluster logicalcluster.Name
+	pluginsCluster logicalcluster.Name
 
 	// tunneling tooling
 	kcpClient   kcpclient.ClusterInterface
@@ -93,24 +105,27 @@ func New(config *config.APIConfig) (*Service, error) {
 	s := &Service{
 		config: config,
 		//proxy:         proxy,
-		cluster:       logicalcluster.New(config.ControllersTenantWorkspace),
-		health:        health.New(),
-		kcpClient:     kcpClient,
-		farosClient:   farosClient,
-		coreClients:   coreClient,
-		authenticator: authenticator,
+		tenantsCluster: logicalcluster.New(config.ControllersTenantWorkspace),
+		pluginsCluster: logicalcluster.New(config.ControllersPluginsWorkspace),
+		health:         health.New(),
+		kcpClient:      kcpClient,
+		farosClient:    farosClient,
+		coreClients:    coreClient,
+		authenticator:  authenticator,
 	}
 
 	s.router = setupRouter()
 	apiRouter := s.router.PathPrefix(pathAPIVersion).Subrouter()
-	apiRouter.HandleFunc("/healthz", healthhandlers.NewJSONHandlerFunc(s.health, nil))
-	apiRouter.HandleFunc(pathOIDCLogin, s.oidcLogin)
-	apiRouter.HandleFunc(pathOIDCCallback, s.oidcCallback)
+	apiRouter.HandleFunc("/healthz", healthhandlers.NewJSONHandlerFunc(s.health, nil)) // /healthz
+	apiRouter.HandleFunc(pathOIDCLogin, s.oidcLogin)                                   // /faros.sh/api/v1alpha1/oidc/login
+	apiRouter.HandleFunc(pathOIDCCallback, s.oidcCallback)                             // /faros.sh/api/v1alpha1/oidc/callback
 
-	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodGet)
-	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodGet)
-	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodDelete)
-	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodPost)
+	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodGet)                              // /faros.sh/api/v1alpha1/workspaces
+	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodGet)    // /faros.sh/api/v1alpha1/workspaces/{workspace}
+	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodDelete) // /faros.sh/api/v1alpha1/workspaces/{workspace}
+	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodPost)                             // /faros.sh/api/v1alpha1/workspaces
+
+	apiRouter.HandleFunc(pathPlugins, s.pluginsHandler).Methods(http.MethodGet) // /faros.sh/api/v1alpha1/plugins
 
 	s.server = &http.Server{
 		Addr: config.Addr,

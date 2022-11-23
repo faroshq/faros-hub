@@ -33,6 +33,9 @@ type APIConfig struct {
 	// Must match one in Controllers config
 	ControllersTenantWorkspace string `envconfig:"FAROS_API_TENANT_WORKSPACE" yaml:"controllersTenantWorkspace,omitempty" default:"root:faros:service:tenants"`
 
+	// ControllersPluginsWorkspace is name of workspace for global plugins management. Used in service management
+	ControllersPluginsWorkspace string `envconfig:"FAROS_API_PLUGINS_WORKSPACE" yaml:"controllersPluginsWorkspace,omitempty" default:"root:faros:service:plugins"`
+
 	// OIDC provider configuration
 	OIDCIssuerURL      string `envconfig:"FAROS_OIDC_ISSUER_URL" yaml:"oidcIssuerURL,omitempty" default:"https://dex.dev.faros.sh"`
 	OIDCClientID       string `envconfig:"FAROS_OIDC_CLIENT_ID" yaml:"oidcClientID,omitempty" default:"faros"`

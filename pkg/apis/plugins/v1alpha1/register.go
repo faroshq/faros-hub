@@ -11,16 +11,8 @@ import (
 var GroupName = "plugins.faros.sh"
 
 const (
-	// PluginNetworkKind is the kind for a Network plugins
-	PluginNetworkKind = "Network"
-	// PluginAccessKind is the kind for an Access plugins
-	PluginAccessKind = "Access"
-	// PluginContainerRuntimeKind is the kind for a ContainerRuntime plugins
-	PluginContainerRuntimeKind = "ContainerRuntime"
-	// PluginMonitoringKind is the kind for a Monitoring plugins
-	PluginMonitoringKind = "Monitoring"
-	// PluginNotificationKind is the kind for a Notification plugins
-	PluginNotificationKind = "Notification"
+	// PluginKind is the kind for a generic plugins
+	PluginKind = "Plugin"
 )
 
 // SchemeGroupVersion is group version used to register these objects
@@ -44,16 +36,8 @@ var (
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Network{},
-		&NetworkList{},
-		&Monitoring{},
-		&MonitoringList{},
-		&Notification{},
-		&NotificationList{},
-		&ContainerRuntime{},
-		&ContainerRuntimeList{},
-		&Access{},
-		&AccessList{},
+		&Plugin{},
+		&PluginList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

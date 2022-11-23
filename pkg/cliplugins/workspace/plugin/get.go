@@ -15,26 +15,26 @@ import (
 	utilprint "github.com/faroshq/faros-hub/pkg/util/print"
 )
 
-// GetWorkspacesOptions contains options for configuring faros workspaces
-type GetWorkspacesOptions struct {
+// GetOptions contains options for configuring faros
+type GetOptions struct {
 	*base.Options
 	Name string
 }
 
-// NewGetWorkspacesOptions returns a new GetWorkspacesOptions.
-func NewGetWorkspacesOptions(streams genericclioptions.IOStreams) *GetWorkspacesOptions {
-	return &GetWorkspacesOptions{
+// NewGetOptions returns a new GetOptions.
+func NewGetOptions(streams genericclioptions.IOStreams) *GetOptions {
+	return &GetOptions{
 		Options: base.NewOptions(streams),
 	}
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *GetWorkspacesOptions) BindFlags(cmd *cobra.Command) {
+func (o *GetOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *GetWorkspacesOptions) Complete(args []string) error {
+func (o *GetOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (o *GetWorkspacesOptions) Complete(args []string) error {
 }
 
 // Validate validates the SyncOptions are complete and usable.
-func (o *GetWorkspacesOptions) Validate() error {
+func (o *GetOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -58,7 +58,7 @@ func (o *GetWorkspacesOptions) Validate() error {
 }
 
 // Run gets workspaces from tenant workspace api
-func (o *GetWorkspacesOptions) Run(ctx context.Context) error {
+func (o *GetOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err

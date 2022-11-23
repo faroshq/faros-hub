@@ -20,89 +20,89 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 		},
 	}
 
-	getWorkspacesOptions := plugin.NewGetWorkspacesOptions(streams)
-	getWorkspacesCmd := &cobra.Command{
+	getOptions := plugin.NewGetOptions(streams)
+	getCmd := &cobra.Command{
 		Use:          "get",
 		Short:        "Get a workspaces",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := getWorkspacesOptions.Complete(args); err != nil {
+			if err := getOptions.Complete(args); err != nil {
 				return err
 			}
 
-			if err := getWorkspacesOptions.Validate(); err != nil {
+			if err := getOptions.Validate(); err != nil {
 				return err
 			}
 
-			return getWorkspacesOptions.Run(c.Context())
+			return getOptions.Run(c.Context())
 		},
 	}
 
-	createWorkspacesOptions := plugin.NewCreateWorkspacesOptions(streams)
-	createWorkspacesCmd := &cobra.Command{
+	createOptions := plugin.NewCreateOptions(streams)
+	createCmd := &cobra.Command{
 		Use:          "create",
 		Short:        "Create a workspaces",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := createWorkspacesOptions.Complete(args); err != nil {
+			if err := createOptions.Complete(args); err != nil {
 				return err
 			}
 
-			if err := createWorkspacesOptions.Validate(); err != nil {
+			if err := createOptions.Validate(); err != nil {
 				return err
 			}
 
-			return createWorkspacesOptions.Run(c.Context())
+			return createOptions.Run(c.Context())
 		},
 	}
 
-	deleteWorkspacesOptions := plugin.NewDeleteWorkspacesOptions(streams)
-	deleteWorkspacesCmd := &cobra.Command{
+	deleteOptions := plugin.NewDeleteOptions(streams)
+	deleteCmd := &cobra.Command{
 		Use:          "delete",
 		Short:        "Delete a workspaces",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := deleteWorkspacesOptions.Complete(args); err != nil {
+			if err := deleteOptions.Complete(args); err != nil {
 				return err
 			}
 
-			if err := deleteWorkspacesOptions.Validate(); err != nil {
+			if err := deleteOptions.Validate(); err != nil {
 				return err
 			}
 
-			return deleteWorkspacesOptions.Run(c.Context())
+			return deleteOptions.Run(c.Context())
 		},
 	}
 
-	useWorkspacesOptions := plugin.NewUseWorkspacesOptions(streams)
-	useWorkspacesCmd := &cobra.Command{
+	useOptions := plugin.NewUseOptions(streams)
+	useCmd := &cobra.Command{
 		Use:          "use",
 		Short:        "Use a workspaces",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := useWorkspacesOptions.Complete(args); err != nil {
+			if err := useOptions.Complete(args); err != nil {
 				return err
 			}
 
-			if err := useWorkspacesOptions.Validate(); err != nil {
+			if err := useOptions.Validate(); err != nil {
 				return err
 			}
 
-			return useWorkspacesOptions.Run(c.Context())
+			return useOptions.Run(c.Context())
 		},
 	}
 
-	getWorkspacesOptions.BindFlags(getWorkspacesCmd)
-	cmd.AddCommand(getWorkspacesCmd)
+	getOptions.BindFlags(getCmd)
+	cmd.AddCommand(getCmd)
 
-	createWorkspacesOptions.BindFlags(createWorkspacesCmd)
-	cmd.AddCommand(createWorkspacesCmd)
+	createOptions.BindFlags(createCmd)
+	cmd.AddCommand(createCmd)
 
-	deleteWorkspacesOptions.BindFlags(deleteWorkspacesCmd)
-	cmd.AddCommand(deleteWorkspacesCmd)
+	deleteOptions.BindFlags(deleteCmd)
+	cmd.AddCommand(deleteCmd)
 
-	useWorkspacesOptions.BindFlags(useWorkspacesCmd)
-	cmd.AddCommand(useWorkspacesCmd)
+	useOptions.BindFlags(useCmd)
+	cmd.AddCommand(useCmd)
 
 	return cmd, nil
 }

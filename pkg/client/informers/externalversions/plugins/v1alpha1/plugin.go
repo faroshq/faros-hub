@@ -31,61 +31,61 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// NotificationInformer provides access to a shared informer and lister for
-// Notifications.
-type NotificationInformer interface {
+// PluginInformer provides access to a shared informer and lister for
+// Plugins.
+type PluginInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.NotificationLister
+	Lister() v1alpha1.PluginLister
 }
 
-type notificationInformer struct {
+type pluginInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewNotificationInformer constructs a new informer for Notification type.
+// NewPluginInformer constructs a new informer for Plugin type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewNotificationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredNotificationInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewPluginInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredPluginInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredNotificationInformer constructs a new informer for Notification type.
+// NewFilteredPluginInformer constructs a new informer for Plugin type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredNotificationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewFilteredNotificationInformerWithOptions(client, namespace, tweakListOptions, cache.WithResyncPeriod(resyncPeriod), cache.WithIndexers(indexers))
+func NewFilteredPluginInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+	return NewFilteredPluginInformerWithOptions(client, namespace, tweakListOptions, cache.WithResyncPeriod(resyncPeriod), cache.WithIndexers(indexers))
 }
 
-func NewFilteredNotificationInformerWithOptions(client versioned.Interface, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc, opts ...cache.SharedInformerOption) cache.SharedIndexInformer {
+func NewFilteredPluginInformerWithOptions(client versioned.Interface, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc, opts ...cache.SharedInformerOption) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformerWithOptions(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginsV1alpha1().Notifications(namespace).List(context.TODO(), options)
+				return client.PluginsV1alpha1().Plugins(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginsV1alpha1().Notifications(namespace).Watch(context.TODO(), options)
+				return client.PluginsV1alpha1().Plugins(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&pluginsv1alpha1.Notification{},
+		&pluginsv1alpha1.Plugin{},
 		opts...,
 	)
 }
 
-func (f *notificationInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func (f *pluginInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	indexers := cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}
 	for k, v := range f.factory.ExtraNamespaceScopedIndexers() {
 		indexers[k] = v
 	}
 
-	return NewFilteredNotificationInformerWithOptions(client, f.namespace,
+	return NewFilteredPluginInformerWithOptions(client, f.namespace,
 		f.tweakListOptions,
 		cache.WithResyncPeriod(resyncPeriod),
 		cache.WithIndexers(indexers),
@@ -93,10 +93,10 @@ func (f *notificationInformer) defaultInformer(client versioned.Interface, resyn
 	)
 }
 
-func (f *notificationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&pluginsv1alpha1.Notification{}, f.defaultInformer)
+func (f *pluginInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&pluginsv1alpha1.Plugin{}, f.defaultInformer)
 }
 
-func (f *notificationInformer) Lister() v1alpha1.NotificationLister {
-	return v1alpha1.NewNotificationLister(f.Informer().GetIndexer())
+func (f *pluginInformer) Lister() v1alpha1.PluginLister {
+	return v1alpha1.NewPluginLister(f.Informer().GetIndexer())
 }

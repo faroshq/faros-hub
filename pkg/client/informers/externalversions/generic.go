@@ -65,16 +65,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Edge().V1alpha1().Registrations().Informer()}, nil
 
 		// Group=plugins.faros.sh, Version=v1alpha1
-	case pluginsv1alpha1.SchemeGroupVersion.WithResource("accesses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Accesses().Informer()}, nil
-	case pluginsv1alpha1.SchemeGroupVersion.WithResource("containerruntimes"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().ContainerRuntimes().Informer()}, nil
-	case pluginsv1alpha1.SchemeGroupVersion.WithResource("monitorings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Monitorings().Informer()}, nil
-	case pluginsv1alpha1.SchemeGroupVersion.WithResource("networks"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Networks().Informer()}, nil
-	case pluginsv1alpha1.SchemeGroupVersion.WithResource("notifications"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Notifications().Informer()}, nil
+	case pluginsv1alpha1.SchemeGroupVersion.WithResource("plugins"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Plugins().Informer()}, nil
 
 		// Group=tenancy.faros.sh, Version=v1alpha1
 	case tenancyv1alpha1.SchemeGroupVersion.WithResource("users"):

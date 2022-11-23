@@ -13,19 +13,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/endpoints/handlers/negotiation"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/strings/slices"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-)
-
-var (
-	scheme       = runtime.NewScheme()
-	codecs       = serializer.NewCodecFactory(scheme)
-	limit  int64 = 1024 * 1024 * 10
 )
 
 // workspacesHandler is a http handler for workspaces operations
@@ -117,13 +110,13 @@ func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) listWorkspaces(ctx context.Context, user tenancyv1alpha1.User) (*tenancyv1alpha1.WorkspaceList, error) {
 	spew.Dump(user)
-	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
+	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
 }
 
 func (s *Service) getWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) (*tenancyv1alpha1.Workspace, error) {
-	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
+	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (s *Service) deleteWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) error {
-	return s.farosClient.Cluster(s.cluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
+	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
 }

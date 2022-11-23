@@ -5,15 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: registrations.edge.faros.sh
+  name: plugins.plugins.faros.sh
 spec:
-  group: edge.faros.sh
+  group: plugins.faros.sh
   names:
-    kind: Registration
-    listKind: RegistrationList
-    plural: registrations
-    singular: registration
-  scope: Namespaced
+    kind: Plugin
+    listKind: PluginList
+    plural: plugins
+    singular: plugin
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Registration is the Schema for the Registration API
+        description: Plugin is the Schema for the plugin API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,16 +37,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: RegistrationSpec defines the desired state of registration
-              token request
+            description: PluginSpec defines the desired state of plugin
+            properties:
+              version:
+                type: string
             type: object
           status:
-            description: RegistrationStatus defines the observed state of Registration
-              object
+            description: PluginStatus defines the observed state of plugin
             properties:
-              ca:
-                description: CA certificate used to validate the agent
-                type: string
               conditions:
                 description: Current processing state of the Agent.
                 items:
@@ -92,9 +90,6 @@ spec:
                   - type
                   type: object
                 type: array
-              token:
-                description: The token used to register the agent
-                type: string
             type: object
         type: object
     served: true

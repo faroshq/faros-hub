@@ -28,11 +28,7 @@ import (
 
 type PluginsV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	AccessesGetter
-	ContainerRuntimesGetter
-	MonitoringsGetter
-	NetworksGetter
-	NotificationsGetter
+	PluginsGetter
 }
 
 // PluginsV1alpha1Client is used to interact with features provided by the plugins.faros.sh group.
@@ -41,24 +37,8 @@ type PluginsV1alpha1Client struct {
 	cluster    v2.Name
 }
 
-func (c *PluginsV1alpha1Client) Accesses(namespace string) AccessInterface {
-	return newAccesses(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) ContainerRuntimes(namespace string) ContainerRuntimeInterface {
-	return newContainerRuntimes(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) Monitorings(namespace string) MonitoringInterface {
-	return newMonitorings(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) Networks(namespace string) NetworkInterface {
-	return newNetworks(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) Notifications(namespace string) NotificationInterface {
-	return newNotifications(c, namespace)
+func (c *PluginsV1alpha1Client) Plugins(namespace string) PluginInterface {
+	return newPlugins(c, namespace)
 }
 
 // NewForConfig creates a new PluginsV1alpha1Client for the given config.

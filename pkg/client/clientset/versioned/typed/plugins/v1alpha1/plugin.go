@@ -30,49 +30,49 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-// AccessesGetter has a method to return a AccessInterface.
+// PluginsGetter has a method to return a PluginInterface.
 // A group's client should implement this interface.
-type AccessesGetter interface {
-	Accesses(namespace string) AccessInterface
+type PluginsGetter interface {
+	Plugins(namespace string) PluginInterface
 }
 
-// AccessInterface has methods to work with Access resources.
-type AccessInterface interface {
-	Create(ctx context.Context, access *v1alpha1.Access, opts v1.CreateOptions) (*v1alpha1.Access, error)
-	Update(ctx context.Context, access *v1alpha1.Access, opts v1.UpdateOptions) (*v1alpha1.Access, error)
-	UpdateStatus(ctx context.Context, access *v1alpha1.Access, opts v1.UpdateOptions) (*v1alpha1.Access, error)
+// PluginInterface has methods to work with Plugin resources.
+type PluginInterface interface {
+	Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.CreateOptions) (*v1alpha1.Plugin, error)
+	Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (*v1alpha1.Plugin, error)
+	UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (*v1alpha1.Plugin, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Access, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AccessList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Plugin, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.PluginList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Access, err error)
-	AccessExpansion
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error)
+	PluginExpansion
 }
 
-// accesses implements AccessInterface
-type accesses struct {
+// plugins implements PluginInterface
+type plugins struct {
 	client  rest.Interface
 	cluster v2.Name
 	ns      string
 }
 
-// newAccesses returns a Accesses
-func newAccesses(c *PluginsV1alpha1Client, namespace string) *accesses {
-	return &accesses{
+// newPlugins returns a Plugins
+func newPlugins(c *PluginsV1alpha1Client, namespace string) *plugins {
+	return &plugins{
 		client:  c.RESTClient(),
 		cluster: c.cluster,
 		ns:      namespace,
 	}
 }
 
-// Get takes name of the access, and returns the corresponding access object, and an error if there is any.
-func (c *accesses) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Access, err error) {
-	result = &v1alpha1.Access{}
+// Get takes name of the plugin, and returns the corresponding plugin object, and an error if there is any.
+func (c *plugins) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Plugin, err error) {
+	result = &v1alpha1.Plugin{}
 	err = c.client.Get().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
 		Do(ctx).
@@ -80,17 +80,17 @@ func (c *accesses) Get(ctx context.Context, name string, options v1.GetOptions) 
 	return
 }
 
-// List takes label and field selectors, and returns the list of Accesses that match those selectors.
-func (c *accesses) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccessList, err error) {
+// List takes label and field selectors, and returns the list of Plugins that match those selectors.
+func (c *plugins) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PluginList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
 	}
-	result = &v1alpha1.AccessList{}
+	result = &v1alpha1.PluginList{}
 	err = c.client.Get().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Do(ctx).
@@ -98,8 +98,8 @@ func (c *accesses) List(ctx context.Context, opts v1.ListOptions) (result *v1alp
 	return
 }
 
-// Watch returns a watch.Interface that watches the requested accesses.
-func (c *accesses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+// Watch returns a watch.Interface that watches the requested plugins.
+func (c *plugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -108,36 +108,36 @@ func (c *accesses) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	return c.client.Get().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Watch(ctx)
 }
 
-// Create takes the representation of a access and creates it.  Returns the server's representation of the access, and an error, if there is any.
-func (c *accesses) Create(ctx context.Context, access *v1alpha1.Access, opts v1.CreateOptions) (result *v1alpha1.Access, err error) {
-	result = &v1alpha1.Access{}
+// Create takes the representation of a plugin and creates it.  Returns the server's representation of the plugin, and an error, if there is any.
+func (c *plugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.CreateOptions) (result *v1alpha1.Plugin, err error) {
+	result = &v1alpha1.Plugin{}
 	err = c.client.Post().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(access).
+		Body(plugin).
 		Do(ctx).
 		Into(result)
 	return
 }
 
-// Update takes the representation of a access and updates it. Returns the server's representation of the access, and an error, if there is any.
-func (c *accesses) Update(ctx context.Context, access *v1alpha1.Access, opts v1.UpdateOptions) (result *v1alpha1.Access, err error) {
-	result = &v1alpha1.Access{}
+// Update takes the representation of a plugin and updates it. Returns the server's representation of the plugin, and an error, if there is any.
+func (c *plugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
+	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
-		Name(access.Name).
+		Resource("plugins").
+		Name(plugin.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(access).
+		Body(plugin).
 		Do(ctx).
 		Into(result)
 	return
@@ -145,27 +145,27 @@ func (c *accesses) Update(ctx context.Context, access *v1alpha1.Access, opts v1.
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *accesses) UpdateStatus(ctx context.Context, access *v1alpha1.Access, opts v1.UpdateOptions) (result *v1alpha1.Access, err error) {
-	result = &v1alpha1.Access{}
+func (c *plugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
+	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
-		Name(access.Name).
+		Resource("plugins").
+		Name(plugin.Name).
 		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(access).
+		Body(plugin).
 		Do(ctx).
 		Into(result)
 	return
 }
 
-// Delete takes name of the access and deletes it. Returns an error if one occurs.
-func (c *accesses) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+// Delete takes name of the plugin and deletes it. Returns an error if one occurs.
+func (c *plugins) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		Name(name).
 		Body(&opts).
 		Do(ctx).
@@ -173,7 +173,7 @@ func (c *accesses) Delete(ctx context.Context, name string, opts v1.DeleteOption
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *accesses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *plugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
 	if listOpts.TimeoutSeconds != nil {
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
@@ -181,7 +181,7 @@ func (c *accesses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, 
 	return c.client.Delete().
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
 		Body(&opts).
@@ -189,13 +189,13 @@ func (c *accesses) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, 
 		Error()
 }
 
-// Patch applies the patch and returns the patched access.
-func (c *accesses) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Access, err error) {
-	result = &v1alpha1.Access{}
+// Patch applies the patch and returns the patched plugin.
+func (c *plugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error) {
+	result = &v1alpha1.Plugin{}
 	err = c.client.Patch(pt).
 		Cluster(c.cluster).
 		Namespace(c.ns).
-		Resource("accesses").
+		Resource("plugins").
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).

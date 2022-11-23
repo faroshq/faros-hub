@@ -23,16 +23,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// Accesses returns a AccessInformer.
-	Accesses() AccessInformer
-	// ContainerRuntimes returns a ContainerRuntimeInformer.
-	ContainerRuntimes() ContainerRuntimeInformer
-	// Monitorings returns a MonitoringInformer.
-	Monitorings() MonitoringInformer
-	// Networks returns a NetworkInformer.
-	Networks() NetworkInformer
-	// Notifications returns a NotificationInformer.
-	Notifications() NotificationInformer
+	// Plugins returns a PluginInformer.
+	Plugins() PluginInformer
 }
 
 type version struct {
@@ -46,27 +38,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// Accesses returns a AccessInformer.
-func (v *version) Accesses() AccessInformer {
-	return &accessInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// ContainerRuntimes returns a ContainerRuntimeInformer.
-func (v *version) ContainerRuntimes() ContainerRuntimeInformer {
-	return &containerRuntimeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Monitorings returns a MonitoringInformer.
-func (v *version) Monitorings() MonitoringInformer {
-	return &monitoringInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Networks returns a NetworkInformer.
-func (v *version) Networks() NetworkInformer {
-	return &networkInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Notifications returns a NotificationInformer.
-func (v *version) Notifications() NotificationInformer {
-	return &notificationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// Plugins returns a PluginInformer.
+func (v *version) Plugins() PluginInformer {
+	return &pluginInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

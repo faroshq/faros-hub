@@ -18,8 +18,8 @@ import (
 
 var kubeConfigAuthKey = "faros"
 
-// UseWorkspacesOptions contains options for configuring faros workspaces
-type UseWorkspacesOptions struct {
+// UseOptions contains options for configuring faros
+type UseOptions struct {
 	*base.Options
 	Name string
 
@@ -27,9 +27,9 @@ type UseWorkspacesOptions struct {
 	modifyConfig func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error
 }
 
-// NewUseWorkspacesOptions returns a new GetWorkspacesOptions.
-func NewUseWorkspacesOptions(streams genericclioptions.IOStreams) *UseWorkspacesOptions {
-	return &UseWorkspacesOptions{
+// NewUseOptions returns a new GetOptions.
+func NewUseOptions(streams genericclioptions.IOStreams) *UseOptions {
+	return &UseOptions{
 		Options: base.NewOptions(streams),
 		modifyConfig: func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error {
 			return clientcmd.ModifyConfig(configAccess, *newConfig, true)
@@ -38,12 +38,12 @@ func NewUseWorkspacesOptions(streams genericclioptions.IOStreams) *UseWorkspaces
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *UseWorkspacesOptions) BindFlags(cmd *cobra.Command) {
+func (o *UseOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *UseWorkspacesOptions) Complete(args []string) error {
+func (o *UseOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (o *UseWorkspacesOptions) Complete(args []string) error {
 }
 
 // Validate validates the SyncOptions are complete and usable.
-func (o *UseWorkspacesOptions) Validate() error {
+func (o *UseOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -66,8 +66,8 @@ func (o *UseWorkspacesOptions) Validate() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-// Run gets workspaces from tenant workspace api
-func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
+// Run gets workspace from tenant workspace api
+func (o *UseOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err

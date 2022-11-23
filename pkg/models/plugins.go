@@ -27,6 +27,7 @@ func (p PluginsList) GetLatest(name string) (Plugin, error) {
 		Name:    name,
 		Version: "v0",
 	}
+
 	found := false
 	for _, p := range p {
 		if p.Name == name && p.Version >= latest.Version {

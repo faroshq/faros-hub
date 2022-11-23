@@ -17,42 +17,10 @@ limitations under the License.
 
 package v1alpha1
 
-// AccessListerExpansion allows custom methods to be added to
-// AccessLister.
-type AccessListerExpansion interface{}
+// PluginListerExpansion allows custom methods to be added to
+// PluginLister.
+type PluginListerExpansion interface{}
 
-// AccessNamespaceListerExpansion allows custom methods to be added to
-// AccessNamespaceLister.
-type AccessNamespaceListerExpansion interface{}
-
-// ContainerRuntimeListerExpansion allows custom methods to be added to
-// ContainerRuntimeLister.
-type ContainerRuntimeListerExpansion interface{}
-
-// ContainerRuntimeNamespaceListerExpansion allows custom methods to be added to
-// ContainerRuntimeNamespaceLister.
-type ContainerRuntimeNamespaceListerExpansion interface{}
-
-// MonitoringListerExpansion allows custom methods to be added to
-// MonitoringLister.
-type MonitoringListerExpansion interface{}
-
-// MonitoringNamespaceListerExpansion allows custom methods to be added to
-// MonitoringNamespaceLister.
-type MonitoringNamespaceListerExpansion interface{}
-
-// NetworkListerExpansion allows custom methods to be added to
-// NetworkLister.
-type NetworkListerExpansion interface{}
-
-// NetworkNamespaceListerExpansion allows custom methods to be added to
-// NetworkNamespaceLister.
-type NetworkNamespaceListerExpansion interface{}
-
-// NotificationListerExpansion allows custom methods to be added to
-// NotificationLister.
-type NotificationListerExpansion interface{}
-
-// NotificationNamespaceListerExpansion allows custom methods to be added to
-// NotificationNamespaceLister.
-type NotificationNamespaceListerExpansion interface{}
+// PluginNamespaceListerExpansion allows custom methods to be added to
+// PluginNamespaceLister.
+type PluginNamespaceListerExpansion interface{}

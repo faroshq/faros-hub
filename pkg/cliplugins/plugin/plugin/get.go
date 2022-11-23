@@ -2,39 +2,38 @@ package plugin
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/spf13/cobra"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
+	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
+	utilprint "github.com/faroshq/faros-hub/pkg/util/print"
 )
 
-// DeleteOptions contains options for configuring faros
-type DeleteOptions struct {
+// GetOptions contains options for configuring faros plugins
+type GetOptions struct {
 	*base.Options
-
 	Name string
 }
 
 // NewGetOptions returns a new GetOptions.
-func NewDeleteOptions(streams genericclioptions.IOStreams) *DeleteOptions {
-	return &DeleteOptions{
+func NewGetOptions(streams genericclioptions.IOStreams) *GetOptions {
+	return &GetOptions{
 		Options: base.NewOptions(streams),
 	}
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *DeleteOptions) BindFlags(cmd *cobra.Command) {
+func (o *GetOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *DeleteOptions) Complete(args []string) error {
+func (o *GetOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func (o *DeleteOptions) Complete(args []string) error {
 }
 
 // Validate validates the SyncOptions are complete and usable.
-func (o *DeleteOptions) Validate() error {
+func (o *GetOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -57,8 +56,8 @@ func (o *DeleteOptions) Validate() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-// Run gets workspaces from tenant workspace api
-func (o *DeleteOptions) Run(ctx context.Context) error {
+// Run gets plugins from tenant workspace api
+func (o *GetOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err
@@ -75,13 +74,33 @@ func (o *DeleteOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	workspace := &tenancyv1alpha1.Workspace{}
+	plugins := &pluginsv1alpha1.PluginList{}
 
-	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
+	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/plugins").Do(ctx).Into(plugins)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Workspace deleted successfully")
-	return nil
+	// drop managed fields
+	for i := range plugins.Items {
+		plugins.Items[i].ObjectMeta.ManagedFields = nil
+	}
+
+	if o.Output == utilprint.FormatTable {
+		table := utilprint.DefaultTable()
+		table.SetHeader([]string{"NAME", "VERSION", "DESCRIPTION"})
+		for _, plugin := range plugins.Items {
+			{
+				table.Append([]string{
+					plugin.Name,
+					plugin.Spec.Version,
+					plugin.Spec.Description,
+				})
+			}
+		}
+		table.Render()
+		return nil
+	}
+
+	return utilprint.PrintWithFormat(plugins, o.Output)
 }
