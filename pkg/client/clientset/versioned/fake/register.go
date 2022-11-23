@@ -18,7 +18,6 @@ limitations under the License.
 package fake
 
 import (
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
@@ -33,7 +32,6 @@ var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
-	accessv1alpha1.AddToScheme,
 	edgev1alpha1.AddToScheme,
 	pluginsv1alpha1.AddToScheme,
 	tenancyv1alpha1.AddToScheme,

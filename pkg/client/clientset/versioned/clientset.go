@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net/http"
 
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/tenancy/v1alpha1"
@@ -60,7 +59,6 @@ func NewClusterForConfig(c *rest.Config) (*Cluster, error) {
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	AccessV1alpha1() accessv1alpha1.AccessV1alpha1Interface
 	EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface
 	PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface
 	TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface
@@ -77,15 +75,9 @@ type Clientset struct {
 // version included in a Clientset.
 type scopedClientset struct {
 	*discovery.DiscoveryClient
-	accessV1alpha1  *accessv1alpha1.AccessV1alpha1Client
 	edgeV1alpha1    *edgev1alpha1.EdgeV1alpha1Client
 	pluginsV1alpha1 *pluginsv1alpha1.PluginsV1alpha1Client
 	tenancyV1alpha1 *tenancyv1alpha1.TenancyV1alpha1Client
-}
-
-// AccessV1alpha1 retrieves the AccessV1alpha1Client
-func (c *Clientset) AccessV1alpha1() accessv1alpha1.AccessV1alpha1Interface {
-	return accessv1alpha1.NewWithCluster(c.accessV1alpha1.RESTClient(), c.cluster)
 }
 
 // EdgeV1alpha1 retrieves the EdgeV1alpha1Client
@@ -147,10 +139,6 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs scopedClientset
 	var err error
-	cs.accessV1alpha1, err = accessv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
 	cs.edgeV1alpha1, err = edgev1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
@@ -184,7 +172,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs scopedClientset
-	cs.accessV1alpha1 = accessv1alpha1.New(c)
 	cs.edgeV1alpha1 = edgev1alpha1.New(c)
 	cs.pluginsV1alpha1 = pluginsv1alpha1.New(c)
 	cs.tenancyV1alpha1 = tenancyv1alpha1.New(c)

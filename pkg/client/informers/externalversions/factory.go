@@ -23,7 +23,6 @@ import (
 	time "time"
 
 	versioned "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
-	access "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/access"
 	edge "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/edge"
 	internalinterfaces "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/internalinterfaces"
 	plugins "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/plugins"
@@ -218,14 +217,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Access() access.Interface
 	Edge() edge.Interface
 	Plugins() plugins.Interface
 	Tenancy() tenancy.Interface
-}
-
-func (f *sharedInformerFactory) Access() access.Interface {
-	return access.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Edge() edge.Interface {

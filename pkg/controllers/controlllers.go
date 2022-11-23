@@ -21,7 +21,6 @@ import (
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
@@ -37,7 +36,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(accessv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(edgev1alpha1.AddToScheme(scheme))
 	utilruntime.Must(workloadv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(kcptenancyv1alpha1.AddToScheme(scheme))

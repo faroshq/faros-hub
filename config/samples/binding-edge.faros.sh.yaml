@@ -1,7 +1,7 @@
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIBinding
 metadata:
-  name: 1edge.faros.sh
+  name: edge.faros.sh
 spec:
   permissionClaims:
   - group: "edge.faros.sh"

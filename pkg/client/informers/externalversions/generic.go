@@ -20,8 +20,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/access/v1alpha1"
-	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
+	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -54,14 +53,10 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=access.faros.sh, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("requests"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Access().V1alpha1().Requests().Informer()}, nil
-
-		// Group=edge.faros.sh, Version=v1alpha1
-	case edgev1alpha1.SchemeGroupVersion.WithResource("agents"):
+	// Group=edge.faros.sh, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("agents"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Edge().V1alpha1().Agents().Informer()}, nil
-	case edgev1alpha1.SchemeGroupVersion.WithResource("registrations"):
+	case v1alpha1.SchemeGroupVersion.WithResource("registrations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Edge().V1alpha1().Registrations().Informer()}, nil
 
 		// Group=plugins.faros.sh, Version=v1alpha1

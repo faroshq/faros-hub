@@ -39,6 +39,8 @@ spec:
           spec:
             description: PluginSpec defines the desired state of plugin
             properties:
+              description:
+                type: string
               version:
                 type: string
             type: object
