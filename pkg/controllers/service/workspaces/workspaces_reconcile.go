@@ -76,10 +76,10 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 				return getOrgClusterAccessName(c.config, w)
 			},
 			deleteClusterRole: func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.ClusterRole) error {
-				return deleteClusterRole(ctx, c.coreClientSet.Cluster(cluster), role)
+				return c.coreClientSet.Cluster(cluster).RbacV1().ClusterRoles().Delete(ctx, role.Name, metav1.DeleteOptions{})
 			},
 			deleteClusterRoleBinding: func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.ClusterRoleBinding) error {
-				return deleteClusterRoleBinding(ctx, c.coreClientSet.Cluster(cluster), roleBinding)
+				return c.coreClientSet.Cluster(cluster).RbacV1().ClusterRoleBindings().Delete(ctx, roleBinding.Name, metav1.DeleteOptions{})
 			},
 			getUserWithPrefixName: func(name string) string {
 				return getUserWithPrefixName(c.config, name)
@@ -186,7 +186,7 @@ func createOrUpdateClusterRole(ctx context.Context, coreClients kubernetes.Inter
 	case err == nil:
 		currentClusterRole.Rules = clusterRole.Rules
 		currentClusterRole.ResourceVersion = ""
-		currentClusterRole.OwnerReferences = mergeOwnerReference(clusterRole.OwnerReferences, originalOwners)
+		currentClusterRole.OwnerReferences = mergeOwnerReference(currentClusterRole.OwnerReferences, originalOwners)
 		_, err := coreClients.RbacV1().ClusterRoles().Update(ctx, currentClusterRole, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update the ClusterRole %s", err)
@@ -199,8 +199,9 @@ func createOrUpdateClusterRole(ctx context.Context, coreClients kubernetes.Inter
 }
 
 func createOrUpdateClusterRoleBinding(ctx context.Context, coreClients kubernetes.Interface, clusterRoleBinding *rbacv1.ClusterRoleBinding) error {
-	currentClusterRoleBinding, err := coreClients.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 	originalOwners := clusterRoleBinding.OwnerReferences
+
+	currentClusterRoleBinding, err := coreClients.RbacV1().ClusterRoleBindings().Get(ctx, clusterRoleBinding.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
 		_, err := coreClients.RbacV1().ClusterRoleBindings().Create(ctx, clusterRoleBinding, metav1.CreateOptions{})
@@ -211,8 +212,8 @@ func createOrUpdateClusterRoleBinding(ctx context.Context, coreClients kubernete
 		currentClusterRoleBinding.RoleRef = clusterRoleBinding.RoleRef
 		currentClusterRoleBinding.Subjects = clusterRoleBinding.Subjects
 		currentClusterRoleBinding.ResourceVersion = ""
-		currentClusterRoleBinding.OwnerReferences = mergeOwnerReference(clusterRoleBinding.OwnerReferences, originalOwners)
-		_, err := coreClients.RbacV1().ClusterRoleBindings().Update(ctx, clusterRoleBinding, metav1.UpdateOptions{})
+		currentClusterRoleBinding.OwnerReferences = mergeOwnerReference(currentClusterRoleBinding.OwnerReferences, originalOwners)
+		_, err := coreClients.RbacV1().ClusterRoleBindings().Update(ctx, currentClusterRoleBinding, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update the ClusterRoleBindings %s", err)
 		}
@@ -221,12 +222,4 @@ func createOrUpdateClusterRoleBinding(ctx context.Context, coreClients kubernete
 	}
 
 	return nil
-}
-
-func deleteClusterRole(ctx context.Context, coreClients kubernetes.Interface, clusterRole *rbacv1.ClusterRole) error {
-	return coreClients.RbacV1().ClusterRoles().Delete(ctx, clusterRole.Name, metav1.DeleteOptions{})
-}
-
-func deleteClusterRoleBinding(ctx context.Context, coreClients kubernetes.Interface, clusterRoleBinding *rbacv1.ClusterRoleBinding) error {
-	return coreClients.RbacV1().ClusterRoleBindings().Delete(ctx, clusterRoleBinding.Name, metav1.DeleteOptions{})
 }

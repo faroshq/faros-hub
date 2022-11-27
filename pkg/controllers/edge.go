@@ -3,39 +3,43 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
+	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
+	farosinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions"
 	"github.com/faroshq/faros-hub/pkg/controllers/tenants/edge/agent"
 	"github.com/faroshq/faros-hub/pkg/controllers/tenants/edge/registration"
 	"github.com/faroshq/faros-hub/pkg/models"
-	"github.com/phayes/freeport"
+	"github.com/kcp-dev/client-go/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/kcp"
 )
 
 // edge controller is running in edge api virtual workspace context
 
 func (c *controllerManager) runEdge(ctx context.Context, plugins models.PluginsList) error {
-	rootRest, err := c.clientFactory.GetRootRestConfig()
-	if err != nil {
-		return err
-	}
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
 	}
 
-	var edgeRest *rest.Config
+	rootRestConfig, err := c.clientFactory.GetRootRestConfig()
+	if err != nil {
+		return err
+	}
+
+	coreClientSet, err := kubernetes.NewForConfig(rootRestConfig)
+	if err != nil {
+		return err
+	}
+
+	var rest *rest.Config
 	// bootstrap rest config for controllers
 	if kcpAPIsGroupPresent(restConfig) {
 		if err := wait.PollImmediateInfinite(time.Second*5, func() (bool, error) {
-			klog.Info("looking up virtual workspace URL - edge.faros.sh")
-			edgeRest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosEdgeAPIExportName)
+			klog.Infof("looking up virtual workspace URL - %s", c.config.ControllersFarosEdgeAPIExportName)
+			rest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosEdgeAPIExportName)
 			if err != nil {
 				return false, nil
 			}
@@ -48,57 +52,39 @@ func (c *controllerManager) runEdge(ctx context.Context, plugins models.PluginsL
 		return fmt.Errorf("kcp APIs group not present in cluster. We don't support non kcp clusters yet")
 	}
 
-	ports, err := freeport.GetFreePorts(2)
+	farosClientSet, err := farosclientset.NewForConfig(rest)
 	if err != nil {
 		return err
 	}
 
-	options := ctrl.Options{
-		Scheme:                  scheme,
-		MetricsBindAddress:      ":" + strconv.Itoa(ports[0]),
-		Port:                    9443,
-		HealthProbeBindAddress:  ":" + strconv.Itoa(ports[1]),
-		LeaderElection:          false,
-		LeaderElectionID:        "edge.faros.sh",
-		LeaderElectionNamespace: "default",
-		LeaderElectionConfig:    edgeRest,
-	}
+	// Must always follow the order. Otherwise informers are not initialized
+	// 1. create shared informer factory
+	// 2. get listers and informers out of the factory in controller constructors
+	// 3. start the factory
+	// 4. wait for the factory to sync.
+	informer := farosinformers.NewSharedInformerFactory(farosClientSet, resyncPeriod)
 
-	mgr, err := kcp.NewClusterAwareManager(edgeRest, options)
-	if err != nil {
-		klog.Error(err, "unable to start manager")
-		return err
-	}
+	ctrlRegistration, err := registration.NewController(
+		c.config,
+		coreClientSet,
+		farosClientSet,
+		informer.Edge().V1alpha1().Registrations(),
+	)
 
-	if err = (&registration.Reconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "registration.edge.faros.sh")
-		return err
-	}
+	ctrlAgent, err := agent.NewController(
+		c.config,
+		coreClientSet,
+		farosClientSet,
+		informer.Edge().V1alpha1().Agents(),
+	)
 
-	if err = (&agent.Reconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Plugins:  plugins,
-		RootRest: rootRest,
-	}).SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller", "agent.edge.faros.sh")
-		return err
-	}
+	informer.Start(ctx.Done())
+	informer.WaitForCacheSync(ctx.Done())
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up health check")
-		return err
-	}
-	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		klog.Error(err, "unable to set up ready check")
-		return err
-	}
+	ctrlRegistration.Start(ctx, 2)
+	ctrlAgent.Start(ctx, 2)
 
-	klog.Info("starting edge manager")
-
-	return mgr.Start(ctx)
+	<-ctx.Done()
+	return nil
 
 }
