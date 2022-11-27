@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	scheme "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -52,17 +51,15 @@ type PluginInterface interface {
 
 // plugins implements PluginInterface
 type plugins struct {
-	client  rest.Interface
-	cluster v2.Name
-	ns      string
+	client rest.Interface
+	ns     string
 }
 
 // newPlugins returns a Plugins
 func newPlugins(c *PluginsV1alpha1Client, namespace string) *plugins {
 	return &plugins{
-		client:  c.RESTClient(),
-		cluster: c.cluster,
-		ns:      namespace,
+		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -70,7 +67,6 @@ func newPlugins(c *PluginsV1alpha1Client, namespace string) *plugins {
 func (c *plugins) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).
@@ -88,7 +84,6 @@ func (c *plugins) List(ctx context.Context, opts v1.ListOptions) (result *v1alph
 	}
 	result = &v1alpha1.PluginList{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -106,7 +101,6 @@ func (c *plugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfa
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -118,7 +112,6 @@ func (c *plugins) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfa
 func (c *plugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.CreateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Post().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,7 +125,6 @@ func (c *plugins) Create(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.C
 func (c *plugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		Name(plugin.Name).
@@ -148,7 +140,6 @@ func (c *plugins) Update(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.U
 func (c *plugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opts v1.UpdateOptions) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		Name(plugin.Name).
@@ -163,7 +154,6 @@ func (c *plugins) UpdateStatus(ctx context.Context, plugin *v1alpha1.Plugin, opt
 // Delete takes name of the plugin and deletes it. Returns an error if one occurs.
 func (c *plugins) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).
@@ -179,7 +169,6 @@ func (c *plugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, l
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
@@ -193,7 +182,6 @@ func (c *plugins) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, l
 func (c *plugins) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Plugin, err error) {
 	result = &v1alpha1.Plugin{}
 	err = c.client.Patch(pt).
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("plugins").
 		Name(name).

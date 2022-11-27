@@ -28,11 +28,14 @@ import (
 	"github.com/faroshq/faros-hub/pkg/models"
 	utilhttp "github.com/faroshq/faros-hub/pkg/util/http"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
+	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 )
 
 var (
 	scheme = runtime.NewScheme()
 )
+
+const resyncPeriod = 10 * time.Hour
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -52,6 +55,7 @@ type controllerManager struct {
 	config        *config.ControllerConfig
 	clientFactory utilkubernetes.ClientFactory
 	bootstraper   bootstrap.Bootstraper
+	kcpClientSet  kcpclientset.ClusterInterface
 }
 
 func New(c *config.ControllerConfig) (Controllers, error) {
@@ -65,7 +69,13 @@ func New(c *config.ControllerConfig) (Controllers, error) {
 		return nil, err
 	}
 
+	kcpClientSet, err := kcpclientset.NewForConfig(c.KCPClusterRestConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	return &controllerManager{
+		kcpClientSet:  kcpClientSet,
 		config:        c,
 		clientFactory: cf,
 		bootstraper:   b,

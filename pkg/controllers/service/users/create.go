@@ -19,6 +19,7 @@ import (
 )
 
 func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, user *tenancyv1alpha1.User, cluster logicalcluster.Name) (ctrl.Result, error) {
+	ctx = logicalcluster.WithCluster(ctx, cluster)
 	// TODO: move to webhook
 	if !controllerutil.ContainsFinalizer(user, finalizerName) {
 		controllerutil.AddFinalizer(user, finalizerName)
@@ -46,7 +47,7 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, use
 	}
 
 	// TODO: Original controller-runtime client discovery is somehow broken. need to debug more
-	_, err := r.CoreClients.Cluster(cluster).CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
+	_, err := r.CoreClients.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return ctrl.Result{}, err
 	}

@@ -2,6 +2,7 @@ package v1alpha1
 
 import (
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,6 +48,9 @@ func (in *Workspace) SetConditions(c conditionsv1alpha1.Conditions) {
 func (in *Workspace) GetConditions() conditionsv1alpha1.Conditions {
 	return in.Status.Conditions
 }
+
+var _ conditions.Getter = &Workspace{}
+var _ conditions.Setter = &Workspace{}
 
 // WorkspaceList contains a list of Workspace
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

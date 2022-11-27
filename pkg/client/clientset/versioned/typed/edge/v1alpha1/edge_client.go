@@ -22,7 +22,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -35,7 +34,6 @@ type EdgeV1alpha1Interface interface {
 // EdgeV1alpha1Client is used to interact with features provided by the edge.faros.sh group.
 type EdgeV1alpha1Client struct {
 	restClient rest.Interface
-	cluster    v2.Name
 }
 
 func (c *EdgeV1alpha1Client) Agents(namespace string) AgentInterface {
@@ -72,7 +70,7 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*EdgeV1alpha1Client,
 	if err != nil {
 		return nil, err
 	}
-	return &EdgeV1alpha1Client{restClient: client}, nil
+	return &EdgeV1alpha1Client{client}, nil
 }
 
 // NewForConfigOrDie creates a new EdgeV1alpha1Client for the given config and
@@ -87,12 +85,7 @@ func NewForConfigOrDie(c *rest.Config) *EdgeV1alpha1Client {
 
 // New creates a new EdgeV1alpha1Client for the given RESTClient.
 func New(c rest.Interface) *EdgeV1alpha1Client {
-	return &EdgeV1alpha1Client{restClient: c}
-}
-
-// NewWithCluster creates a new EdgeV1alpha1Client for the given RESTClient and cluster.
-func NewWithCluster(c rest.Interface, cluster v2.Name) *EdgeV1alpha1Client {
-	return &EdgeV1alpha1Client{restClient: c, cluster: cluster}
+	return &EdgeV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {

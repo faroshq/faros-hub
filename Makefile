@@ -8,6 +8,11 @@ TOOLS_DIR=hack/tools
 TOOLS_GOBIN_DIR := $(abspath $(TOOLS_DIR))
 KO_DOCKER_REPO ?= ${REPO}
 
+CODE_GENERATOR_VER := 2dc1248118a7f2337c6374ff5778c0880e1a4226
+CODE_GENERATOR_BIN := code-generator
+CODE_GENERATOR := $(TOOLS_GOBIN_DIR)/$(CODE_GENERATOR_BIN)-$(CODE_GENERATOR_VER)
+export CODE_GENERATOR # so hack scripts can use it
+
 KUSTOMIZE_VERSION ?= v3.8.7
 CONTROLLER_GEN_VER := v0.10.0
 CONTROLLER_GEN_BIN := controller-gen
@@ -17,6 +22,9 @@ export CONTROLLER_GEN # so hack scripts can use it
 
 #APIEXPORT_PREFIX ?= v$(shell date +'%Y%m%d')
 APIEXPORT_PREFIX = today
+
+$(CODE_GENERATOR):
+	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) github.com/kcp-dev/code-generator $(CODE_GENERATOR_BIN) $(CODE_GENERATOR_VER)
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 $(KUSTOMIZE): ## Download kustomize locally if necessary.
@@ -33,13 +41,14 @@ apiresourceschemas: $(KUSTOMIZE) ## Convert CRDs from config/crds to APIResource
 	$(KUSTOMIZE) build config/crds | kubectl kcp crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml
 	make generate
 
-tools:$(CONTROLLER_GEN)
+tools:$(CONTROLLER_GEN) $(CODE_GENERATOR)
 .PHONY: tools
 
 $(CONTROLLER_GEN):
 	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) sigs.k8s.io/controller-tools/cmd/controller-gen $(CONTROLLER_GEN_BIN) $(CONTROLLER_GEN_VER)
 
-codegen: $(CONTROLLER_GEN) generate ## Run the codegenerators
+codegen: $(CONTROLLER_GEN) $(CODE_GENERATOR) generate ## Run the codegenerators
+	echo $(CODE_GENERATOR)
 	go mod download
 	./hack/update-codegen.sh
 .PHONY: codegen

@@ -7,8 +7,8 @@ import (
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/logicalcluster/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -22,8 +22,9 @@ var finalizerName = "agents.edge.faros.sh/finalizer"
 // Reconciler reconciles a Agent object
 type Reconciler struct {
 	client.Client
-	Scheme  *runtime.Scheme
-	Plugins models.PluginsList
+	RootRest *rest.Config
+	Scheme   *runtime.Scheme
+	Plugins  models.PluginsList
 }
 
 // +kubebuilder:rbac:groups=edge.faros.sh,resources=agent,verbs=get;list;watch;create;update;patch;delete
@@ -78,27 +79,4 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&edgev1alpha1.Agent{}).
 		Complete(r)
-}
-
-// mergeOwnerReference: merge a slice of ownerReference with a given ownerReferences
-func mergeOwnerReference(ownerReferences, newOwnerReferences []metav1.OwnerReference) []metav1.OwnerReference {
-	var merged []metav1.OwnerReference
-
-	merged = append(merged, ownerReferences...)
-
-	for _, ownerReference := range newOwnerReferences {
-		found := false
-		for _, mergedOwnerReference := range merged {
-			if mergedOwnerReference.UID == ownerReference.UID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			merged = append(merged, ownerReference)
-		}
-	}
-
-	return merged
-
 }

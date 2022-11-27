@@ -62,13 +62,13 @@ type AuthenticatorImpl struct {
 	redirectURL   string
 	client        *http.Client
 
-	farosClient farosclient.ClusterInterface
-	coreClient  kubernetes.ClusterInterface
+	farosClient farosclient.Interface
+	coreClient  kubernetes.Interface
 
 	cluster logicalcluster.Name
 }
 
-func NewAuthenticator(cfg *config.APIConfig, coreClient kubernetes.ClusterInterface, farosClient farosclient.ClusterInterface, callbackURLPrefix string) (*AuthenticatorImpl, error) {
+func NewAuthenticator(cfg *config.APIConfig, coreClient kubernetes.Interface, farosClient farosclient.Interface, callbackURLPrefix string) (*AuthenticatorImpl, error) {
 	var client *http.Client
 	var err error
 
@@ -376,6 +376,8 @@ func (a *AuthenticatorImpl) oauth2Config(scopes []string) *oauth2.Config {
 // registerOrUpdateUser will register or update user in the system when user is authenticated
 // TODO: This is not quite right place for this
 func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha1.User) (*tenancyv1alpha1.User, error) {
+	ctx = logicalcluster.WithCluster(ctx, a.cluster)
+
 	if user.Name == "" {
 		for {
 			user.Name = uuid.New().String()
@@ -404,19 +406,19 @@ func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tena
 		}
 
 		current.Labels[UserLabel] = labelEmail
-		return a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().Update(ctx, current, metav1.UpdateOptions{})
+		return a.farosClient.TenancyV1alpha1().Users().Update(ctx, current, metav1.UpdateOptions{})
 	} else {
 		user.Labels = map[string]string{
 			UserLabel: labelEmail,
 		}
-		user, err = a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().Create(ctx, user, metav1.CreateOptions{})
+		user, err = a.farosClient.TenancyV1alpha1().Users().Create(ctx, user, metav1.CreateOptions{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// provision user namespace
-	_, err = a.coreClient.Cluster(a.cluster).CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+	_, err = a.coreClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: user.Name,
 		},
@@ -433,12 +435,14 @@ var (
 )
 
 func (a *AuthenticatorImpl) getUser(ctx context.Context, email string) (*tenancyv1alpha1.User, error) {
+	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(a.config.ControllersTenantWorkspace))
+
 	if !strings.Contains(email, "@") {
 		return nil, fmt.Errorf("invalid email address")
 	}
 
 	labelEmail := strings.Replace(email, "@", "-at-", 1)
-	users, err := a.farosClient.Cluster(a.cluster).TenancyV1alpha1().Users().List(ctx, metav1.ListOptions{
+	users, err := a.farosClient.TenancyV1alpha1().Users().List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", UserLabel, labelEmail),
 	})
 	if err != nil {

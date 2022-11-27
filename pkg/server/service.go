@@ -14,8 +14,6 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	//kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	//workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"github.com/kcp-dev/logicalcluster/v2"
 	"go.uber.org/zap"
@@ -66,9 +64,9 @@ type Service struct {
 	pluginsCluster logicalcluster.Name
 
 	// tunneling tooling
-	kcpClient   kcpclient.ClusterInterface
-	farosClient farosclient.ClusterInterface
-	coreClients kubernetes.ClusterInterface
+	kcpClient   kcpclient.Interface
+	farosClient farosclient.Interface
+	coreClients kubernetes.Interface
 
 	//proxy       *httputil.ReverseProxy
 }
@@ -76,17 +74,17 @@ type Service struct {
 func New(config *config.APIConfig) (*Service, error) {
 	//p := newKubeConfigProxy(config.RestConfig)
 
-	kcpClient, err := kcpclient.NewClusterForConfig(config.KCPClusterRestConfig)
+	kcpClient, err := kcpclient.NewForConfig(config.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	farosClient, err := farosclient.NewClusterForConfig(config.KCPClusterRestConfig)
+	farosClient, err := farosclient.NewForConfig(config.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	coreClient, err := kubernetes.NewClusterForConfig(config.KCPClusterRestConfig)
+	coreClient, err := kubernetes.NewForConfig(config.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}

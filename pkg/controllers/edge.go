@@ -21,6 +21,10 @@ import (
 // edge controller is running in edge api virtual workspace context
 
 func (c *controllerManager) runEdge(ctx context.Context, plugins models.PluginsList) error {
+	rootRest, err := c.clientFactory.GetRootRestConfig()
+	if err != nil {
+		return err
+	}
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
@@ -75,9 +79,10 @@ func (c *controllerManager) runEdge(ctx context.Context, plugins models.PluginsL
 	}
 
 	if err = (&agent.Reconciler{
-		Client:  mgr.GetClient(),
-		Scheme:  mgr.GetScheme(),
-		Plugins: plugins,
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Plugins:  plugins,
+		RootRest: rootRest,
 	}).SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller", "agent.edge.faros.sh")
 		return err

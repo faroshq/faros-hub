@@ -22,7 +22,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -34,7 +33,6 @@ type PluginsV1alpha1Interface interface {
 // PluginsV1alpha1Client is used to interact with features provided by the plugins.faros.sh group.
 type PluginsV1alpha1Client struct {
 	restClient rest.Interface
-	cluster    v2.Name
 }
 
 func (c *PluginsV1alpha1Client) Plugins(namespace string) PluginInterface {
@@ -67,7 +65,7 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*PluginsV1alpha1Clie
 	if err != nil {
 		return nil, err
 	}
-	return &PluginsV1alpha1Client{restClient: client}, nil
+	return &PluginsV1alpha1Client{client}, nil
 }
 
 // NewForConfigOrDie creates a new PluginsV1alpha1Client for the given config and
@@ -82,12 +80,7 @@ func NewForConfigOrDie(c *rest.Config) *PluginsV1alpha1Client {
 
 // New creates a new PluginsV1alpha1Client for the given RESTClient.
 func New(c rest.Interface) *PluginsV1alpha1Client {
-	return &PluginsV1alpha1Client{restClient: c}
-}
-
-// NewWithCluster creates a new PluginsV1alpha1Client for the given RESTClient and cluster.
-func NewWithCluster(c rest.Interface, cluster v2.Name) *PluginsV1alpha1Client {
-	return &PluginsV1alpha1Client{restClient: c, cluster: cluster}
+	return &PluginsV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {

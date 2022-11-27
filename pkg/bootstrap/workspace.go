@@ -18,8 +18,10 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	separatorIndex := strings.LastIndex(workspace, ":")
 	name := workspace[separatorIndex+1:]
 	parent, exists := logicalcluster.New(workspace).Parent()
+	ctx = logicalcluster.WithCluster(ctx, parent)
+
 	if exists {
-		_, err := b.kcpClient.Cluster(parent).TenancyV1alpha1().ClusterWorkspaces().Get(ctx, name, metav1.GetOptions{})
+		_, err := b.kcpClient.TenancyV1alpha1().ClusterWorkspaces().Get(ctx, name, metav1.GetOptions{})
 		if err != nil && (apierrors.IsNotFound(err) || apierrors.IsForbidden(err)) {
 			switch {
 			case apierrors.IsNotFound(err) && parent.String() == string(tenancyv1alpha1.RootWorkspaceTypeName):
@@ -40,7 +42,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	var structuredWorkspaceType tenancyv1alpha1.ClusterWorkspaceTypeReference
-	ws, err := b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
+	ws, err := b.kcpClient.TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -53,7 +55,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	if err := wait.PollImmediate(time.Millisecond*100, time.Second*5, func() (bool, error) {
-		if _, err := b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{}); err != nil {
+		if _, err := b.kcpClient.TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{}); err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, nil
 			}
@@ -67,7 +69,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	// wait for being ready
 	if ws.Status.Phase != tenancyv1alpha1.ClusterWorkspacePhaseReady {
 		if err := wait.PollImmediate(time.Millisecond*500, time.Second*5, func() (bool, error) {
-			ws, err = b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{})
+			ws, err = b.kcpClient.TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}

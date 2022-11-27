@@ -15,13 +15,14 @@ import (
 )
 
 func (r *Reconciler) delete(ctx context.Context, logger logr.Logger, user *tenancyv1alpha1.User, cluster logicalcluster.Name) (ctrl.Result, error) {
+	ctx = logicalcluster.WithCluster(ctx, cluster)
 	namespace := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: user.Name,
 		},
 	}
 
-	err := r.CoreClients.Cluster(cluster).CoreV1().Namespaces().Delete(ctx, namespace.Name, metav1.DeleteOptions{})
+	err := r.CoreClients.CoreV1().Namespaces().Delete(ctx, namespace.Name, metav1.DeleteOptions{})
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		return ctrl.Result{}, err
 	}

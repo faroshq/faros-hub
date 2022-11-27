@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 
+	kcpclienthelper "github.com/kcp-dev/apimachinery/pkg/client"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	"github.com/kcp-dev/logicalcluster/v2"
@@ -13,7 +14,7 @@ import (
 )
 
 type ClientFactory interface {
-	GetRootKCPClient() (kcpclient.ClusterInterface, error)
+	GetRootKCPClient() (kcpclient.Interface, error)
 
 	GetRootRestConfig() (*rest.Config, error)
 	GetWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error)
@@ -22,11 +23,11 @@ type ClientFactory interface {
 
 type clientFactory struct {
 	rest             *rest.Config
-	kcpClusterClient kcpclient.ClusterInterface
+	kcpClusterClient kcpclient.Interface
 }
 
 func NewClientFactory(config *rest.Config) (*clientFactory, error) {
-	client, err := kcpclient.NewClusterForConfig(config)
+	client, err := kcpclient.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -36,12 +37,12 @@ func NewClientFactory(config *rest.Config) (*clientFactory, error) {
 	}, nil
 }
 
-func (c *clientFactory) GetRootKCPClient() (kcpclient.ClusterInterface, error) {
+func (c *clientFactory) GetRootKCPClient() (kcpclient.Interface, error) {
 	clusterConfig, err := c.getRootRestConfig()
 	if err != nil {
 		return nil, err
 	}
-	return kcpclient.NewClusterForConfig(clusterConfig)
+	return kcpclient.NewForConfig(clusterConfig)
 }
 
 func (c *clientFactory) GetRootRestConfig() (*rest.Config, error) {
@@ -65,7 +66,7 @@ func (c *clientFactory) GetWorkspaceRestConfig(ctx context.Context, workspace st
 	u.Path = cluster.Path()
 	r.Host = u.String()
 
-	return r, nil
+	return kcpclienthelper.SetMultiClusterRoundTripper(rest.CopyConfig(r)), nil
 }
 
 func (c *clientFactory) GetChildWorkspaceRestConfig(ctx context.Context, workspace string) (*rest.Config, error) {
@@ -88,7 +89,7 @@ func (c *clientFactory) GetChildWorkspaceRestConfig(ctx context.Context, workspa
 	u.Path = parent.Path()
 	r.Host = u.String()
 
-	return r, nil
+	return kcpclienthelper.SetMultiClusterRoundTripper(rest.CopyConfig(r)), nil
 }
 
 func (c *clientFactory) getRootRestConfig() (*rest.Config, error) {
@@ -100,5 +101,6 @@ func (c *clientFactory) getRootRestConfig() (*rest.Config, error) {
 	u.Path = ""
 	clusterConfig.Host = u.String()
 	clusterConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-	return clusterConfig, nil
+
+	return kcpclienthelper.SetMultiClusterRoundTripper(rest.CopyConfig(clusterConfig)), nil
 }

@@ -28,7 +28,7 @@ type Reconciler struct {
 	client.Client
 	Scheme      *runtime.Scheme
 	Config      *config.ControllerConfig
-	CoreClients kubernetes.ClusterInterface
+	CoreClients kubernetes.Interface
 }
 
 // Reconcile reconciles an object

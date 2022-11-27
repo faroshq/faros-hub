@@ -1,3 +1,4 @@
+# TODO: Construct this from plugins list and expose into workspace
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIBinding
 metadata:
@@ -7,4 +8,9 @@ spec:
     workspace:
       exportName: v20221123.systemds.services.plugins.faros.sh
       path: root:faros:service:plugins
-
+  permissionClaims:
+  - group: "services.plugins.faros.sh"
+    resource: "systemds"
+    state: Accepted
+    all: true
+    identityHash: e12721b4c1db51c7249bf413a4174599cefb0895e689a0ff71ec2f0d25b26bcc

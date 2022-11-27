@@ -44,6 +44,8 @@ func newPluginStore() *pluginStore {
 }
 
 func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.PluginsList, error) {
+	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(b.config.ControllersPluginsWorkspace))
+
 	path := b.config.PluginsDir
 	store := newPluginStore()
 
@@ -51,8 +53,6 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 	if err != nil {
 		return nil, err
 	}
-
-	cluster := logicalcluster.New(b.config.ControllersPluginsWorkspace)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(files))
@@ -86,7 +86,7 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 				return fmt.Errorf("failed to unmarshal API resource schema for plugin %q: %w", name, err)
 			}
 
-			_, err = b.kcpClient.Cluster(cluster).ApisV1alpha1().APIResourceSchemas().Create(ctx, &schema, metav1.CreateOptions{})
+			_, err = b.kcpClient.ApisV1alpha1().APIResourceSchemas().Create(ctx, &schema, metav1.CreateOptions{})
 			if err != nil && apierrors.IsConflict(err) {
 				return fmt.Errorf("failed to create API resource schema for plugin %q: %w", name, err)
 			}
@@ -103,7 +103,7 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 				return fmt.Errorf("failed to unmarshal API export schema for plugin %q: %w", name, err)
 			}
 
-			_, err = b.kcpClient.Cluster(cluster).ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
+			_, err = b.kcpClient.ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
 			if err != nil && apierrors.IsConflict(err) {
 				return fmt.Errorf("failed to create API export schema for plugin %q: %w", name, err)
 			}

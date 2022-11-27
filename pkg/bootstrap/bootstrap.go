@@ -28,7 +28,7 @@ type Bootstraper interface {
 type bootstrap struct {
 	config *config.ControllerConfig
 
-	kcpClient     kcpclient.ClusterInterface
+	kcpClient     kcpclient.Interface
 	clientFactory utilkubernetes.ClientFactory
 }
 
@@ -43,7 +43,7 @@ func New(config *config.ControllerConfig) (*bootstrap, error) {
 		return nil, err
 	}
 
-	client, err := kcpclient.NewClusterForConfig(rootRest)
+	client, err := kcpclient.NewForConfig(rootRest)
 	if err != nil {
 		return nil, err
 	}

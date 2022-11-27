@@ -13,13 +13,14 @@ import (
 	"k8s.io/klog/v2"
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
+	"github.com/kcp-dev/logicalcluster/v2"
 )
 
 // pluginsHandler is a http handler for plugins operations
 // GET -  faros.sh/plugins - list all plugins for users
 // Plugins are global, so we don't care about the user
 func (s *Service) pluginsHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx := logicalcluster.WithCluster(r.Context(), s.pluginsCluster)
 
 	authenticated, _, err := s.authenticator.Authenticate(r)
 	if err != nil {
@@ -58,14 +59,14 @@ func (s *Service) pluginsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) listPlugins(ctx context.Context) (*pluginsv1alpha1.PluginList, error) {
-	exports, err := s.kcpClient.Cluster(s.pluginsCluster).ApisV1alpha1().APIExports().List(ctx, metav1.ListOptions{})
+	exports, err := s.kcpClient.ApisV1alpha1().APIExports().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 	var plugins pluginsv1alpha1.PluginList
 	for _, export := range exports.Items {
 		// description is from apiresourceschema
-		schema, err := s.kcpClient.Cluster(s.pluginsCluster).ApisV1alpha1().APIResourceSchemas().Get(ctx, export.Name, metav1.GetOptions{})
+		schema, err := s.kcpClient.ApisV1alpha1().APIResourceSchemas().Get(ctx, export.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -105,7 +106,9 @@ func (s *Service) listPlugins(ctx context.Context) (*pluginsv1alpha1.PluginList,
 }
 
 func (s *Service) getPlugin(ctx context.Context, name string) (*pluginsv1alpha1.Plugin, error) {
-	export, err := s.kcpClient.Cluster(s.pluginsCluster).ApisV1alpha1().APIExports().Get(ctx, name, metav1.GetOptions{})
+	ctx = logicalcluster.WithCluster(ctx, s.pluginsCluster)
+
+	export, err := s.kcpClient.ApisV1alpha1().APIExports().Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

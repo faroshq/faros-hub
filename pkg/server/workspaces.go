@@ -27,7 +27,7 @@ import (
 // DELETE - faros.sh/workspaces/<workspace> - delete a workspace
 // POST - faros.sh/workspaces - create new workspace
 func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx := logicalcluster.WithCluster(r.Context(), logicalcluster.New(s.config.ControllersTenantWorkspace))
 
 	authenticated, user, err := s.authenticator.Authenticate(r)
 	if err != nil {
@@ -82,8 +82,7 @@ func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
 			request.Spec.Members = append(request.Spec.Members, user.Spec.Email)
 		}
 
-		cluster := logicalcluster.New(s.config.ControllersTenantWorkspace)
-		workspace, err := s.farosClient.Cluster(cluster).TenancyV1alpha1().Workspaces(user.Name).Create(ctx, request, metav1.CreateOptions{})
+		workspace, err := s.farosClient.TenancyV1alpha1().Workspaces(user.Name).Create(ctx, request, metav1.CreateOptions{})
 		if err != nil {
 			responsewriters.ErrorNegotiated(err, codecs, schema.GroupVersion{}, w, r)
 			return
@@ -109,14 +108,13 @@ func (s *Service) workspacesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) listWorkspaces(ctx context.Context, user tenancyv1alpha1.User) (*tenancyv1alpha1.WorkspaceList, error) {
-	spew.Dump(user)
-	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
+	return s.farosClient.TenancyV1alpha1().Workspaces(user.Name).List(ctx, metav1.ListOptions{})
 }
 
 func (s *Service) getWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) (*tenancyv1alpha1.Workspace, error) {
-	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
+	return s.farosClient.TenancyV1alpha1().Workspaces(user.Name).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (s *Service) deleteWorkspace(ctx context.Context, user tenancyv1alpha1.User, name string) error {
-	return s.farosClient.Cluster(s.tenantsCluster).TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
+	return s.farosClient.TenancyV1alpha1().Workspaces(user.Name).Delete(ctx, name, metav1.DeleteOptions{})
 }

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/models"
 	"github.com/go-logr/logr"
@@ -24,13 +25,6 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, age
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	//registrationOwnersReferences := []metav1.OwnerReference{{
-	//////////	APIVersion: workloadv1alpha1.SchemeGroupVersion.String(),
-	////////////////////	Kind:       edgev1alpha1.RegistrationKind,
-	////////////////////	Name:       agent.Name,
-	//////////	UID:        agent.UID,
-	//}}
-
 	// Iterate plugins and see if they are available and create instances of them
 	for _, plugin := range agent.Spec.Plugins {
 
@@ -47,7 +41,10 @@ func (r *Reconciler) createOrUpdate(ctx context.Context, logger logr.Logger, age
 				Name:    plugin.Name,
 				Version: plugin.Version,
 			}) {
-				// Create a registration for each plugin
+				spew.Dump(models.Plugin{
+					Name:    plugin.Name,
+					Version: plugin.Version,
+				})
 			} else {
 				// Mark the plugin as unavailable
 				conditions.MarkFalse(agent, conditionsv1alpha1.ReadyCondition, "PluginUnavailable", "Plugin %s is not available", plugin.Name)
