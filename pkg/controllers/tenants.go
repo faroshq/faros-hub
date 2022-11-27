@@ -7,6 +7,7 @@ import (
 
 	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	farosinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions"
+	"github.com/faroshq/faros-hub/pkg/controllers/service/users"
 	"github.com/faroshq/faros-hub/pkg/controllers/service/workspaces"
 	"github.com/kcp-dev/client-go/kubernetes"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,8 +18,6 @@ import (
 // runSystem controller is running in system workspace and is responsible for
 // managing workspaces and tenants
 func (c *controllerManager) runSystem(ctx context.Context) error {
-	//cluster := logicalcluster.New(c.config.ControllersWorkspace)
-
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
 	if err != nil {
 		return err
@@ -64,7 +63,7 @@ func (c *controllerManager) runSystem(ctx context.Context) error {
 	// 4. wait for the factory to sync.
 	informer := farosinformers.NewSharedInformerFactory(farosClientSet, resyncPeriod)
 
-	ctrl, err := workspaces.NewController(
+	ctrlWorkspaces, err := workspaces.NewController(
 		c.config,
 		c.kcpClientSet, // root client to create bindings and workspaces
 		coreClientSet,
@@ -75,10 +74,21 @@ func (c *controllerManager) runSystem(ctx context.Context) error {
 		return err
 	}
 
+	ctrlUsers, err := users.NewController(
+		c.config,
+		coreClientSet,
+		farosClientSet,
+		informer.Tenancy().V1alpha1().Users(),
+	)
+	if err != nil {
+		return err
+	}
+
 	informer.Start(ctx.Done())
 	informer.WaitForCacheSync(ctx.Done())
 
-	ctrl.Start(ctx, 2)
+	ctrlWorkspaces.Start(ctx, 2)
+	ctrlUsers.Start(ctx, 2)
 
 	<-ctx.Done()
 	return nil

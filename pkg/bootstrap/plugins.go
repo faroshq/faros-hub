@@ -44,6 +44,7 @@ func newPluginStore() *pluginStore {
 }
 
 func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.PluginsList, error) {
+	logger := klog.FromContext(ctx)
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(b.config.ControllersPluginsWorkspace))
 
 	path := b.config.PluginsDir
@@ -51,7 +52,8 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		return nil, err
+		logger.Error(err, "failed to read plugins directory. No plugins will be served")
+		return nil, nil
 	}
 
 	wg := &sync.WaitGroup{}

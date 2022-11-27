@@ -6,6 +6,7 @@ import (
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 func getWorkspaceName(config *config.ControllerConfig, w *tenancyv1alpha1.Workspace) string {
@@ -44,5 +45,15 @@ func mergeOwnerReference(ownerReferences, newOwnerReferences []metav1.OwnerRefer
 	}
 
 	return merged
+}
 
+func getWorkspaceOwnersReference(workspace *tenancyv1alpha1.Workspace) []metav1.OwnerReference {
+	return []metav1.OwnerReference{{
+		APIVersion:         tenancyv1alpha1.SchemeGroupVersion.String(),
+		Kind:               tenancyv1alpha1.WorkspaceKind,
+		Name:               workspace.Name,
+		BlockOwnerDeletion: pointer.BoolPtr(true),
+		Controller:         pointer.BoolPtr(true),
+		UID:                workspace.UID,
+	}}
 }

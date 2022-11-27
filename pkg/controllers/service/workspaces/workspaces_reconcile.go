@@ -13,7 +13,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -172,17 +171,6 @@ func (c *Controller) deleteFarosWorkspace(ctx context.Context, cluster logicalcl
 	}
 
 	return c.kcpClientSet.Cluster(cluster).TenancyV1beta1().Workspaces().Delete(ctx, ws.Name, metav1.DeleteOptions{})
-}
-
-func getWorkspaceOwnersReference(workspace *tenancyv1alpha1.Workspace) []metav1.OwnerReference {
-	return []metav1.OwnerReference{{
-		APIVersion:         tenancyv1alpha1.SchemeGroupVersion.String(),
-		Kind:               tenancyv1alpha1.WorkspaceKind,
-		Name:               workspace.Name,
-		BlockOwnerDeletion: pointer.BoolPtr(true),
-		Controller:         pointer.BoolPtr(true),
-		UID:                workspace.UID,
-	}}
 }
 
 func createOrUpdateClusterRole(ctx context.Context, coreClients kubernetes.Interface, clusterRole *rbacv1.ClusterRole) error {
