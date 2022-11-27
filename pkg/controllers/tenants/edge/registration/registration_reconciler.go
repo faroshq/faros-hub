@@ -185,7 +185,7 @@ func createOrUpdateRoleBinding(ctx context.Context, coreClients kubernetes.Inter
 	currentRoleBinding, err := coreClients.RbacV1().RoleBindings(roleBinding.Namespace).Get(ctx, roleBinding.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
-		_, err := coreClients.RbacV1().RoleBindings(roleBinding.Namespace).Create(ctx, currentRoleBinding, metav1.CreateOptions{})
+		_, err := coreClients.RbacV1().RoleBindings(roleBinding.Namespace).Create(ctx, roleBinding, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("failed to create the RoleBindings %s", err)
 		}
