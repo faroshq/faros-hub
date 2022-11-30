@@ -5,8 +5,6 @@ import (
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v2"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -30,20 +28,11 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 				return finalizerName
 			},
 		},
-		&userCreateReconciler{
-			createNamespace: func(ctx context.Context, namespace *corev1.Namespace) error {
-				_, err := c.coreClientSet.Cluster(cluster).CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
-				return err
-			},
-		},
+		&userCreateReconciler{},
 	}
 
 	deleteReconcilers := []reconciler{
-		&userDeleteReconciler{
-			deleteNamespace: func(ctx context.Context, namespace *corev1.Namespace) error {
-				return c.coreClientSet.Cluster(cluster).CoreV1().Namespaces().Delete(ctx, namespace.Name, metav1.DeleteOptions{})
-			},
-		},
+		&userDeleteReconciler{},
 		&finalizerRemoveReconciler{
 			getFinalizerName: func() string {
 				return finalizerName

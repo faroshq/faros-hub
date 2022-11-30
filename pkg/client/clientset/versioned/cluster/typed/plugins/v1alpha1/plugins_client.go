@@ -34,6 +34,7 @@ import (
 type PluginsV1alpha1ClusterInterface interface {
 	PluginsV1alpha1ClusterScoper
 	PluginsClusterGetter
+	RequestsClusterGetter
 }
 
 type PluginsV1alpha1ClusterScoper interface {
@@ -54,6 +55,10 @@ func (c *PluginsV1alpha1ClusterClient) Cluster(name logicalcluster.Name) plugins
 
 func (c *PluginsV1alpha1ClusterClient) Plugins() PluginClusterInterface {
 	return &pluginsClusterInterface{clientCache: c.clientCache}
+}
+
+func (c *PluginsV1alpha1ClusterClient) Requests() RequestClusterInterface {
+	return &requestsClusterInterface{clientCache: c.clientCache}
 }
 // NewForConfig creates a new PluginsV1alpha1ClusterClient for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),

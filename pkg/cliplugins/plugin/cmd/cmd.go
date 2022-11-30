@@ -38,6 +38,28 @@ func New(streams genericclioptions.IOStreams) (*cobra.Command, error) {
 		},
 	}
 
+	enableOptions := plugin.NewEnableOptions(streams)
+	enableCmd := &cobra.Command{
+		Use:          "enable",
+		Short:        "Enable a plugins",
+		Aliases:      []string{"request"},
+		SilenceUsage: true,
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := enableOptions.Complete(args); err != nil {
+				return err
+			}
+
+			if err := enableOptions.Validate(); err != nil {
+				return err
+			}
+
+			return enableOptions.Run(c.Context())
+		},
+	}
+
+	enableOptions.BindFlags(enableCmd)
+	cmd.AddCommand(enableCmd)
+
 	getOptions.BindFlags(getCmd)
 	cmd.AddCommand(getCmd)
 

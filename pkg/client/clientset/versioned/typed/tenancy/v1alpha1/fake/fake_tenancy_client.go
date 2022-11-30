@@ -31,8 +31,8 @@ func (c *FakeTenancyV1alpha1) Users() v1alpha1.UserInterface {
 	return &FakeUsers{c}
 }
 
-func (c *FakeTenancyV1alpha1) Workspaces(namespace string) v1alpha1.WorkspaceInterface {
-	return &FakeWorkspaces{c, namespace}
+func (c *FakeTenancyV1alpha1) Workspaces() v1alpha1.WorkspaceInterface {
+	return &FakeWorkspaces{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

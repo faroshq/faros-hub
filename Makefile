@@ -70,9 +70,13 @@ setup-kind:
 
 delete-kind:
 	./hack/dev/delete-kind.sh
+	rm -rf dev/database.sqlite3
 
 run-with-oidc:
 	./hack/dev/run-with-oidc.sh
 
 images:
 	KO_DOCKER_REPO=${KO_DOCKER_REPO} ko build --sbom=none -B --platform=linux/amd64 -t latest ./cmd/*
+
+show-sqlite-database:
+	sqlitebrowser dev/database.sqlite3

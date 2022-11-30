@@ -13,29 +13,20 @@ import (
 	"net/http"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/coreos/go-oidc"
-	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/models"
+	"github.com/faroshq/faros-hub/pkg/store"
 	"github.com/golang-jwt/jwt/request"
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
-	"github.com/kcp-dev/logicalcluster/v2"
 	"golang.org/x/oauth2"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	utiltls "github.com/faroshq/faros-hub/pkg/util/tls"
-
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-)
-
-const (
-	// UserLabel is the label used to identify the user
-	UserLabel = "faros.sh/user"
+	utiltls "github.com/faroshq/faros-hub/pkg/util/tls"
 )
 
 // Authenticator authenticator is used to authenticate and handle all authentication related tasks
@@ -45,9 +36,9 @@ type Authenticator interface {
 	// OIDCCallback will handle OIDC callback
 	OIDCCallback(w http.ResponseWriter, r *http.Request)
 	// Authenticate will authenticate the request if user already exists
-	Authenticate(r *http.Request) (authenticated bool, user *tenancyv1alpha1.User, err error)
+	Authenticate(r *http.Request) (authenticated bool, user *models.User, err error)
 	// ParseJWTToken will parse the JWT token and return the user
-	ParseJWTToken(ctx context.Context, token string) (user *tenancyv1alpha1.User, err error)
+	ParseJWTToken(ctx context.Context, token string) (user *models.User, err error)
 }
 
 // Static check
@@ -57,18 +48,14 @@ type AuthenticatorImpl struct {
 	config *config.APIConfig
 
 	oAuthSessions *sessions.CookieStore
+	store         store.Store
 	provider      *oidc.Provider
 	verifier      *oidc.IDTokenVerifier
 	redirectURL   string
 	client        *http.Client
-
-	farosClient farosclient.Interface
-	coreClient  kubernetes.Interface
-
-	cluster logicalcluster.Name
 }
 
-func NewAuthenticator(cfg *config.APIConfig, coreClient kubernetes.Interface, farosClient farosclient.Interface, callbackURLPrefix string) (*AuthenticatorImpl, error) {
+func NewAuthenticator(cfg *config.APIConfig, store store.Store, callbackURLPrefix string) (*AuthenticatorImpl, error) {
 	var client *http.Client
 	var err error
 
@@ -110,14 +97,12 @@ func NewAuthenticator(cfg *config.APIConfig, coreClient kubernetes.Interface, fa
 
 	da := &AuthenticatorImpl{
 		config:        cfg,
-		farosClient:   farosClient,
-		coreClient:    coreClient,
+		store:         store,
 		verifier:      verifier,
 		provider:      provider,
 		client:        client,
 		redirectURL:   redirectURL,
 		oAuthSessions: sessions.NewCookieStore([]byte(cfg.OIDCAuthSessionKey)),
-		cluster:       logicalcluster.New(cfg.ControllersTenantWorkspace),
 	}
 	return da, nil
 }
@@ -239,11 +224,7 @@ func (a *AuthenticatorImpl) OIDCCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = a.registerOrUpdateUser(ctx, &tenancyv1alpha1.User{
-		Spec: tenancyv1alpha1.UserSpec{
-			Email: claims.Email,
-		},
-	})
+	_, err = a.registerOrUpdateUser(ctx, claims.Email)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to register user: %v", err), http.StatusInternalServerError)
 		return
@@ -269,8 +250,7 @@ func (a *AuthenticatorImpl) OIDCCallback(w http.ResponseWriter, r *http.Request)
 
 }
 
-func (a *AuthenticatorImpl) Authenticate(r *http.Request) (authenticated bool, user *tenancyv1alpha1.User, err error) {
-
+func (a *AuthenticatorImpl) Authenticate(r *http.Request) (authenticated bool, user *models.User, err error) {
 	// Trying to authenticate via URL query (websocket for SSH/logs, SSE)
 	if urlQueryToken := r.URL.Query().Get("_t"); urlQueryToken != "" {
 		user, err = a.ParseJWTToken(r.Context(), urlQueryToken)
@@ -307,7 +287,7 @@ func (a *AuthenticatorImpl) Authenticate(r *http.Request) (authenticated bool, u
 }
 
 // ParseJWTToken validates token's validity and returns models.User that the token belongs to
-func (a *AuthenticatorImpl) ParseJWTToken(ctx context.Context, token string) (user *tenancyv1alpha1.User, err error) {
+func (a *AuthenticatorImpl) ParseJWTToken(ctx context.Context, token string) (user *models.User, err error) {
 	idToken, err := a.verifier.Verify(ctx, token)
 	if err != nil {
 		return nil, err
@@ -374,87 +354,38 @@ func (a *AuthenticatorImpl) oauth2Config(scopes []string) *oauth2.Config {
 }
 
 // registerOrUpdateUser will register or update user in the system when user is authenticated
-// TODO: This is not quite right place for this
-func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, user *tenancyv1alpha1.User) (*tenancyv1alpha1.User, error) {
-	ctx = logicalcluster.WithCluster(ctx, a.cluster)
-
-	if user.Name == "" {
-		for {
-			user.Name = uuid.New().String()
-			// HACK: we can't start with digit for now. This will change in the future
-			if !unicode.IsDigit(rune(user.Name[0])) {
-				break
-			}
-		}
-	}
-
-	// we will be selecting based on labels, but k8s does not allow symbols like '@' in labels
-	// so we will replace it with '-at-' checking before if only single @ exists
-
-	current, err := a.getUser(ctx, user.Spec.Email)
-	if err != nil && err != errUserNotFound {
+func (a *AuthenticatorImpl) registerOrUpdateUser(ctx context.Context, email string) (*models.User, error) {
+	current, err := a.getUser(ctx, email)
+	if err != nil && err != store.ErrRecordNotFound {
 		return nil, err
 	}
-
-	// TODO: Duplicate with f below
-	labelEmail := strings.Replace(user.Spec.Email, "@", "-at-", 1)
 
 	if current != nil {
-		current.Spec = user.Spec
-		if current.Labels == nil {
-			current.Labels = make(map[string]string)
-		}
-
-		current.Labels[UserLabel] = labelEmail
-		return a.farosClient.TenancyV1alpha1().Users().Update(ctx, current, metav1.UpdateOptions{})
+		// no update of any kind for now
+		return current, nil
 	} else {
-		user.Labels = map[string]string{
-			UserLabel: labelEmail,
-		}
-		user, err = a.farosClient.TenancyV1alpha1().Users().Create(ctx, user, metav1.CreateOptions{})
-		if err != nil {
-			return nil, err
-		}
+		// create the user
+		return a.store.CreateUser(ctx, models.User{
+			Email: email,
+			User: tenancyv1alpha1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: uuid.New().String(),
+				},
+				Spec: tenancyv1alpha1.UserSpec{
+					Email: email,
+				},
+			},
+		})
 	}
-
-	// provision user namespace
-	_, err = a.coreClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: user.Name,
-		},
-	}, metav1.CreateOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return user, nil
 }
 
-var (
-	errUserNotFound       = errors.New("user not found")
-	errMultipleUsersFound = errors.New("multiple users found")
-)
-
-func (a *AuthenticatorImpl) getUser(ctx context.Context, email string) (*tenancyv1alpha1.User, error) {
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(a.config.ControllersTenantWorkspace))
-
-	if !strings.Contains(email, "@") {
-		return nil, fmt.Errorf("invalid email address")
-	}
-
-	labelEmail := strings.Replace(email, "@", "-at-", 1)
-	users, err := a.farosClient.TenancyV1alpha1().Users().List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", UserLabel, labelEmail),
+func (a *AuthenticatorImpl) getUser(ctx context.Context, email string) (*models.User, error) {
+	user, err := a.store.GetUser(ctx, models.User{
+		Email: email,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	switch len(users.Items) {
-	case 0:
-		return nil, errUserNotFound
-	case 1:
-		return &users.Items[0], nil
-	default:
-		return nil, errMultipleUsersFound
-	}
+	return user, nil
 }

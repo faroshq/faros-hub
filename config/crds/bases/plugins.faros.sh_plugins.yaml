@@ -5,15 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: containerruntimes.plugins.faros.sh
+  name: plugins.plugins.faros.sh
 spec:
   group: plugins.faros.sh
   names:
-    kind: ContainerRuntime
-    listKind: ContainerRuntimeList
-    plural: containerruntimes
-    singular: containerruntime
-  scope: Namespaced
+    kind: Plugin
+    listKind: PluginList
+    plural: plugins
+    singular: plugin
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ContainerRuntime is the Schema for the plugin API
+        description: Plugin is the Schema for the plugin API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,56 +37,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: ContainerRuntimeStatus defines the observed state of plugin
+            description: PluginSpec defines the desired state of plugin
             properties:
-              conditions:
-                description: Current processing state of the Agent.
-                items:
-                  description: Condition defines an observation of a object operational
-                    state.
-                  properties:
-                    lastTransitionTime:
-                      description: Last time the condition transitioned from one status
-                        to another. This should be when the underlying condition changed.
-                        If that is not known, then using the time when the API field
-                        changed is acceptable.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A human readable message indicating details about
-                        the transition. This field may be empty.
-                      type: string
-                    reason:
-                      description: The reason for the condition's last transition
-                        in CamelCase. The specific API may choose whether or not this
-                        field is considered a guaranteed API. This field may not be
-                        empty.
-                      type: string
-                    severity:
-                      description: Severity provides an explicit classification of
-                        Reason code, so the users or machines can immediately understand
-                        the current situation and act accordingly. The Severity field
-                        MUST be set only when Status=False.
-                      type: string
-                    status:
-                      description: Status of the condition, one of True, False, Unknown.
-                      type: string
-                    type:
-                      description: Type of condition in CamelCase or in foo.example.com/CamelCase.
-                        Many .condition.type values are consistent across resources
-                        like Available, but because arbitrary conditions can be useful
-                        (see .node.status.conditions), the ability to deconflict is
-                        important.
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - status
-                  - type
-                  type: object
-                type: array
+              description:
+                type: string
+              version:
+                type: string
             type: object
           status:
-            description: ContainerRuntimeStatus defines the observed state of plugin
+            description: PluginStatus defines the observed state of plugin
             properties:
               conditions:
                 description: Current processing state of the Agent.

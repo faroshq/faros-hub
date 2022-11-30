@@ -92,7 +92,7 @@ func (o *CreateOptions) Run(ctx context.Context) error {
 			APIVersion: tenancyv1alpha1.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: o.Name,
+			Name: o.Name, // this will get migrated into the label.
 		},
 		Spec: tenancyv1alpha1.WorkspaceSpec{
 			Description: o.Description,

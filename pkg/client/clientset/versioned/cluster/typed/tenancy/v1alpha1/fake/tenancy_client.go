@@ -67,6 +67,6 @@ func (c *TenancyV1alpha1Client) Users() tenancyv1alpha1.UserInterface {
 	return &usersClient{Fake: c.Fake, Cluster: c.Cluster}
 }
 
-func (c *TenancyV1alpha1Client) Workspaces(namespace string) tenancyv1alpha1.WorkspaceInterface {
-	return &workspacesClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+func (c *TenancyV1alpha1Client) Workspaces() tenancyv1alpha1.WorkspaceInterface {
+	return &workspacesClient{Fake: c.Fake, Cluster: c.Cluster}
 }

@@ -7,6 +7,7 @@ import (
 
 	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	farosinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions"
+	"github.com/faroshq/faros-hub/pkg/controllers/service/bridge"
 	"github.com/faroshq/faros-hub/pkg/controllers/service/users"
 	"github.com/faroshq/faros-hub/pkg/controllers/service/workspaces"
 	"github.com/kcp-dev/client-go/kubernetes"
@@ -87,8 +88,15 @@ func (c *controllerManager) runSystem(ctx context.Context) error {
 	informer.Start(ctx.Done())
 	informer.WaitForCacheSync(ctx.Done())
 
-	ctrlWorkspaces.Start(ctx, 2)
-	ctrlUsers.Start(ctx, 2)
+	go ctrlWorkspaces.Start(ctx, 2)
+	go ctrlUsers.Start(ctx, 2)
+
+	// setup sql to k8s bridge
+	b, err := bridge.New(ctx, c.config)
+	if err != nil {
+		return err
+	}
+	go b.Run(ctx)
 
 	<-ctx.Done()
 	return nil

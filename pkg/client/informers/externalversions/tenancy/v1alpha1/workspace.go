@@ -88,7 +88,7 @@ func NewFilteredWorkspaceClusterInformer(client clientset.ClusterInterface, resy
 func (f *workspaceClusterInformer) defaultInformer(client clientset.ClusterInterface, resyncPeriod time.Duration) kcpcache.ScopeableSharedIndexInformer {
 	return NewFilteredWorkspaceClusterInformer(client, resyncPeriod, cache.Indexers{
 			kcpcache.ClusterIndexName: kcpcache.ClusterIndexFunc,
-			kcpcache.ClusterAndNamespaceIndexName: kcpcache.ClusterAndNamespaceIndexFunc,},
+			}, 
 		f.tweakListOptions,
 	)
 }
@@ -131,7 +131,7 @@ func (f *workspaceInformer) Lister() tenancyv1alpha1listers.WorkspaceLister {
 type workspaceScopedInformer struct {
 	factory internalinterfaces.SharedScopedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
-	namespace string}
+	}
 
 func (f *workspaceScopedInformer) Informer() cache.SharedIndexInformer {
 	return f.factory.InformerFor(&tenancyv1alpha1.Workspace{}, f.defaultInformer)
@@ -144,27 +144,27 @@ func (f *workspaceScopedInformer) Lister() tenancyv1alpha1listers.WorkspaceListe
 // NewWorkspaceInformer constructs a new informer for Workspace type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewWorkspaceInformer(client scopedclientset.Interface, resyncPeriod time.Duration, namespace string,indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredWorkspaceInformer(client, resyncPeriod,  namespace,indexers, nil)
+func NewWorkspaceInformer(client scopedclientset.Interface, resyncPeriod time.Duration,indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredWorkspaceInformer(client, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredWorkspaceInformer constructs a new informer for Workspace type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredWorkspaceInformer(client scopedclientset.Interface, resyncPeriod time.Duration,  namespace string,indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredWorkspaceInformer(client scopedclientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.TenancyV1alpha1().Workspaces(namespace).List(context.TODO(), options)
+				return client.TenancyV1alpha1().Workspaces().List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.TenancyV1alpha1().Workspaces(namespace).Watch(context.TODO(), options)
+				return client.TenancyV1alpha1().Workspaces().Watch(context.TODO(), options)
 			},
 		},
 		&tenancyv1alpha1.Workspace{},
@@ -174,8 +174,6 @@ func NewFilteredWorkspaceInformer(client scopedclientset.Interface, resyncPeriod
 }
 
 func (f *workspaceScopedInformer) defaultInformer(client scopedclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredWorkspaceInformer(client, resyncPeriod, f.namespace,cache.Indexers{
-		cache.NamespaceIndex: cache.MetaNamespaceIndexFunc,
-	}, f.tweakListOptions)
+	return NewFilteredWorkspaceInformer(client, resyncPeriod,cache.Indexers{ }, f.tweakListOptions)
 }
 

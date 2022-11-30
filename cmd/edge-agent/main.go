@@ -26,6 +26,7 @@ func main() {
 	flag.Lookup("v").Value.Set("6")
 
 	ctx := ctrl.SetupSignalHandler()
+	ctx = klog.NewContext(ctx, klog.NewKlogr())
 
 	err := run(ctx)
 	if err != nil {

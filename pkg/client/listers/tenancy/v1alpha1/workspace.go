@@ -51,7 +51,6 @@ type workspaceClusterLister struct {
 // - is fed by a cross-workspace LIST+WATCH
 // - uses kcpcache.MetaClusterNamespaceKeyFunc as the key function
 // - has the kcpcache.ClusterIndex as an index
-// - has the kcpcache.ClusterAndNamespaceIndex as an index
 func NewWorkspaceClusterLister(indexer cache.Indexer) *workspaceClusterLister {
 	return &workspaceClusterLister{indexer: indexer}
 }
@@ -69,17 +68,18 @@ func (s *workspaceClusterLister) Cluster(cluster logicalcluster.Name) WorkspaceL
 return &workspaceLister{indexer: s.indexer, cluster: cluster}
 }
 
-// WorkspaceLister can list Workspaces across all namespaces, or scope down to a WorkspaceNamespaceLister for one namespace.
+// WorkspaceLister can list all Workspaces, or get one in particular.
 // All objects returned here must be treated as read-only.
 type WorkspaceLister interface {
 	// List lists all Workspaces in the workspace.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*tenancyv1alpha1.Workspace, err error)
-// Workspaces returns a lister that can list and get Workspaces in one workspace and namespace.
-	Workspaces(namespace string) WorkspaceNamespaceLister
+// Get retrieves the Workspace from the indexer for a given workspace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*tenancyv1alpha1.Workspace, error)
 WorkspaceListerExpansion
 }
-// workspaceLister can list all Workspaces inside a workspace or scope down to a WorkspaceLister for one namespace.
+// workspaceLister can list all Workspaces inside a workspace.
 type workspaceLister struct {
 	indexer cache.Indexer
 	cluster logicalcluster.Name
@@ -93,41 +93,9 @@ func (s *workspaceLister) List(selector labels.Selector) (ret []*tenancyv1alpha1
 	return ret, err
 }
 
-// Workspaces returns an object that can list and get Workspaces in one namespace.
-func (s *workspaceLister) Workspaces(namespace string) WorkspaceNamespaceLister {
-return &workspaceNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
-}
-
-// workspaceNamespaceLister helps list and get Workspaces.
-// All objects returned here must be treated as read-only.
-type WorkspaceNamespaceLister interface {
-	// List lists all Workspaces in the workspace and namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*tenancyv1alpha1.Workspace, err error)
-	// Get retrieves the Workspace from the indexer for a given workspace, namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*tenancyv1alpha1.Workspace, error)
-	WorkspaceNamespaceListerExpansion
-}
-// workspaceNamespaceLister helps list and get Workspaces.
-// All objects returned here must be treated as read-only.
-type workspaceNamespaceLister struct {
-	indexer   cache.Indexer
-	cluster   logicalcluster.Name
-	namespace string
-}
-
-// List lists all Workspaces in the indexer for a given workspace and namespace.
-func (s *workspaceNamespaceLister) List(selector labels.Selector) (ret []*tenancyv1alpha1.Workspace, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*tenancyv1alpha1.Workspace))
-	})
-	return ret, err
-}
-
-// Get retrieves the Workspace from the indexer for a given workspace, namespace and name.
-func (s *workspaceNamespaceLister) Get(name string) (*tenancyv1alpha1.Workspace, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+// Get retrieves the Workspace from the indexer for a given workspace and name.
+func (s *workspaceLister) Get(name string) (*tenancyv1alpha1.Workspace, error) {
+	key := kcpcache.ToClusterAwareKey(s.cluster.String(), "", name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err
@@ -141,12 +109,11 @@ func (s *workspaceNamespaceLister) Get(name string) (*tenancyv1alpha1.Workspace,
 // We assume that the indexer:
 // - is fed by a workspace-scoped LIST+WATCH
 // - uses cache.MetaNamespaceKeyFunc as the key function
-// - has the cache.NamespaceIndex as an index
 func NewWorkspaceLister(indexer cache.Indexer) *workspaceScopedLister {
 	return &workspaceScopedLister{indexer: indexer}
 }
 
-// workspaceScopedLister can list all Workspaces inside a workspace or scope down to a WorkspaceLister for one namespace.
+// workspaceScopedLister can list all Workspaces inside a workspace.
 type workspaceScopedLister struct {
 	indexer cache.Indexer
 }
@@ -159,28 +126,9 @@ func (s *workspaceScopedLister) List(selector labels.Selector) (ret []*tenancyv1
 	return ret, err
 }
 
-// Workspaces returns an object that can list and get Workspaces in one namespace.
-func (s *workspaceScopedLister) Workspaces(namespace string) WorkspaceNamespaceLister {
-	return &workspaceScopedNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// workspaceScopedNamespaceLister helps list and get Workspaces.
-type workspaceScopedNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Workspaces in the indexer for a given workspace and namespace.
-func (s *workspaceScopedNamespaceLister) List(selector labels.Selector) (ret []*tenancyv1alpha1.Workspace, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*tenancyv1alpha1.Workspace))
-	})
-	return ret, err
-}
-
-// Get retrieves the Workspace from the indexer for a given workspace, namespace and name.
-func (s *workspaceScopedNamespaceLister) Get(name string) (*tenancyv1alpha1.Workspace, error) {
-	key := s.namespace + "/" + name
+// Get retrieves the Workspace from the indexer for a given workspace and name.
+func (s *workspaceScopedLister) Get(name string) (*tenancyv1alpha1.Workspace, error) {
+	key := name
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

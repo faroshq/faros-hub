@@ -9,7 +9,6 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
 )
@@ -75,9 +74,7 @@ func (o *DeleteOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	workspace := &tenancyv1alpha1.Workspace{}
-
-	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
+	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Error()
 	if err != nil {
 		return err
 	}

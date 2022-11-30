@@ -8,7 +8,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/davecgh/go-spew/spew"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
@@ -109,11 +108,8 @@ func (r *registrationCreateReconciler) reconcile(ctx context.Context, cluster lo
 		RoleRef:  roleRef,
 	}
 
-	spew.Dump(roleBinding)
-
 	err = r.createOrUpdateRoleBinding(ctx, cluster, roleBinding)
 	if err != nil {
-		spew.Dump(err)
 		return reconcileStatusStopAndRequeue, err
 	}
 

@@ -40,8 +40,8 @@ func (c *TenancyV1alpha1Client) Users() UserInterface {
 	return newUsers(c)
 }
 
-func (c *TenancyV1alpha1Client) Workspaces(namespace string) WorkspaceInterface {
-	return newWorkspaces(c, namespace)
+func (c *TenancyV1alpha1Client) Workspaces() WorkspaceInterface {
+	return newWorkspaces(c)
 }
 
 // NewForConfig creates a new TenancyV1alpha1Client for the given config.

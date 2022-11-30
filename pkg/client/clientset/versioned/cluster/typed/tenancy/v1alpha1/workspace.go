@@ -39,9 +39,9 @@ type WorkspacesClusterGetter interface {
 }
 
 // WorkspaceClusterInterface can operate on Workspaces across all clusters,
-// or scope down to one cluster and return a WorkspacesNamespacer.
+// or scope down to one cluster and return a tenancyv1alpha1client.WorkspaceInterface.
 type WorkspaceClusterInterface interface {
-	Cluster(logicalcluster.Name) WorkspacesNamespacer
+	Cluster(logicalcluster.Name) tenancyv1alpha1client.WorkspaceInterface
 	List(ctx context.Context, opts metav1.ListOptions) (*tenancyv1alpha1.WorkspaceList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,34 +51,21 @@ type workspacesClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *workspacesClusterInterface) Cluster(name logicalcluster.Name) WorkspacesNamespacer {
+func (c *workspacesClusterInterface) Cluster(name logicalcluster.Name) tenancyv1alpha1client.WorkspaceInterface {
 	if name == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &workspacesNamespacer{clientCache: c.clientCache, name: name}
+	return c.clientCache.ClusterOrDie(name).Workspaces()
 }
 
 
 // List returns the entire collection of all Workspaces across all clusters. 
 func (c *workspacesClusterInterface) List(ctx context.Context, opts metav1.ListOptions) (*tenancyv1alpha1.WorkspaceList, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Workspaces(metav1.NamespaceAll).List(ctx, opts)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Workspaces().List(ctx, opts)
 }
 
 // Watch begins to watch all Workspaces across all clusters.
 func (c *workspacesClusterInterface) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Workspaces(metav1.NamespaceAll).Watch(ctx, opts)
-}
-// WorkspacesNamespacer can scope to objects within a namespace, returning a tenancyv1alpha1client.WorkspaceInterface.
-type WorkspacesNamespacer interface {
-	Namespace(string) tenancyv1alpha1client.WorkspaceInterface
-}
-
-type workspacesNamespacer struct {
-	clientCache kcpclient.Cache[*tenancyv1alpha1client.TenancyV1alpha1Client]
-	name logicalcluster.Name
-}
-
-func (n *workspacesNamespacer) Namespace(namespace string) tenancyv1alpha1client.WorkspaceInterface {
-	return n.clientCache.ClusterOrDie(n.name).Workspaces(namespace)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Workspaces().Watch(ctx, opts)
 }

@@ -228,6 +228,6 @@ func (c *Controller) patchIfNeeded(ctx context.Context, old, obj *tenancyv1alpha
 		subresources = []string{"status"}
 	}
 
-	_, err = c.farosClientSet.Cluster(clusterName).TenancyV1alpha1().Workspaces(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
+	_, err = c.farosClientSet.Cluster(clusterName).TenancyV1alpha1().Users().Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
 	return err
 }

@@ -73,6 +73,6 @@ func (v *scopedVersion) Users() UserInformer {
 }
 // Workspaces returns a WorkspaceInformer
 func (v *scopedVersion) Workspaces() WorkspaceInformer {
-	return &workspaceScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &workspaceScopedInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 

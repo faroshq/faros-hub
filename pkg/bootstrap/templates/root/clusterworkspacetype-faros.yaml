@@ -6,6 +6,8 @@ spec:
   defaultAPIBindings:
   - path: root:faros:service:controllers
     exportName: edge.faros.sh
+  - path: root:faros:service:controllers
+    exportName: plugins.faros.sh
   defaultChildren:
     types:
     - name: universal

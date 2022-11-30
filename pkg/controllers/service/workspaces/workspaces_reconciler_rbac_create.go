@@ -6,6 +6,7 @@ import (
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	kcptenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"github.com/kcp-dev/logicalcluster/v2"
@@ -18,6 +19,7 @@ type workspaceRBACReconciler struct {
 	getOrgClusterAccessName          func(workspace *tenancyv1alpha1.Workspace) string
 	getUserWithPrefixName            func(user string) string
 	getRBACClusterAdminName          func(workspace *tenancyv1alpha1.Workspace) string
+	getKCPWorkspace                  func(ctx context.Context, cluster logicalcluster.Name, name string) (*kcptenancyv1beta1.Workspace, error)
 	createOrUpdateClusterRole        func(ctx context.Context, cluster logicalcluster.Name, clusterRole *rbacv1.ClusterRole) error
 	createOrUpdateClusterRoleBinding func(ctx context.Context, cluster logicalcluster.Name, clusterRoleBinding *rbacv1.ClusterRoleBinding) error
 }
@@ -31,11 +33,15 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		return reconcileStatusError, fmt.Errorf("parent cluster not found")
 	}
 
+	kcpWorkspace, err := r.getKCPWorkspace(ctx, parent, workspace.Name)
+	if err != nil {
+		return reconcileStatusStopAndRequeue, err
+	}
+
 	// create global cluster role in root cluster to enable rbac
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            r.getOrgClusterAccessName(workspace),
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			Name: r.getOrgClusterAccessName(workspace),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -47,7 +53,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		},
 	}
 
-	err := r.createOrUpdateClusterRole(ctx, kcptenancyv1alpha1.RootCluster, clusterRole)
+	err = r.createOrUpdateClusterRole(ctx, kcptenancyv1alpha1.RootCluster, clusterRole)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -63,8 +69,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            r.getOrgClusterAccessName(workspace),
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			Name: r.getOrgClusterAccessName(workspace),
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,
@@ -85,7 +90,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 	clusterRole = &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            r.getRBACClusterAdminName(workspace),
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			OwnerReferences: getKCPWorkspaceOwnersReference(kcpWorkspace),
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -114,7 +119,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 	clusterRoleBinding = &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            r.getRBACClusterAdminName(workspace),
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			OwnerReferences: getKCPWorkspaceOwnersReference(kcpWorkspace),
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacv1.GroupName,

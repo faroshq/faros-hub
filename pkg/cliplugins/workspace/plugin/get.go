@@ -64,11 +64,17 @@ func (o *GetOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	u, err := url.Parse(config.Host)
+	rawConfig, err := o.ClientConfig.RawConfig()
+	if err != nil {
+		return err
+	}
+
+	u, err := url.Parse(rawConfig.Clusters[kubeConfigAuthKey].Server)
 	if err != nil {
 		return err
 	}
 	config.Host = u.Host
+	config.BearerToken = rawConfig.AuthInfos[kubeConfigAuthKey].Token
 
 	farosclient, err := farosclient.NewForConfig(config)
 	if err != nil {
@@ -89,7 +95,7 @@ func (o *GetOptions) Run(ctx context.Context) error {
 
 	if o.Output == utilprint.FormatTable {
 		table := utilprint.DefaultTable()
-		table.SetHeader([]string{"NAME", "MEMBERS", "DESCRIPTION", "STATUS", "AGE"})
+		table.SetHeader([]string{"NAME", "ID", "MEMBERS", "DESCRIPTION", "STATUS", "AGE"})
 		for _, workspace := range workspaces.Items {
 			{
 				status := "Unknown"
@@ -98,6 +104,7 @@ func (o *GetOptions) Run(ctx context.Context) error {
 				}
 
 				table.Append([]string{
+					workspace.Spec.Name,
 					workspace.Name,
 					strings.Join(workspace.Spec.Members, ","),
 					workspace.Spec.Description,

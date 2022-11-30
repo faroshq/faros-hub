@@ -184,13 +184,13 @@ func (c *Controller) processNextWorkItem(ctx context.Context) bool {
 func (c *Controller) process(ctx context.Context, key string) (bool, error) {
 	logger := klog.FromContext(ctx)
 
-	cluster, namespace, name, err := kcpcache.SplitMetaClusterNamespaceKey(key)
+	cluster, _, name, err := kcpcache.SplitMetaClusterNamespaceKey(key)
 	if err != nil {
 		runtime.HandleError(err)
 		return false, nil
 	}
 
-	obj, err := c.workspaceLister.Cluster(cluster).Workspaces(namespace).Get(name)
+	obj, err := c.workspaceLister.Cluster(cluster).Get(name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil // object deleted before we handled it
@@ -276,6 +276,6 @@ func (c *Controller) patchIfNeeded(ctx context.Context, old, obj *tenancyv1alpha
 		subresources = []string{"status"}
 	}
 
-	_, err = c.farosClientSet.Cluster(clusterName).TenancyV1alpha1().Workspaces(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
+	_, err = c.farosClientSet.Cluster(clusterName).TenancyV1alpha1().Workspaces().Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
 	return err
 }

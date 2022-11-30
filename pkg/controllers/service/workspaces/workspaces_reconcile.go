@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"k8s.io/klog/v2"
 )
 
 type reconcileStatus int
@@ -48,6 +48,9 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 		&workspaceRBACReconciler{ // must be after kcpWorkspaceReconciler
 			getWorkspaceName: func(w *tenancyv1alpha1.Workspace) string {
 				return getWorkspaceName(c.config, w)
+			},
+			getKCPWorkspace: func(ctx context.Context, cluster logicalcluster.Name, name string) (*kcptenancyv1beta1.Workspace, error) {
+				return c.kcpClientSet.Cluster(cluster).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{})
 			},
 			getOrgClusterAccessName: func(w *tenancyv1alpha1.Workspace) string {
 				return getOrgClusterAccessName(c.config, w)
@@ -129,12 +132,11 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 }
 
 func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
-	logger := log.FromContext(ctx)
+	logger := klog.FromContext(ctx)
 
 	ws := &kcptenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            workspace.Name,
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			Name: workspace.Name,
 		},
 		Spec: kcptenancyv1beta1.WorkspaceSpec{
 			Type: kcptenancyv1alpha1.ClusterWorkspaceTypeReference{
@@ -147,7 +149,7 @@ func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcl
 	kcpWorkspace, err := c.kcpClientSet.Cluster(cluster).TenancyV1beta1().Workspaces().Get(ctx, ws.Name, metav1.GetOptions{})
 	switch {
 	case apierrors.IsNotFound(err):
-		logger.Error(err, "creating workspace", "workspace-name", workspace.Name)
+		logger.Info("creating workspace", "workspace-name", workspace.Name)
 		kcpWorkspace, err = c.kcpClientSet.Cluster(cluster).TenancyV1beta1().Workspaces().Create(ctx, ws, metav1.CreateOptions{})
 		if err != nil && !apierrors.IsAlreadyExists(err) {
 			return fmt.Errorf("failed to create Workspace: %s", err)
@@ -165,8 +167,7 @@ func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcl
 func (c *Controller) deleteFarosWorkspace(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
 	ws := &kcptenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            workspace.Name,
-			OwnerReferences: getWorkspaceOwnersReference(workspace),
+			Name: workspace.Name,
 		},
 	}
 

@@ -46,6 +46,10 @@ func (c *PluginsV1alpha1ClusterClient) Cluster(cluster logicalcluster.Name) plug
 func (c *PluginsV1alpha1ClusterClient) Plugins() kcppluginsv1alpha1.PluginClusterInterface {
 	return &pluginsClusterClient{Fake: c.Fake}
 }
+
+func (c *PluginsV1alpha1ClusterClient) Requests() kcppluginsv1alpha1.RequestClusterInterface {
+	return &requestsClusterClient{Fake: c.Fake}
+}
 var _ pluginsv1alpha1.PluginsV1alpha1Interface = (*PluginsV1alpha1Client)(nil)
 
 type PluginsV1alpha1Client struct {
@@ -61,4 +65,8 @@ func (c *PluginsV1alpha1Client) RESTClient() rest.Interface {
 
 func (c *PluginsV1alpha1Client) Plugins(namespace string) pluginsv1alpha1.PluginInterface {
 	return &pluginsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+}
+
+func (c *PluginsV1alpha1Client) Requests(namespace string) pluginsv1alpha1.RequestInterface {
+	return &requestsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
 }

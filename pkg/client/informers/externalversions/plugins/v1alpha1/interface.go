@@ -27,6 +27,8 @@ import (
 type ClusterInterface interface {
 // Plugins returns a PluginClusterInformer
 	Plugins() PluginClusterInformer
+// Requests returns a RequestClusterInformer
+	Requests() RequestClusterInformer
 }
 
 type version struct {
@@ -43,9 +45,15 @@ func New(f internalinterfaces.SharedInformerFactory, tweakListOptions internalin
 func (v *version) Plugins() PluginClusterInformer {
 	return &pluginClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
+// Requests returns a RequestClusterInformer
+func (v *version) Requests() RequestClusterInformer {
+	return &requestClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
 type Interface interface {
 // Plugins returns a PluginInformer
 	Plugins() PluginInformer
+// Requests returns a RequestInformer
+	Requests() RequestInformer
 }
 
 type scopedVersion struct {
@@ -62,5 +70,9 @@ func NewScoped(f internalinterfaces.SharedScopedInformerFactory, namespace strin
 // Plugins returns a PluginInformer
 func (v *scopedVersion) Plugins() PluginInformer {
 	return &pluginScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+// Requests returns a RequestInformer
+func (v *scopedVersion) Requests() RequestInformer {
+	return &requestScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 

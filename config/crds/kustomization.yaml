@@ -5,10 +5,6 @@ resources:
 - access.faros.sh_requests.yaml
 - edge.faros.sh_agents.yaml
 - edge.faros.sh_registrations.yaml
-- plugins.faros.sh_accesses.yaml
-- plugins.faros.sh_containerruntimes.yaml
-- plugins.faros.sh_monitorings.yaml
-- plugins.faros.sh_networks.yaml
-- plugins.faros.sh_notifications.yaml
+- plugins.faros.sh_requests.yaml
 - tenancy.faros.sh_workspaces.yaml
 - tenancy.faros.sh_users.yaml

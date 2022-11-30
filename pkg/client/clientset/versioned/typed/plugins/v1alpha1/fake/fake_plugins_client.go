@@ -31,6 +31,10 @@ func (c *FakePluginsV1alpha1) Plugins(namespace string) v1alpha1.PluginInterface
 	return &FakePlugins{c, namespace}
 }
 
+func (c *FakePluginsV1alpha1) Requests(namespace string) v1alpha1.RequestInterface {
+	return &FakeRequests{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakePluginsV1alpha1) RESTClient() rest.Interface {

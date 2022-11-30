@@ -2,7 +2,7 @@ externalHostname: kcp.dev.faros.sh
 kcp:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "2"
+  v: "8"
   tokenAuth:
     enabled: true
   hostAliases:

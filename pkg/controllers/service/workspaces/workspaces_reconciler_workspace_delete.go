@@ -28,7 +28,5 @@ func (r *kcpWorkspaceDeleteReconciler) reconcile(ctx context.Context, workspace 
 		return reconcileStatusStopAndRequeue, err
 	}
 
-	// TODO: check if last one and delete KCP workspace too
-
 	return reconcileStatusContinue, nil
 }

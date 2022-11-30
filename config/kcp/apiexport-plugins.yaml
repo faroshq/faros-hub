@@ -4,9 +4,5 @@ metadata:
   name: plugins.faros.sh
 spec:
   latestResourceSchemas:
-    - today.accesses.plugins.faros.sh
-    - today.containerruntimes.plugins.faros.sh
-    - today.monitorings.plugins.faros.sh
-    - today.networks.plugins.faros.sh
-    - today.notifications.plugins.faros.sh
+    - today.requests.plugins.faros.sh
   permissionClaims:

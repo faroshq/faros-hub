@@ -5,15 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: notifications.plugins.faros.sh
+  name: requests.plugins.faros.sh
 spec:
   group: plugins.faros.sh
   names:
-    kind: Notification
-    listKind: NotificationList
-    plural: notifications
-    singular: notification
-  scope: Namespaced
+    kind: Request
+    listKind: RequestList
+    plural: requests
+    singular: request
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
@@ -22,7 +22,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Notification is the Schema for the plugin API
+        description: Request is the Schema for the plugin request API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,13 +37,18 @@ spec:
           metadata:
             type: object
           spec:
-            description: NotificationSpec defines the desired state of plugin
+            description: PluginSpec defines the desired state of plugin
+            properties:
+              description:
+                type: string
+              version:
+                type: string
             type: object
           status:
-            description: NotificationStatus defines the observed state of plugin
+            description: PluginStatus defines the observed state of plugin
             properties:
               conditions:
-                description: Current processing state of the plugin.
+                description: Current processing state of the Agent.
                 items:
                   description: Condition defines an observation of a object operational
                     state.

@@ -28,6 +28,7 @@ import (
 type PluginsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	PluginsGetter
+	RequestsGetter
 }
 
 // PluginsV1alpha1Client is used to interact with features provided by the plugins.faros.sh group.
@@ -37,6 +38,10 @@ type PluginsV1alpha1Client struct {
 
 func (c *PluginsV1alpha1Client) Plugins(namespace string) PluginInterface {
 	return newPlugins(c, namespace)
+}
+
+func (c *PluginsV1alpha1Client) Requests(namespace string) RequestInterface {
+	return newRequests(c, namespace)
 }
 
 // NewForConfig creates a new PluginsV1alpha1Client for the given config.

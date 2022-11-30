@@ -120,6 +120,6 @@ func (o *UseOptions) Run(ctx context.Context) error {
 
 	rawConfig.CurrentContext = workspace.Name
 
-	fmt.Println("Using workspace", workspace.Name)
+	fmt.Println("Using workspace", o.Name)
 	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &rawConfig)
 }
