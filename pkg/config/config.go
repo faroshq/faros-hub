@@ -40,6 +40,11 @@ type APIConfig struct {
 	// ControllersPluginsWorkspace is name of workspace for global plugins management. Used in service management
 	ControllersPluginsWorkspace string `envconfig:"FAROS_API_PLUGINS_WORKSPACE" yaml:"controllersPluginsWorkspace,omitempty" default:"root:faros:service:plugins"`
 
+	// TenantsWorkspacePrefix is prefix of workspace tenants are operating in
+	// TODO: Move under users once we can rebase to main. There is some bug in
+	// using homedir but I was not able to reproduce it in main kcp branch so I am not sure if it is fixed
+	TenantsWorkspacePrefix string `envconfig:"FAROS_TENANTS_WORKSPACE_PREFIX" yaml:"tenantsWorkspacePrefix,omitempty" default:"root:faros-tenants:edge"`
+
 	// OIDC provider configuration
 	OIDCIssuerURL      string `envconfig:"FAROS_OIDC_ISSUER_URL" yaml:"oidcIssuerURL,omitempty" default:"https://dex.dev.faros.sh"`
 	OIDCClientID       string `envconfig:"FAROS_OIDC_CLIENT_ID" yaml:"oidcClientID,omitempty" default:"faros"`

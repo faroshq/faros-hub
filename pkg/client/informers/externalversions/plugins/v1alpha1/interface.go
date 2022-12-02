@@ -73,6 +73,6 @@ func (v *scopedVersion) Plugins() PluginInformer {
 }
 // Requests returns a RequestInformer
 func (v *scopedVersion) Requests() RequestInformer {
-	return &requestScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &requestScopedInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 

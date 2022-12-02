@@ -13,6 +13,8 @@ var GroupName = "plugins.faros.sh"
 const (
 	// PluginKind is the kind for a generic plugins
 	PluginKind = "Plugin"
+	// RequestKind is the kind for requesting plugin registration
+	RequestKind = "Request"
 )
 
 // SchemeGroupVersion is group version used to register these objects

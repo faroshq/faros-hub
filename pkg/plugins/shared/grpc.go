@@ -110,7 +110,7 @@ func (m *GRPCServer) GetAPIResourceSchema(ctx context.Context, req *proto.Empty)
 }
 
 func (m *GRPCServer) GetAPIExportSchema(ctx context.Context, req *proto.Empty) (*proto.GetAPIExportSchemaResponse, error) {
-	data, err := m.Impl.GetAPIResourceSchema(ctx)
+	data, err := m.Impl.GetAPIExportSchema(ctx)
 	return &proto.GetAPIExportSchemaResponse{Schema: data}, err
 }
 

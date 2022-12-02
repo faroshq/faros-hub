@@ -343,15 +343,15 @@ spec:
         metadata:
           type: object
         spec:
-          description: PluginSpec defines the desired state of plugin
+          description: RequestSpec defines the desired state of plugin request
           properties:
-            description:
+            name:
               type: string
             version:
               type: string
           type: object
         status:
-          description: PluginStatus defines the observed state of plugin
+          description: RequestStatus defines the observed state of plugin request
           properties:
             conditions:
               description: Current processing state of the Agent.
@@ -397,6 +397,9 @@ spec:
                 - type
                 type: object
               type: array
+            version:
+              description: Version of the plugin that is installed
+              type: string
           type: object
       type: object
     served: true

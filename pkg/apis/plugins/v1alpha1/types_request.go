@@ -12,6 +12,7 @@ import (
 
 // +crd
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
@@ -23,8 +24,8 @@ type Request struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PluginSpec   `json:"spec,omitempty"`
-	Status PluginStatus `json:"status,omitempty"`
+	Spec   RequestSpec   `json:"spec,omitempty"`
+	Status RequestStatus `json:"status,omitempty"`
 }
 
 // RequestSpec defines the desired state of plugin request
@@ -38,6 +39,10 @@ type RequestStatus struct {
 	// Current processing state of the Agent.
 	// +optional
 	Conditions conditionsv1alpha1.Conditions `json:"conditions,omitempty"`
+
+	// Version of the plugin that is installed
+	// +optional
+	Version string `json:"version,omitempty"`
 }
 
 func (in *Request) SetConditions(c conditionsv1alpha1.Conditions) {

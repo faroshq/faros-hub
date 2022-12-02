@@ -113,8 +113,9 @@ func New(ctx context.Context, config *config.APIConfig) (*Service, error) {
 	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.deleteWorkspace).Methods(http.MethodDelete) // /faros.sh/api/v1alpha1/workspaces/{workspace}
 	apiRouter.HandleFunc(pathWorkspaces, s.createWorkspace).Methods(http.MethodPost)                             // /faros.sh/api/v1alpha1/workspaces
 
-	apiRouter.HandleFunc(pathPlugins, s.pluginsHandler).Methods(http.MethodGet)                                                     // /faros.sh/api/v1alpha1/plugins - list all plugins
-	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}", pathPlugins), s.pluginsWorkspaceHandler).Methods(http.MethodPost) // /faros.sh/api/v1alpha1/workspaces/{workspace}/plugins - enable plugin for workspace
+	apiRouter.HandleFunc(pathPlugins, s.listPlugins).Methods(http.MethodGet) // /faros.sh/api/v1alpha1/plugins - list all plugins
+	//apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}", pathPlugins), s.listWorkspacePlugins).Methods(http.MethodGet)    // /faros.sh/api/v1alpha1/workspaces/{workspace}/plugins - list plugins for a workspace
+	//apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}", pathPlugins), s.enableWorkspacePlugins).Methods(http.MethodPost) // /faros.sh/api/v1alpha1/workspaces/{workspace}/plugins - enable plugin for a workspace
 
 	s.server = &http.Server{
 		Addr: config.Addr,

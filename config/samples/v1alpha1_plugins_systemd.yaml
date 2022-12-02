@@ -1,0 +1,5 @@
+apiVersion: services.plugins.faros.sh/v1alpha1
+kind: SystemD
+metadata:
+  name: systemd-test
+spec:

@@ -32,7 +32,6 @@ import (
 // FakeRequests implements RequestInterface
 type FakeRequests struct {
 	Fake *FakePluginsV1alpha1
-	ns   string
 }
 
 var requestsResource = schema.GroupVersionResource{Group: "plugins.faros.sh", Version: "v1alpha1", Resource: "requests"}
@@ -42,8 +41,7 @@ var requestsKind = schema.GroupVersionKind{Group: "plugins.faros.sh", Version: "
 // Get takes name of the request, and returns the corresponding request object, and an error if there is any.
 func (c *FakeRequests) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Request, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(requestsResource, c.ns, name), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootGetAction(requestsResource, name), &v1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -53,8 +51,7 @@ func (c *FakeRequests) Get(ctx context.Context, name string, options v1.GetOptio
 // List takes label and field selectors, and returns the list of Requests that match those selectors.
 func (c *FakeRequests) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RequestList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(requestsResource, requestsKind, c.ns, opts), &v1alpha1.RequestList{})
-
+		Invokes(testing.NewRootListAction(requestsResource, requestsKind, opts), &v1alpha1.RequestList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -75,15 +72,13 @@ func (c *FakeRequests) List(ctx context.Context, opts v1.ListOptions) (result *v
 // Watch returns a watch.Interface that watches the requested requests.
 func (c *FakeRequests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(requestsResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(requestsResource, opts))
 }
 
 // Create takes the representation of a request and creates it.  Returns the server's representation of the request, and an error, if there is any.
 func (c *FakeRequests) Create(ctx context.Context, request *v1alpha1.Request, opts v1.CreateOptions) (result *v1alpha1.Request, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(requestsResource, c.ns, request), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootCreateAction(requestsResource, request), &v1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -93,8 +88,7 @@ func (c *FakeRequests) Create(ctx context.Context, request *v1alpha1.Request, op
 // Update takes the representation of a request and updates it. Returns the server's representation of the request, and an error, if there is any.
 func (c *FakeRequests) Update(ctx context.Context, request *v1alpha1.Request, opts v1.UpdateOptions) (result *v1alpha1.Request, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(requestsResource, c.ns, request), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootUpdateAction(requestsResource, request), &v1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -105,8 +99,7 @@ func (c *FakeRequests) Update(ctx context.Context, request *v1alpha1.Request, op
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeRequests) UpdateStatus(ctx context.Context, request *v1alpha1.Request, opts v1.UpdateOptions) (*v1alpha1.Request, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(requestsResource, "status", c.ns, request), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootUpdateSubresourceAction(requestsResource, "status", request), &v1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -116,14 +109,13 @@ func (c *FakeRequests) UpdateStatus(ctx context.Context, request *v1alpha1.Reque
 // Delete takes name of the request and deletes it. Returns an error if one occurs.
 func (c *FakeRequests) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(requestsResource, c.ns, name, opts), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootDeleteActionWithOptions(requestsResource, name, opts), &v1alpha1.Request{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeRequests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(requestsResource, c.ns, listOpts)
+	action := testing.NewRootDeleteCollectionAction(requestsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.RequestList{})
 	return err
@@ -132,8 +124,7 @@ func (c *FakeRequests) DeleteCollection(ctx context.Context, opts v1.DeleteOptio
 // Patch applies the patch and returns the patched request.
 func (c *FakeRequests) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Request, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(requestsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Request{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(requestsResource, name, pt, data, subresources...), &v1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}

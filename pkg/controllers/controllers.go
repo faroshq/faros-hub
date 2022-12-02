@@ -126,7 +126,10 @@ func (c *controllerManager) Run(ctx context.Context) error {
 		return c.runEdge(ctx, plugins)
 	})
 	eg.Go(func() error {
-		return c.runSystem(ctx)
+		return c.runSystemTenants(ctx)
+	})
+	eg.Go(func() error {
+		return c.runSystemPlugins(ctx, plugins)
 	})
 
 	return eg.Wait()

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -104,6 +105,8 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal API export schema for plugin %q: %w", name, err)
 			}
+			spew.Dump(export)
+			spew.Dump(string(data))
 
 			_, err = b.kcpClient.ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
 			if err != nil && apierrors.IsConflict(err) {

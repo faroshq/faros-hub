@@ -32,7 +32,7 @@ import (
 // RequestsGetter has a method to return a RequestInterface.
 // A group's client should implement this interface.
 type RequestsGetter interface {
-	Requests(namespace string) RequestInterface
+	Requests() RequestInterface
 }
 
 // RequestInterface has methods to work with Request resources.
@@ -52,14 +52,12 @@ type RequestInterface interface {
 // requests implements RequestInterface
 type requests struct {
 	client rest.Interface
-	ns     string
 }
 
 // newRequests returns a Requests
-func newRequests(c *PluginsV1alpha1Client, namespace string) *requests {
+func newRequests(c *PluginsV1alpha1Client) *requests {
 	return &requests{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -67,7 +65,6 @@ func newRequests(c *PluginsV1alpha1Client, namespace string) *requests {
 func (c *requests) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Request, err error) {
 	result = &v1alpha1.Request{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("requests").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -84,7 +81,6 @@ func (c *requests) List(ctx context.Context, opts v1.ListOptions) (result *v1alp
 	}
 	result = &v1alpha1.RequestList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("requests").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -101,7 +97,6 @@ func (c *requests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("requests").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -112,7 +107,6 @@ func (c *requests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interf
 func (c *requests) Create(ctx context.Context, request *v1alpha1.Request, opts v1.CreateOptions) (result *v1alpha1.Request, err error) {
 	result = &v1alpha1.Request{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("requests").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(request).
@@ -125,7 +119,6 @@ func (c *requests) Create(ctx context.Context, request *v1alpha1.Request, opts v
 func (c *requests) Update(ctx context.Context, request *v1alpha1.Request, opts v1.UpdateOptions) (result *v1alpha1.Request, err error) {
 	result = &v1alpha1.Request{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("requests").
 		Name(request.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -140,7 +133,6 @@ func (c *requests) Update(ctx context.Context, request *v1alpha1.Request, opts v
 func (c *requests) UpdateStatus(ctx context.Context, request *v1alpha1.Request, opts v1.UpdateOptions) (result *v1alpha1.Request, err error) {
 	result = &v1alpha1.Request{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("requests").
 		Name(request.Name).
 		SubResource("status").
@@ -154,7 +146,6 @@ func (c *requests) UpdateStatus(ctx context.Context, request *v1alpha1.Request, 
 // Delete takes name of the request and deletes it. Returns an error if one occurs.
 func (c *requests) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("requests").
 		Name(name).
 		Body(&opts).
@@ -169,7 +160,6 @@ func (c *requests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, 
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("requests").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -182,7 +172,6 @@ func (c *requests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, 
 func (c *requests) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Request, err error) {
 	result = &v1alpha1.Request{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("requests").
 		Name(name).
 		SubResource(subresources...).

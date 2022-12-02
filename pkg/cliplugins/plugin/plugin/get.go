@@ -17,7 +17,6 @@ import (
 // GetOptions contains options for configuring faros plugins
 type GetOptions struct {
 	*base.Options
-	Name string
 }
 
 // NewGetOptions returns a new GetOptions.
@@ -36,10 +35,6 @@ func (o *GetOptions) BindFlags(cmd *cobra.Command) {
 func (o *GetOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
-	}
-
-	if o.Name == "" && len(args) > 0 {
-		o.Name = args[0]
 	}
 
 	return nil
@@ -76,6 +71,8 @@ func (o *GetOptions) Run(ctx context.Context) error {
 
 	plugins := &pluginsv1alpha1.PluginList{}
 
+	// If context is set to 'faros', this means we are at root faros context.
+	// If user overrides it or its set to something else, we assume we are in a workspace context.
 	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/plugins").Do(ctx).Into(plugins)
 	if err != nil {
 		return err

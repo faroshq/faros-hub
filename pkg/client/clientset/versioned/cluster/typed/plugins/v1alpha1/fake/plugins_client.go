@@ -67,6 +67,6 @@ func (c *PluginsV1alpha1Client) Plugins(namespace string) pluginsv1alpha1.Plugin
 	return &pluginsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
 }
 
-func (c *PluginsV1alpha1Client) Requests(namespace string) pluginsv1alpha1.RequestInterface {
-	return &requestsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+func (c *PluginsV1alpha1Client) Requests() pluginsv1alpha1.RequestInterface {
+	return &requestsClient{Fake: c.Fake, Cluster: c.Cluster}
 }

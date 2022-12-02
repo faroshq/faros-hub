@@ -2,22 +2,29 @@ package plugin
 
 import (
 	"context"
-	"net/url"
+	"fmt"
 
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
-	utilprint "github.com/faroshq/faros-hub/pkg/util/print"
 )
+
+var kubeConfigAuthKey = "faros"
 
 // EnableOptions contains options for configuring faros plugins
 type EnableOptions struct {
 	*base.Options
-	Name string
+
+	Name       string
+	PluginName string
+	Version    string
+	Workspace  string
+	Namespace  string
 }
 
 // NewEnableOptions returns a new EnableOptions.
@@ -30,6 +37,10 @@ func NewEnableOptions(streams genericclioptions.IOStreams) *EnableOptions {
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
 func (o *EnableOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
+
+	cmd.Flags().StringVar(&o.Version, "plugin-version", "latest", "Plugin version to use")
+	cmd.Flags().StringVar(&o.PluginName, "plugin-name", "", "Plugin name")
+	cmd.Flags().StringVar(&o.Workspace, "workspace", "default", "Workspace name")
 }
 
 // Complete ensures all dynamically populated fields are initialized.
@@ -40,6 +51,23 @@ func (o *EnableOptions) Complete(args []string) error {
 
 	if o.Name == "" && len(args) > 0 {
 		o.Name = args[0]
+	}
+
+	if o.PluginName == "" {
+		o.PluginName = o.Name // default to request name
+	}
+
+	if o.Version == "" {
+		o.Version = "latest"
+	}
+
+	rawConfig, err := o.ClientConfig.RawConfig()
+	if err != nil {
+		fmt.Printf("Not able to determine workspace name from kubeconfig: %v", err)
+		return err
+	}
+	if rawConfig.CurrentContext == kubeConfigAuthKey {
+		return fmt.Errorf("kubeconfig not set to any workspace. Use `faros workspace use` to set the current workspace")
 	}
 
 	return nil
@@ -63,44 +91,30 @@ func (o *EnableOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	u, err := url.Parse(config.Host)
-	if err != nil {
-		return err
-	}
-	config.Host = u.Host
-
 	farosclient, err := farosclient.NewForConfig(config)
 	if err != nil {
 		return err
 	}
 
-	plugins := &pluginsv1alpha1.PluginList{}
+	plugin := pluginsv1alpha1.Request{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       pluginsv1alpha1.RequestKind,
+			APIVersion: pluginsv1alpha1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: o.Name,
+		},
+		Spec: pluginsv1alpha1.RequestSpec{
+			Version: o.Version,
+			Name:    o.PluginName,
+		},
+	}
 
-	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/plugins").Do(ctx).Into(plugins)
+	_, err = farosclient.PluginsV1alpha1().Requests().Create(ctx, &plugin, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
-	// drop managed fields
-	for i := range plugins.Items {
-		plugins.Items[i].ObjectMeta.ManagedFields = nil
-	}
-
-	if o.Output == utilprint.FormatTable {
-		table := utilprint.DefaultTable()
-		table.SetHeader([]string{"NAME", "VERSION", "DESCRIPTION"})
-		for _, plugin := range plugins.Items {
-			{
-				table.Append([]string{
-					plugin.Name,
-					plugin.Spec.Version,
-					plugin.Spec.Description,
-				})
-			}
-		}
-		table.Render()
-		return nil
-	}
-
-	return utilprint.PrintWithFormat(plugins, o.Output)
+	fmt.Fprintf(o.Out, "Plugin request %s created", o.Name)
+	return nil
 }

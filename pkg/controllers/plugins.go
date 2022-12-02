@@ -7,29 +7,17 @@ import (
 
 	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	farosinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions"
-	"github.com/faroshq/faros-hub/pkg/controllers/service/bridge"
-	"github.com/faroshq/faros-hub/pkg/controllers/service/users"
-	"github.com/faroshq/faros-hub/pkg/controllers/service/workspaces"
-	"github.com/kcp-dev/client-go/kubernetes"
+	pluginrequests "github.com/faroshq/faros-hub/pkg/controllers/service/plugin_requests"
+	"github.com/faroshq/faros-hub/pkg/models"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 )
 
-// runSystemTenants controller is running in system tenants virtual workspace and is responsible for
-// managing workspaces and tenants
-func (c *controllerManager) runSystemTenants(ctx context.Context) error {
+// runSystemPlugins controller is running in system plugins virtual workspace and is responsible for
+// managing plugins
+func (c *controllerManager) runSystemPlugins(ctx context.Context, plugins models.PluginsList) error {
 	restConfig, err := c.clientFactory.GetWorkspaceRestConfig(ctx, c.config.ControllersWorkspace)
-	if err != nil {
-		return err
-	}
-
-	rootRestConfig, err := c.clientFactory.GetRootRestConfig()
-	if err != nil {
-		return err
-	}
-
-	coreClientSet, err := kubernetes.NewForConfig(rootRestConfig)
 	if err != nil {
 		return err
 	}
@@ -38,8 +26,8 @@ func (c *controllerManager) runSystemTenants(ctx context.Context) error {
 	// bootstrap rest config for controllers
 	if kcpAPIsGroupPresent(restConfig) {
 		if err := wait.PollImmediateInfinite(time.Second*5, func() (bool, error) {
-			klog.Infof("looking up virtual workspace URL - %s", c.config.ControllersFarosTenancyAPIExportName)
-			rest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosTenancyAPIExportName)
+			klog.Infof("looking up virtual workspace URL - %s", c.config.ControllersFarosPluginsAPIExportName)
+			rest, err = restConfigForAPIExport(ctx, restConfig, c.config.ControllersFarosPluginsAPIExportName)
 			if err != nil {
 				return false, nil
 			}
@@ -64,22 +52,12 @@ func (c *controllerManager) runSystemTenants(ctx context.Context) error {
 	// 4. wait for the factory to sync.
 	informer := farosinformers.NewSharedInformerFactory(farosClientSet, resyncPeriod)
 
-	ctrlWorkspaces, err := workspaces.NewController(
+	ctrlRequests, err := pluginrequests.NewController(
 		c.config,
-		c.kcpClientSet,
-		coreClientSet,
-		farosClientSet, // client to manage plugins
-		informer.Tenancy().V1alpha1().Workspaces(),
-	)
-	if err != nil {
-		return err
-	}
-
-	ctrlUsers, err := users.NewController(
-		c.config,
-		coreClientSet,
 		farosClientSet,
-		informer.Tenancy().V1alpha1().Users(),
+		c.kcpClientSet,
+		informer.Plugins().V1alpha1().Requests(),
+		plugins,
 	)
 	if err != nil {
 		return err
@@ -88,15 +66,7 @@ func (c *controllerManager) runSystemTenants(ctx context.Context) error {
 	informer.Start(ctx.Done())
 	informer.WaitForCacheSync(ctx.Done())
 
-	go ctrlWorkspaces.Start(ctx, 2)
-	go ctrlUsers.Start(ctx, 2)
-
-	// setup sql to k8s bridge
-	b, err := bridge.New(ctx, c.config)
-	if err != nil {
-		return err
-	}
-	go b.Run(ctx)
+	go ctrlRequests.Start(ctx, 2)
 
 	<-ctx.Done()
 	return nil

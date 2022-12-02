@@ -86,39 +86,45 @@ func (o *UseOptions) Run(ctx context.Context) error {
 
 	workspace := &tenancyv1alpha1.Workspace{}
 
-	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
-	if err != nil {
-		return err
-	}
-
 	// Get raw config and add new cluster and context to it
 	rawConfig, err := o.ClientConfig.RawConfig()
 	if err != nil {
 		return err
 	}
 
-	rawConfig.Clusters[workspace.Name] = &clientcmdapi.Cluster{
-		Server: workspace.Status.WorkspaceURL,
-	}
-
-	farosCluster, ok := rawConfig.Clusters[kubeConfigAuthKey]
-	if !ok {
-		rawConfig.Clusters[workspace.Name].InsecureSkipTLSVerify = true
-	} else {
-		if farosCluster.InsecureSkipTLSVerify {
-			rawConfig.Clusters[workspace.Name].InsecureSkipTLSVerify = true
-		} else {
-			rawConfig.Clusters[workspace.Name].CertificateAuthorityData = farosCluster.CertificateAuthorityData
-			rawConfig.Clusters[workspace.Name].CertificateAuthority = farosCluster.CertificateAuthority
+	if o.Name != kubeConfigAuthKey {
+		err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
+		if err != nil {
+			return err
 		}
-	}
 
-	rawConfig.Contexts[workspace.Name] = &clientcmdapi.Context{
-		Cluster:  workspace.Name,
-		AuthInfo: kubeConfigAuthKey,
-	}
+		rawConfig.Clusters[workspace.Spec.Name] = &clientcmdapi.Cluster{
+			Server: workspace.Status.WorkspaceURL,
+		}
 
-	rawConfig.CurrentContext = workspace.Name
+		farosCluster, ok := rawConfig.Clusters[kubeConfigAuthKey]
+		if !ok {
+			rawConfig.Clusters[workspace.Spec.Name].InsecureSkipTLSVerify = true
+		} else {
+			if farosCluster.InsecureSkipTLSVerify {
+				rawConfig.Clusters[workspace.Spec.Name].InsecureSkipTLSVerify = true
+			} else {
+				rawConfig.Clusters[workspace.Spec.Name].CertificateAuthorityData = farosCluster.CertificateAuthorityData
+				rawConfig.Clusters[workspace.Spec.Name].CertificateAuthority = farosCluster.CertificateAuthority
+			}
+		}
+
+		rawConfig.Contexts[workspace.Spec.Name] = &clientcmdapi.Context{
+			Cluster:  workspace.Spec.Name,
+			AuthInfo: kubeConfigAuthKey,
+		}
+
+		rawConfig.CurrentContext = workspace.Spec.Name
+
+	} else {
+		// if user requests "faros" context, just set it as current context
+		rawConfig.CurrentContext = kubeConfigAuthKey
+	}
 
 	fmt.Println("Using workspace", o.Name)
 	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &rawConfig)

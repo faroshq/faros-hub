@@ -39,9 +39,9 @@ type RequestsClusterGetter interface {
 }
 
 // RequestClusterInterface can operate on Requests across all clusters,
-// or scope down to one cluster and return a RequestsNamespacer.
+// or scope down to one cluster and return a pluginsv1alpha1client.RequestInterface.
 type RequestClusterInterface interface {
-	Cluster(logicalcluster.Name) RequestsNamespacer
+	Cluster(logicalcluster.Name) pluginsv1alpha1client.RequestInterface
 	List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.RequestList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,34 +51,21 @@ type requestsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *requestsClusterInterface) Cluster(name logicalcluster.Name) RequestsNamespacer {
+func (c *requestsClusterInterface) Cluster(name logicalcluster.Name) pluginsv1alpha1client.RequestInterface {
 	if name == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &requestsNamespacer{clientCache: c.clientCache, name: name}
+	return c.clientCache.ClusterOrDie(name).Requests()
 }
 
 
 // List returns the entire collection of all Requests across all clusters. 
 func (c *requestsClusterInterface) List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.RequestList, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Requests(metav1.NamespaceAll).List(ctx, opts)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Requests().List(ctx, opts)
 }
 
 // Watch begins to watch all Requests across all clusters.
 func (c *requestsClusterInterface) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Requests(metav1.NamespaceAll).Watch(ctx, opts)
-}
-// RequestsNamespacer can scope to objects within a namespace, returning a pluginsv1alpha1client.RequestInterface.
-type RequestsNamespacer interface {
-	Namespace(string) pluginsv1alpha1client.RequestInterface
-}
-
-type requestsNamespacer struct {
-	clientCache kcpclient.Cache[*pluginsv1alpha1client.PluginsV1alpha1Client]
-	name logicalcluster.Name
-}
-
-func (n *requestsNamespacer) Namespace(namespace string) pluginsv1alpha1client.RequestInterface {
-	return n.clientCache.ClusterOrDie(n.name).Requests(namespace)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Requests().Watch(ctx, opts)
 }

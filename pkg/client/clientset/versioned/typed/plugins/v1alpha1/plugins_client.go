@@ -40,8 +40,8 @@ func (c *PluginsV1alpha1Client) Plugins(namespace string) PluginInterface {
 	return newPlugins(c, namespace)
 }
 
-func (c *PluginsV1alpha1Client) Requests(namespace string) RequestInterface {
-	return newRequests(c, namespace)
+func (c *PluginsV1alpha1Client) Requests() RequestInterface {
+	return newRequests(c)
 }
 
 // NewForConfig creates a new PluginsV1alpha1Client for the given config.

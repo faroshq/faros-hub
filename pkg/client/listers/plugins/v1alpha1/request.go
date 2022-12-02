@@ -51,7 +51,6 @@ type requestClusterLister struct {
 // - is fed by a cross-workspace LIST+WATCH
 // - uses kcpcache.MetaClusterNamespaceKeyFunc as the key function
 // - has the kcpcache.ClusterIndex as an index
-// - has the kcpcache.ClusterAndNamespaceIndex as an index
 func NewRequestClusterLister(indexer cache.Indexer) *requestClusterLister {
 	return &requestClusterLister{indexer: indexer}
 }
@@ -69,17 +68,18 @@ func (s *requestClusterLister) Cluster(cluster logicalcluster.Name) RequestListe
 return &requestLister{indexer: s.indexer, cluster: cluster}
 }
 
-// RequestLister can list Requests across all namespaces, or scope down to a RequestNamespaceLister for one namespace.
+// RequestLister can list all Requests, or get one in particular.
 // All objects returned here must be treated as read-only.
 type RequestLister interface {
 	// List lists all Requests in the workspace.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error)
-// Requests returns a lister that can list and get Requests in one workspace and namespace.
-	Requests(namespace string) RequestNamespaceLister
+// Get retrieves the Request from the indexer for a given workspace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*pluginsv1alpha1.Request, error)
 RequestListerExpansion
 }
-// requestLister can list all Requests inside a workspace or scope down to a RequestLister for one namespace.
+// requestLister can list all Requests inside a workspace.
 type requestLister struct {
 	indexer cache.Indexer
 	cluster logicalcluster.Name
@@ -93,41 +93,9 @@ func (s *requestLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.R
 	return ret, err
 }
 
-// Requests returns an object that can list and get Requests in one namespace.
-func (s *requestLister) Requests(namespace string) RequestNamespaceLister {
-return &requestNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
-}
-
-// requestNamespaceLister helps list and get Requests.
-// All objects returned here must be treated as read-only.
-type RequestNamespaceLister interface {
-	// List lists all Requests in the workspace and namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error)
-	// Get retrieves the Request from the indexer for a given workspace, namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*pluginsv1alpha1.Request, error)
-	RequestNamespaceListerExpansion
-}
-// requestNamespaceLister helps list and get Requests.
-// All objects returned here must be treated as read-only.
-type requestNamespaceLister struct {
-	indexer   cache.Indexer
-	cluster   logicalcluster.Name
-	namespace string
-}
-
-// List lists all Requests in the indexer for a given workspace and namespace.
-func (s *requestNamespaceLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*pluginsv1alpha1.Request))
-	})
-	return ret, err
-}
-
-// Get retrieves the Request from the indexer for a given workspace, namespace and name.
-func (s *requestNamespaceLister) Get(name string) (*pluginsv1alpha1.Request, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+// Get retrieves the Request from the indexer for a given workspace and name.
+func (s *requestLister) Get(name string) (*pluginsv1alpha1.Request, error) {
+	key := kcpcache.ToClusterAwareKey(s.cluster.String(), "", name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err
@@ -141,12 +109,11 @@ func (s *requestNamespaceLister) Get(name string) (*pluginsv1alpha1.Request, err
 // We assume that the indexer:
 // - is fed by a workspace-scoped LIST+WATCH
 // - uses cache.MetaNamespaceKeyFunc as the key function
-// - has the cache.NamespaceIndex as an index
 func NewRequestLister(indexer cache.Indexer) *requestScopedLister {
 	return &requestScopedLister{indexer: indexer}
 }
 
-// requestScopedLister can list all Requests inside a workspace or scope down to a RequestLister for one namespace.
+// requestScopedLister can list all Requests inside a workspace.
 type requestScopedLister struct {
 	indexer cache.Indexer
 }
@@ -159,28 +126,9 @@ func (s *requestScopedLister) List(selector labels.Selector) (ret []*pluginsv1al
 	return ret, err
 }
 
-// Requests returns an object that can list and get Requests in one namespace.
-func (s *requestScopedLister) Requests(namespace string) RequestNamespaceLister {
-	return &requestScopedNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// requestScopedNamespaceLister helps list and get Requests.
-type requestScopedNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Requests in the indexer for a given workspace and namespace.
-func (s *requestScopedNamespaceLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*pluginsv1alpha1.Request))
-	})
-	return ret, err
-}
-
-// Get retrieves the Request from the indexer for a given workspace, namespace and name.
-func (s *requestScopedNamespaceLister) Get(name string) (*pluginsv1alpha1.Request, error) {
-	key := s.namespace + "/" + name
+// Get retrieves the Request from the indexer for a given workspace and name.
+func (s *requestScopedLister) Get(name string) (*pluginsv1alpha1.Request, error) {
+	key := name
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

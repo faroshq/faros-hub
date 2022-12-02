@@ -88,7 +88,7 @@ func NewFilteredRequestClusterInformer(client clientset.ClusterInterface, resync
 func (f *requestClusterInformer) defaultInformer(client clientset.ClusterInterface, resyncPeriod time.Duration) kcpcache.ScopeableSharedIndexInformer {
 	return NewFilteredRequestClusterInformer(client, resyncPeriod, cache.Indexers{
 			kcpcache.ClusterIndexName: kcpcache.ClusterIndexFunc,
-			kcpcache.ClusterAndNamespaceIndexName: kcpcache.ClusterAndNamespaceIndexFunc,}, 
+			}, 
 		f.tweakListOptions,
 	)
 }
@@ -131,7 +131,7 @@ func (f *requestInformer) Lister() pluginsv1alpha1listers.RequestLister {
 type requestScopedInformer struct {
 	factory internalinterfaces.SharedScopedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
-	namespace string}
+	}
 
 func (f *requestScopedInformer) Informer() cache.SharedIndexInformer {
 	return f.factory.InformerFor(&pluginsv1alpha1.Request{}, f.defaultInformer)
@@ -144,27 +144,27 @@ func (f *requestScopedInformer) Lister() pluginsv1alpha1listers.RequestLister {
 // NewRequestInformer constructs a new informer for Request type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewRequestInformer(client scopedclientset.Interface, resyncPeriod time.Duration, namespace string,indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredRequestInformer(client, resyncPeriod,  namespace,indexers, nil)
+func NewRequestInformer(client scopedclientset.Interface, resyncPeriod time.Duration,indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredRequestInformer(client, resyncPeriod, indexers, nil)
 }
 
 // NewFilteredRequestInformer constructs a new informer for Request type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredRequestInformer(client scopedclientset.Interface, resyncPeriod time.Duration,  namespace string,indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredRequestInformer(client scopedclientset.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginsV1alpha1().Requests(namespace).List(context.TODO(), options)
+				return client.PluginsV1alpha1().Requests().List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PluginsV1alpha1().Requests(namespace).Watch(context.TODO(), options)
+				return client.PluginsV1alpha1().Requests().Watch(context.TODO(), options)
 			},
 		},
 		&pluginsv1alpha1.Request{},
@@ -174,8 +174,6 @@ func NewFilteredRequestInformer(client scopedclientset.Interface, resyncPeriod t
 }
 
 func (f *requestScopedInformer) defaultInformer(client scopedclientset.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredRequestInformer(client, resyncPeriod, f.namespace,cache.Indexers{ 
-		cache.NamespaceIndex: cache.MetaNamespaceIndexFunc,
-	}, f.tweakListOptions)
+	return NewFilteredRequestInformer(client, resyncPeriod,cache.Indexers{ }, f.tweakListOptions)
 }
 
