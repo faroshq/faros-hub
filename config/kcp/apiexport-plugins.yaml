@@ -5,4 +5,5 @@ metadata:
 spec:
   latestResourceSchemas:
     - today.requests.plugins.faros.sh
+    - today.bindings.plugins.faros.sh
   permissionClaims:

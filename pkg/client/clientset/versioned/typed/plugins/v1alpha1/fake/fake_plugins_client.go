@@ -27,8 +27,12 @@ type FakePluginsV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakePluginsV1alpha1) Plugins(namespace string) v1alpha1.PluginInterface {
-	return &FakePlugins{c, namespace}
+func (c *FakePluginsV1alpha1) Bindings(namespace string) v1alpha1.BindingInterface {
+	return &FakeBindings{c, namespace}
+}
+
+func (c *FakePluginsV1alpha1) Plugins() v1alpha1.PluginInterface {
+	return &FakePlugins{c}
 }
 
 func (c *FakePluginsV1alpha1) Requests() v1alpha1.RequestInterface {

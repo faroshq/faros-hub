@@ -11,7 +11,7 @@ e2e development, you might want to run plugin with agent code. This document wil
 ```
 export FAROS_PLUGINS_DIR=/path/to/agent/plugins
 # example:
-export FAROS_PLUGINS_DIR=/go/src/github.com/faroshq/plugin-process/plugins
+export FAROS_PLUGINS_DIR=/go/src/github.com/faroshq/plugin-services/plugins
 ```
 
 For simplicity, you can build agent with static version of plugin. This will make

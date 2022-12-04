@@ -140,6 +140,7 @@ Open new terminal and run agent with generated kubeconfig:
 
 ```bash
 export KUBECONFIG=agent1.kubeconfig
+export FAROS_AGENT_NAME=agent1
 go run ./cmd/edge-agent
 ```
 

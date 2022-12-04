@@ -7,6 +7,7 @@ import (
 
 	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	farosinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions"
+	pluginbindings "github.com/faroshq/faros-hub/pkg/controllers/service/plugin_bindings"
 	pluginrequests "github.com/faroshq/faros-hub/pkg/controllers/service/plugin_requests"
 	"github.com/faroshq/faros-hub/pkg/models"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -63,10 +64,20 @@ func (c *controllerManager) runSystemPlugins(ctx context.Context, plugins models
 		return err
 	}
 
+	ctrlBindings, err := pluginbindings.NewController(
+		c.config,
+		farosClientSet,
+		informer.Plugins().V1alpha1().Bindings(),
+	)
+	if err != nil {
+		return err
+	}
+
 	informer.Start(ctx.Done())
 	informer.WaitForCacheSync(ctx.Done())
 
 	go ctrlRequests.Start(ctx, 2)
+	go ctrlBindings.Start(ctx, 2)
 
 	<-ctx.Done()
 	return nil

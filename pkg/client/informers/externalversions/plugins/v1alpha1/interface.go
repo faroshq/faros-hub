@@ -25,6 +25,8 @@ import (
 )
 
 type ClusterInterface interface {
+// Bindings returns a BindingClusterInformer
+	Bindings() BindingClusterInformer
 // Plugins returns a PluginClusterInformer
 	Plugins() PluginClusterInformer
 // Requests returns a RequestClusterInformer
@@ -41,6 +43,10 @@ func New(f internalinterfaces.SharedInformerFactory, tweakListOptions internalin
 	return &version{factory: f, tweakListOptions: tweakListOptions}
 }
 
+// Bindings returns a BindingClusterInformer
+func (v *version) Bindings() BindingClusterInformer {
+	return &bindingClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
 // Plugins returns a PluginClusterInformer
 func (v *version) Plugins() PluginClusterInformer {
 	return &pluginClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
@@ -50,6 +56,8 @@ func (v *version) Requests() RequestClusterInformer {
 	return &requestClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 type Interface interface {
+// Bindings returns a BindingInformer
+	Bindings() BindingInformer
 // Plugins returns a PluginInformer
 	Plugins() PluginInformer
 // Requests returns a RequestInformer
@@ -67,9 +75,13 @@ func NewScoped(f internalinterfaces.SharedScopedInformerFactory, namespace strin
 	return &scopedVersion{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
+// Bindings returns a BindingInformer
+func (v *scopedVersion) Bindings() BindingInformer {
+	return &bindingScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
 // Plugins returns a PluginInformer
 func (v *scopedVersion) Plugins() PluginInformer {
-	return &pluginScopedInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &pluginScopedInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 // Requests returns a RequestInformer
 func (v *scopedVersion) Requests() RequestInformer {

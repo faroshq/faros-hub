@@ -39,9 +39,9 @@ type PluginsClusterGetter interface {
 }
 
 // PluginClusterInterface can operate on Plugins across all clusters,
-// or scope down to one cluster and return a PluginsNamespacer.
+// or scope down to one cluster and return a pluginsv1alpha1client.PluginInterface.
 type PluginClusterInterface interface {
-	Cluster(logicalcluster.Name) PluginsNamespacer
+	Cluster(logicalcluster.Name) pluginsv1alpha1client.PluginInterface
 	List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.PluginList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,34 +51,21 @@ type pluginsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *pluginsClusterInterface) Cluster(name logicalcluster.Name) PluginsNamespacer {
+func (c *pluginsClusterInterface) Cluster(name logicalcluster.Name) pluginsv1alpha1client.PluginInterface {
 	if name == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &pluginsNamespacer{clientCache: c.clientCache, name: name}
+	return c.clientCache.ClusterOrDie(name).Plugins()
 }
 
 
 // List returns the entire collection of all Plugins across all clusters. 
 func (c *pluginsClusterInterface) List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.PluginList, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Plugins(metav1.NamespaceAll).List(ctx, opts)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Plugins().List(ctx, opts)
 }
 
 // Watch begins to watch all Plugins across all clusters.
 func (c *pluginsClusterInterface) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Plugins(metav1.NamespaceAll).Watch(ctx, opts)
-}
-// PluginsNamespacer can scope to objects within a namespace, returning a pluginsv1alpha1client.PluginInterface.
-type PluginsNamespacer interface {
-	Namespace(string) pluginsv1alpha1client.PluginInterface
-}
-
-type pluginsNamespacer struct {
-	clientCache kcpclient.Cache[*pluginsv1alpha1client.PluginsV1alpha1Client]
-	name logicalcluster.Name
-}
-
-func (n *pluginsNamespacer) Namespace(namespace string) pluginsv1alpha1client.PluginInterface {
-	return n.clientCache.ClusterOrDie(n.name).Plugins(namespace)
+	return c.clientCache.ClusterOrDie(logicalcluster.Wildcard).Plugins().Watch(ctx, opts)
 }

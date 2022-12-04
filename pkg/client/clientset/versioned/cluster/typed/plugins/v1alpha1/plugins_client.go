@@ -33,6 +33,7 @@ import (
 
 type PluginsV1alpha1ClusterInterface interface {
 	PluginsV1alpha1ClusterScoper
+	BindingsClusterGetter
 	PluginsClusterGetter
 	RequestsClusterGetter
 }
@@ -52,6 +53,10 @@ func (c *PluginsV1alpha1ClusterClient) Cluster(name logicalcluster.Name) plugins
 	return c.clientCache.ClusterOrDie(name)
 }
 
+
+func (c *PluginsV1alpha1ClusterClient) Bindings() BindingClusterInterface {
+	return &bindingsClusterInterface{clientCache: c.clientCache}
+}
 
 func (c *PluginsV1alpha1ClusterClient) Plugins() PluginClusterInterface {
 	return &pluginsClusterInterface{clientCache: c.clientCache}

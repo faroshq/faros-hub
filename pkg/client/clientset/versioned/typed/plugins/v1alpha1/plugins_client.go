@@ -27,6 +27,7 @@ import (
 
 type PluginsV1alpha1Interface interface {
 	RESTClient() rest.Interface
+	BindingsGetter
 	PluginsGetter
 	RequestsGetter
 }
@@ -36,8 +37,12 @@ type PluginsV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *PluginsV1alpha1Client) Plugins(namespace string) PluginInterface {
-	return newPlugins(c, namespace)
+func (c *PluginsV1alpha1Client) Bindings(namespace string) BindingInterface {
+	return newBindings(c, namespace)
+}
+
+func (c *PluginsV1alpha1Client) Plugins() PluginInterface {
+	return newPlugins(c)
 }
 
 func (c *PluginsV1alpha1Client) Requests() RequestInterface {

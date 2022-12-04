@@ -127,7 +127,7 @@ type ControllerConfig struct {
 
 type AgentConfig struct {
 	Name      string `envconfig:"FAROS_AGENT_NAME" yaml:"name,omitempty" default:""`
-	Namespace string `envconfig:"FAROS_AGENT_NAMESPACE" yaml:"namespace,omitempty" default:""`
+	Namespace string `envconfig:"FAROS_AGENT_NAMESPACE" yaml:"namespace,omitempty" default:"default"`
 
 	PluginsDir string `envconfig:"FAROS_PLUGINS_DIR" yaml:"pluginsDir,omitempty" default:"./plugins"`
 

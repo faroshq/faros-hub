@@ -15,6 +15,8 @@ const (
 	PluginKind = "Plugin"
 	// RequestKind is the kind for requesting plugin registration
 	RequestKind = "Request"
+	// BindingKind is the kind for binding a plugin to a cluster
+	BindingKind = "Binding"
 )
 
 // SchemeGroupVersion is group version used to register these objects
@@ -42,6 +44,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PluginList{},
 		&Request{},
 		&RequestList{},
+		&Binding{},
+		&BindingList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

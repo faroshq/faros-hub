@@ -1,0 +1,6 @@
+apiVersion: plugins.faros.sh/v1alpha1
+kind: Binding
+metadata:
+  name: bob
+spec:
+

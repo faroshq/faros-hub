@@ -95,6 +95,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	case edgev1alpha1.SchemeGroupVersion.WithResource("registrations"):
 		return &genericClusterInformer{resource: resource.GroupResource(), informer: f.Edge().V1alpha1().Registrations().Informer()}, nil
 	// Group=plugins.faros.sh, Version=V1alpha1
+	case pluginsv1alpha1.SchemeGroupVersion.WithResource("bindings"):
+		return &genericClusterInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Bindings().Informer()}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("plugins"):
 		return &genericClusterInformer{resource: resource.GroupResource(), informer: f.Plugins().V1alpha1().Plugins().Informer()}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("requests"):
@@ -121,6 +123,9 @@ func (f *sharedScopedInformerFactory) ForResource(resource schema.GroupVersionRe
 		informer := f.Edge().V1alpha1().Registrations().Informer()
 		return &genericInformer{lister: cache.NewGenericLister(informer.GetIndexer(), resource.GroupResource()), informer: informer}, nil
 	// Group=plugins.faros.sh, Version=V1alpha1
+	case pluginsv1alpha1.SchemeGroupVersion.WithResource("bindings"):
+		informer := f.Plugins().V1alpha1().Bindings().Informer()
+		return &genericInformer{lister: cache.NewGenericLister(informer.GetIndexer(), resource.GroupResource()), informer: informer}, nil
 	case pluginsv1alpha1.SchemeGroupVersion.WithResource("plugins"):
 		informer := f.Plugins().V1alpha1().Plugins().Informer()
 		return &genericInformer{lister: cache.NewGenericLister(informer.GetIndexer(), resource.GroupResource()), informer: informer}, nil

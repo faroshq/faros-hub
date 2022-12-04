@@ -51,7 +51,6 @@ type pluginClusterLister struct {
 // - is fed by a cross-workspace LIST+WATCH
 // - uses kcpcache.MetaClusterNamespaceKeyFunc as the key function
 // - has the kcpcache.ClusterIndex as an index
-// - has the kcpcache.ClusterAndNamespaceIndex as an index
 func NewPluginClusterLister(indexer cache.Indexer) *pluginClusterLister {
 	return &pluginClusterLister{indexer: indexer}
 }
@@ -69,17 +68,18 @@ func (s *pluginClusterLister) Cluster(cluster logicalcluster.Name) PluginLister 
 return &pluginLister{indexer: s.indexer, cluster: cluster}
 }
 
-// PluginLister can list Plugins across all namespaces, or scope down to a PluginNamespaceLister for one namespace.
+// PluginLister can list all Plugins, or get one in particular.
 // All objects returned here must be treated as read-only.
 type PluginLister interface {
 	// List lists all Plugins in the workspace.
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error)
-// Plugins returns a lister that can list and get Plugins in one workspace and namespace.
-	Plugins(namespace string) PluginNamespaceLister
+// Get retrieves the Plugin from the indexer for a given workspace and name.
+	// Objects returned here must be treated as read-only.
+	Get(name string) (*pluginsv1alpha1.Plugin, error)
 PluginListerExpansion
 }
-// pluginLister can list all Plugins inside a workspace or scope down to a PluginLister for one namespace.
+// pluginLister can list all Plugins inside a workspace.
 type pluginLister struct {
 	indexer cache.Indexer
 	cluster logicalcluster.Name
@@ -93,41 +93,9 @@ func (s *pluginLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Pl
 	return ret, err
 }
 
-// Plugins returns an object that can list and get Plugins in one namespace.
-func (s *pluginLister) Plugins(namespace string) PluginNamespaceLister {
-return &pluginNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
-}
-
-// pluginNamespaceLister helps list and get Plugins.
-// All objects returned here must be treated as read-only.
-type PluginNamespaceLister interface {
-	// List lists all Plugins in the workspace and namespace.
-	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error)
-	// Get retrieves the Plugin from the indexer for a given workspace, namespace and name.
-	// Objects returned here must be treated as read-only.
-	Get(name string) (*pluginsv1alpha1.Plugin, error)
-	PluginNamespaceListerExpansion
-}
-// pluginNamespaceLister helps list and get Plugins.
-// All objects returned here must be treated as read-only.
-type pluginNamespaceLister struct {
-	indexer   cache.Indexer
-	cluster   logicalcluster.Name
-	namespace string
-}
-
-// List lists all Plugins in the indexer for a given workspace and namespace.
-func (s *pluginNamespaceLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*pluginsv1alpha1.Plugin))
-	})
-	return ret, err
-}
-
-// Get retrieves the Plugin from the indexer for a given workspace, namespace and name.
-func (s *pluginNamespaceLister) Get(name string) (*pluginsv1alpha1.Plugin, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+// Get retrieves the Plugin from the indexer for a given workspace and name.
+func (s *pluginLister) Get(name string) (*pluginsv1alpha1.Plugin, error) {
+	key := kcpcache.ToClusterAwareKey(s.cluster.String(), "", name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err
@@ -141,12 +109,11 @@ func (s *pluginNamespaceLister) Get(name string) (*pluginsv1alpha1.Plugin, error
 // We assume that the indexer:
 // - is fed by a workspace-scoped LIST+WATCH
 // - uses cache.MetaNamespaceKeyFunc as the key function
-// - has the cache.NamespaceIndex as an index
 func NewPluginLister(indexer cache.Indexer) *pluginScopedLister {
 	return &pluginScopedLister{indexer: indexer}
 }
 
-// pluginScopedLister can list all Plugins inside a workspace or scope down to a PluginLister for one namespace.
+// pluginScopedLister can list all Plugins inside a workspace.
 type pluginScopedLister struct {
 	indexer cache.Indexer
 }
@@ -159,28 +126,9 @@ func (s *pluginScopedLister) List(selector labels.Selector) (ret []*pluginsv1alp
 	return ret, err
 }
 
-// Plugins returns an object that can list and get Plugins in one namespace.
-func (s *pluginScopedLister) Plugins(namespace string) PluginNamespaceLister {
-	return &pluginScopedNamespaceLister{indexer: s.indexer, namespace: namespace}
-}
-
-// pluginScopedNamespaceLister helps list and get Plugins.
-type pluginScopedNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Plugins in the indexer for a given workspace and namespace.
-func (s *pluginScopedNamespaceLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(i interface{}) {
-		ret = append(ret, i.(*pluginsv1alpha1.Plugin))
-	})
-	return ret, err
-}
-
-// Get retrieves the Plugin from the indexer for a given workspace, namespace and name.
-func (s *pluginScopedNamespaceLister) Get(name string) (*pluginsv1alpha1.Plugin, error) {
-	key := s.namespace + "/" + name
+// Get retrieves the Plugin from the indexer for a given workspace and name.
+func (s *pluginScopedLister) Get(name string) (*pluginsv1alpha1.Plugin, error) {
+	key := name
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err
