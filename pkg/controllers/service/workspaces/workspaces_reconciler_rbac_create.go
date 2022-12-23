@@ -2,14 +2,12 @@ package workspaces
 
 import (
 	"context"
-	"fmt"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	kcptenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,21 +17,17 @@ type workspaceRBACReconciler struct {
 	getOrgClusterAccessName          func(workspace *tenancyv1alpha1.Workspace) string
 	getUserWithPrefixName            func(user string) string
 	getRBACClusterAdminName          func(workspace *tenancyv1alpha1.Workspace) string
-	getKCPWorkspace                  func(ctx context.Context, cluster logicalcluster.Name, name string) (*kcptenancyv1beta1.Workspace, error)
-	createOrUpdateClusterRole        func(ctx context.Context, cluster logicalcluster.Name, clusterRole *rbacv1.ClusterRole) error
-	createOrUpdateClusterRoleBinding func(ctx context.Context, cluster logicalcluster.Name, clusterRoleBinding *rbacv1.ClusterRoleBinding) error
+	getKCPWorkspace                  func(ctx context.Context, cluster logicalcluster.Path, name string) (*kcptenancyv1beta1.Workspace, error)
+	createOrUpdateClusterRole        func(ctx context.Context, cluster logicalcluster.Path, clusterRole *rbacv1.ClusterRole) error
+	createOrUpdateClusterRoleBinding func(ctx context.Context, cluster logicalcluster.Path, clusterRoleBinding *rbacv1.ClusterRoleBinding) error
 }
 
 func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tenancyv1alpha1.Workspace) (reconcileStatus, error) {
 	workspacePath := r.getWorkspaceName(workspace)
-	cluster := logicalcluster.New(workspacePath)
+	clusterPath := logicalcluster.NewPath(workspacePath)
+	rootPath := logicalcluster.NewPath("root")
 
-	parent, exits := cluster.Parent()
-	if !exits {
-		return reconcileStatusError, fmt.Errorf("parent cluster not found")
-	}
-
-	kcpWorkspace, err := r.getKCPWorkspace(ctx, parent, workspace.Name)
+	kcpWorkspace, err := r.getKCPWorkspace(ctx, clusterPath, workspace.Name)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -53,7 +47,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		},
 	}
 
-	err = r.createOrUpdateClusterRole(ctx, kcptenancyv1alpha1.RootCluster, clusterRole)
+	err = r.createOrUpdateClusterRole(ctx, rootPath, clusterRole)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -79,7 +73,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		Subjects: subjects,
 	}
 
-	err = r.createOrUpdateClusterRoleBinding(ctx, kcptenancyv1alpha1.RootCluster, clusterRoleBinding)
+	err = r.createOrUpdateClusterRoleBinding(ctx, rootPath, clusterRoleBinding)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -102,7 +96,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		},
 	}
 
-	err = r.createOrUpdateClusterRole(ctx, parent, clusterRole)
+	err = r.createOrUpdateClusterRole(ctx, clusterPath, clusterRole)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -129,7 +123,7 @@ func (r *workspaceRBACReconciler) reconcile(ctx context.Context, workspace *tena
 		Subjects: subjects,
 	}
 
-	err = r.createOrUpdateClusterRoleBinding(ctx, parent, clusterRoleBinding)
+	err = r.createOrUpdateClusterRoleBinding(ctx, clusterPath, clusterRoleBinding)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}

@@ -5,20 +5,20 @@ import (
 	"fmt"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 )
 
 type kcpWorkspaceReconciler struct {
 	createKCPWorkspace   func(ctx context.Context, workspace string) error
-	createFarosWorkspace func(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error
+	createFarosWorkspace func(ctx context.Context, cluster logicalcluster.Path, workspace *tenancyv1alpha1.Workspace) error
 	getWorkspaceName     func(w *tenancyv1alpha1.Workspace) string
 }
 
 func (r *kcpWorkspaceReconciler) reconcile(ctx context.Context, workspace *tenancyv1alpha1.Workspace) (reconcileStatus, error) {
 	workspacePath := r.getWorkspaceName(workspace)
-	cluster := logicalcluster.New(workspacePath)
+	clusterPath := logicalcluster.NewPath(workspacePath)
 
-	parent, exits := cluster.Parent()
+	parent, exits := clusterPath.Parent()
 	if !exits {
 		return reconcileStatusError, fmt.Errorf("parent cluster not found")
 	}

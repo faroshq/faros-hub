@@ -21,11 +21,11 @@ import (
 	farosclientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	tenancyinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/tenancy/v1alpha1"
 	tenancylisters "github.com/faroshq/faros-hub/pkg/client/listers/tenancy/v1alpha1"
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
 	"github.com/kcp-dev/client-go/kubernetes"
 	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 	"github.com/kcp-dev/kcp/pkg/logging"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/faroshq/faros-hub/pkg/bootstrap"
@@ -276,6 +276,6 @@ func (c *Controller) patchIfNeeded(ctx context.Context, old, obj *tenancyv1alpha
 		subresources = []string{"status"}
 	}
 
-	_, err = c.farosClientSet.Cluster(clusterName).TenancyV1alpha1().Workspaces().Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
+	_, err = c.farosClientSet.Cluster(clusterName.Path()).TenancyV1alpha1().Workspaces().Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
 	return err
 }

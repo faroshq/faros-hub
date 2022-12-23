@@ -17,7 +17,7 @@ import (
 	"github.com/gorilla/mux"
 
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -98,7 +98,7 @@ func New(ctx context.Context, config *config.APIConfig) (*Service, error) {
 		health:        health.New(),
 		store:         store,
 		kcpClient:     kcpClient,
-		farosClient:   farosClient.Cluster(logicalcluster.New(config.ControllersTenantWorkspace)),
+		farosClient:   farosClient.Cluster(logicalcluster.NewPath(config.ControllersTenantWorkspace)),
 		authenticator: authenticator,
 	}
 

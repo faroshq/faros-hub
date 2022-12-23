@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,12 +49,12 @@ type registrationsClusterClient struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *registrationsClusterClient) Cluster(cluster logicalcluster.Name) kcpedgev1alpha1.RegistrationsNamespacer {
-	if cluster == logicalcluster.Wildcard {
+func (c *registrationsClusterClient) Cluster(clusterPath logicalcluster.Path) kcpedgev1alpha1.RegistrationsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &registrationsNamespacer{Fake: c.Fake, Cluster: cluster}
+	return &registrationsNamespacer{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -84,21 +84,21 @@ func (c *registrationsClusterClient) Watch(ctx context.Context, opts metav1.List
 }
 type registrationsNamespacer struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (n *registrationsNamespacer) Namespace(namespace string) edgev1alpha1client.RegistrationInterface {
-	return &registrationsClient{Fake: n.Fake, Cluster: n.Cluster, Namespace: namespace}
+	return &registrationsClient{Fake: n.Fake, ClusterPath: n.ClusterPath, Namespace: namespace}
 }
 type registrationsClient struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 	Namespace string
 }
 
 
 func (c *registrationsClient) Create(ctx context.Context, registration *edgev1alpha1.Registration, opts metav1.CreateOptions) (*edgev1alpha1.Registration, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(registrationsResource, c.Cluster, c.Namespace, registration), &edgev1alpha1.Registration{})
+	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(registrationsResource, c.ClusterPath, c.Namespace, registration), &edgev1alpha1.Registration{})
 	if obj == nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *registrationsClient) Create(ctx context.Context, registration *edgev1al
 }
 
 func (c *registrationsClient) Update(ctx context.Context, registration *edgev1alpha1.Registration, opts metav1.UpdateOptions) (*edgev1alpha1.Registration, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(registrationsResource, c.Cluster, c.Namespace, registration), &edgev1alpha1.Registration{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(registrationsResource, c.ClusterPath, c.Namespace, registration), &edgev1alpha1.Registration{})
 	if obj == nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (c *registrationsClient) Update(ctx context.Context, registration *edgev1al
 }
 
 func (c *registrationsClient) UpdateStatus(ctx context.Context, registration *edgev1alpha1.Registration, opts metav1.UpdateOptions) (*edgev1alpha1.Registration, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(registrationsResource, c.Cluster, "status", c.Namespace, registration), &edgev1alpha1.Registration{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(registrationsResource, c.ClusterPath, "status", c.Namespace, registration), &edgev1alpha1.Registration{})
 	if obj == nil {
 		return nil, err
 	}
@@ -122,19 +122,19 @@ func (c *registrationsClient) UpdateStatus(ctx context.Context, registration *ed
 }
 
 func (c *registrationsClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(registrationsResource, c.Cluster, c.Namespace, name, opts), &edgev1alpha1.Registration{})
+	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(registrationsResource, c.ClusterPath, c.Namespace, name, opts), &edgev1alpha1.Registration{})
 	return err
 }
 
 func (c *registrationsClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := kcptesting.NewDeleteCollectionAction(registrationsResource, c.Cluster, c.Namespace, listOpts)
+	action := kcptesting.NewDeleteCollectionAction(registrationsResource, c.ClusterPath, c.Namespace, listOpts)
 
 	_, err := c.Fake.Invokes(action, &edgev1alpha1.RegistrationList{})
 	return err
 }
 
 func (c *registrationsClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*edgev1alpha1.Registration, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(registrationsResource, c.Cluster, c.Namespace, name), &edgev1alpha1.Registration{})
+	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(registrationsResource, c.ClusterPath, c.Namespace, name), &edgev1alpha1.Registration{})
 	if obj == nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (c *registrationsClient) Get(ctx context.Context, name string, options meta
 
 // List takes label and field selectors, and returns the list of Registrations that match those selectors.
 func (c *registrationsClient) List(ctx context.Context, opts metav1.ListOptions) (*edgev1alpha1.RegistrationList, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewListAction(registrationsResource, registrationsKind, c.Cluster, c.Namespace, opts), &edgev1alpha1.RegistrationList{})
+	obj, err := c.Fake.Invokes(kcptesting.NewListAction(registrationsResource, registrationsKind, c.ClusterPath, c.Namespace, opts), &edgev1alpha1.RegistrationList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -162,11 +162,11 @@ func (c *registrationsClient) List(ctx context.Context, opts metav1.ListOptions)
 }
 
 func (c *registrationsClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(registrationsResource, c.Cluster, c.Namespace, opts))
+	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(registrationsResource, c.ClusterPath, c.Namespace, opts))
 }
 
 func (c *registrationsClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*edgev1alpha1.Registration, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(registrationsResource, c.Cluster, c.Namespace, name, pt, data, subresources...), &edgev1alpha1.Registration{})
+	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(registrationsResource, c.ClusterPath, c.Namespace, name, pt, data, subresources...), &edgev1alpha1.Registration{})
 	if obj == nil {
 		return nil, err
 	}

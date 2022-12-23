@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/apimachinery/v2/pkg/client"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +41,7 @@ type RegistrationsClusterGetter interface {
 // RegistrationClusterInterface can operate on Registrations across all clusters,
 // or scope down to one cluster and return a RegistrationsNamespacer.
 type RegistrationClusterInterface interface {
-	Cluster(logicalcluster.Name) RegistrationsNamespacer
+	Cluster(logicalcluster.Path) RegistrationsNamespacer
 	List(ctx context.Context, opts metav1.ListOptions) (*edgev1alpha1.RegistrationList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,12 +51,12 @@ type registrationsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *registrationsClusterInterface) Cluster(name logicalcluster.Name) RegistrationsNamespacer {
-	if name == logicalcluster.Wildcard {
+func (c *registrationsClusterInterface) Cluster(clusterPath logicalcluster.Path) RegistrationsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &registrationsNamespacer{clientCache: c.clientCache, name: name}
+	return &registrationsNamespacer{clientCache: c.clientCache, clusterPath: clusterPath}
 }
 
 
@@ -76,9 +76,9 @@ type RegistrationsNamespacer interface {
 
 type registrationsNamespacer struct {
 	clientCache kcpclient.Cache[*edgev1alpha1client.EdgeV1alpha1Client]
-	name logicalcluster.Name
+	clusterPath logicalcluster.Path
 }
 
 func (n *registrationsNamespacer) Namespace(namespace string) edgev1alpha1client.RegistrationInterface {
-	return n.clientCache.ClusterOrDie(n.name).Registrations(namespace)
+	return n.clientCache.ClusterOrDie(n.clusterPath).Registrations(namespace)
 }

@@ -22,7 +22,7 @@ package v1alpha1
 
 import (
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	"k8s.io/client-go/rest"
 	kcptenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster/typed/tenancy/v1alpha1"
@@ -35,11 +35,11 @@ type TenancyV1alpha1ClusterClient struct {
 	*kcptesting.Fake 
 }
 
-func (c *TenancyV1alpha1ClusterClient) Cluster(cluster logicalcluster.Name) tenancyv1alpha1.TenancyV1alpha1Interface {
-	if cluster == logicalcluster.Wildcard {
+func (c *TenancyV1alpha1ClusterClient) Cluster(clusterPath logicalcluster.Path) tenancyv1alpha1.TenancyV1alpha1Interface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
-	return &TenancyV1alpha1Client{Fake: c.Fake, Cluster: cluster}
+	return &TenancyV1alpha1Client{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -54,7 +54,7 @@ var _ tenancyv1alpha1.TenancyV1alpha1Interface = (*TenancyV1alpha1Client)(nil)
 
 type TenancyV1alpha1Client struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (c *TenancyV1alpha1Client) RESTClient() rest.Interface {
@@ -64,9 +64,9 @@ func (c *TenancyV1alpha1Client) RESTClient() rest.Interface {
 
 
 func (c *TenancyV1alpha1Client) Users() tenancyv1alpha1.UserInterface {
-	return &usersClient{Fake: c.Fake, Cluster: c.Cluster}
+	return &usersClient{Fake: c.Fake, ClusterPath: c.ClusterPath}
 }
 
 func (c *TenancyV1alpha1Client) Workspaces() tenancyv1alpha1.WorkspaceInterface {
-	return &workspacesClient{Fake: c.Fake, Cluster: c.Cluster}
+	return &workspacesClient{Fake: c.Fake, ClusterPath: c.ClusterPath}
 }

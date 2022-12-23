@@ -11,19 +11,19 @@ import (
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 )
 
 type registrationCreateReconciler struct {
 	getRegistrationResourceName  func(r *edgev1alpha1.Registration) string
-	createOrUpdateServiceAccount func(ctx context.Context, cluster logicalcluster.Name, sa *corev1.ServiceAccount) error
-	createOrUpdateSecret         func(ctx context.Context, cluster logicalcluster.Name, secret *corev1.Secret) error
-	createOrUpdateRole           func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.Role) error
-	createOrUpdateRoleBinding    func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.RoleBinding) error
-	getSecret                    func(ctx context.Context, cluster logicalcluster.Name, name, namespace string) (*corev1.Secret, error)
+	createOrUpdateServiceAccount func(ctx context.Context, cluster logicalcluster.Path, sa *corev1.ServiceAccount) error
+	createOrUpdateSecret         func(ctx context.Context, cluster logicalcluster.Path, secret *corev1.Secret) error
+	createOrUpdateRole           func(ctx context.Context, cluster logicalcluster.Path, role *rbacv1.Role) error
+	createOrUpdateRoleBinding    func(ctx context.Context, cluster logicalcluster.Path, roleBinding *rbacv1.RoleBinding) error
+	getSecret                    func(ctx context.Context, cluster logicalcluster.Path, name, namespace string) (*corev1.Secret, error)
 }
 
-func (r *registrationCreateReconciler) reconcile(ctx context.Context, cluster logicalcluster.Name, registration *edgev1alpha1.Registration) (reconcileStatus, error) {
+func (r *registrationCreateReconciler) reconcile(ctx context.Context, cluster logicalcluster.Path, registration *edgev1alpha1.Registration) (reconcileStatus, error) {
 	resourceName := r.getRegistrationResourceName(registration)
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{

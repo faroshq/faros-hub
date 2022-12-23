@@ -12,10 +12,10 @@ import (
 	edgeinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/edge/v1alpha1"
 	edgelisters "github.com/faroshq/faros-hub/pkg/client/listers/edge/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
 	"github.com/kcp-dev/client-go/kubernetes"
 	"github.com/kcp-dev/kcp/pkg/logging"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,7 +156,7 @@ func (c *Controller) process(ctx context.Context, key string) (bool, error) {
 	ctx = klog.NewContext(ctx, logger)
 
 	var errs []error
-	requeue, err := c.reconcile(ctx, cluster, obj)
+	requeue, err := c.reconcile(ctx, cluster.Path(), obj)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -228,6 +228,6 @@ func (c *Controller) patchIfNeeded(ctx context.Context, old, obj *edgev1alpha1.R
 		subresources = []string{"status"}
 	}
 
-	_, err = c.farosClientSet.Cluster(clusterName).EdgeV1alpha1().Registrations(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
+	_, err = c.farosClientSet.Cluster(clusterName.Path()).EdgeV1alpha1().Registrations(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
 	return err
 }

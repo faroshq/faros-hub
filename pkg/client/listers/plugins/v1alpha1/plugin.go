@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"	
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"	
+	"github.com/kcp-dev/logicalcluster/v3"
 	
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/labels"
@@ -38,7 +38,7 @@ type PluginClusterLister interface {
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error)
 	// Cluster returns a lister that can list and get Plugins in one workspace.
-Cluster(cluster logicalcluster.Name) PluginLister
+Cluster(clusterName logicalcluster.Name) PluginLister
 PluginClusterListerExpansion
 }
 
@@ -64,8 +64,8 @@ func (s *pluginClusterLister) List(selector labels.Selector) (ret []*pluginsv1al
 }
 
 // Cluster scopes the lister to one workspace, allowing users to list and get Plugins.
-func (s *pluginClusterLister) Cluster(cluster logicalcluster.Name) PluginLister {
-return &pluginLister{indexer: s.indexer, cluster: cluster}
+func (s *pluginClusterLister) Cluster(clusterName logicalcluster.Name) PluginLister {
+return &pluginLister{indexer: s.indexer, clusterName: clusterName}
 }
 
 // PluginLister can list all Plugins, or get one in particular.
@@ -82,12 +82,12 @@ PluginListerExpansion
 // pluginLister can list all Plugins inside a workspace.
 type pluginLister struct {
 	indexer cache.Indexer
-	cluster logicalcluster.Name
+	clusterName logicalcluster.Name
 }
 
 // List lists all Plugins in the indexer for a workspace.
 func (s *pluginLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Plugin, err error) {
-	err = kcpcache.ListAllByCluster(s.indexer, s.cluster, selector, func(i interface{}) {
+	err = kcpcache.ListAllByCluster(s.indexer, s.clusterName, selector, func(i interface{}) {
 		ret = append(ret, i.(*pluginsv1alpha1.Plugin))
 	})
 	return ret, err
@@ -95,7 +95,7 @@ func (s *pluginLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Pl
 
 // Get retrieves the Plugin from the indexer for a given workspace and name.
 func (s *pluginLister) Get(name string) (*pluginsv1alpha1.Plugin, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), "", name)
+	key := kcpcache.ToClusterAwareKey(s.clusterName.String(), "", name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

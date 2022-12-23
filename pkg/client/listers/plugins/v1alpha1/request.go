@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"	
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"	
+	"github.com/kcp-dev/logicalcluster/v3"
 	
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/labels"
@@ -38,7 +38,7 @@ type RequestClusterLister interface {
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error)
 	// Cluster returns a lister that can list and get Requests in one workspace.
-Cluster(cluster logicalcluster.Name) RequestLister
+Cluster(clusterName logicalcluster.Name) RequestLister
 RequestClusterListerExpansion
 }
 
@@ -64,8 +64,8 @@ func (s *requestClusterLister) List(selector labels.Selector) (ret []*pluginsv1a
 }
 
 // Cluster scopes the lister to one workspace, allowing users to list and get Requests.
-func (s *requestClusterLister) Cluster(cluster logicalcluster.Name) RequestLister {
-return &requestLister{indexer: s.indexer, cluster: cluster}
+func (s *requestClusterLister) Cluster(clusterName logicalcluster.Name) RequestLister {
+return &requestLister{indexer: s.indexer, clusterName: clusterName}
 }
 
 // RequestLister can list all Requests, or get one in particular.
@@ -82,12 +82,12 @@ RequestListerExpansion
 // requestLister can list all Requests inside a workspace.
 type requestLister struct {
 	indexer cache.Indexer
-	cluster logicalcluster.Name
+	clusterName logicalcluster.Name
 }
 
 // List lists all Requests in the indexer for a workspace.
 func (s *requestLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Request, err error) {
-	err = kcpcache.ListAllByCluster(s.indexer, s.cluster, selector, func(i interface{}) {
+	err = kcpcache.ListAllByCluster(s.indexer, s.clusterName, selector, func(i interface{}) {
 		ret = append(ret, i.(*pluginsv1alpha1.Request))
 	})
 	return ret, err
@@ -95,7 +95,7 @@ func (s *requestLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.R
 
 // Get retrieves the Request from the indexer for a given workspace and name.
 func (s *requestLister) Get(name string) (*pluginsv1alpha1.Request, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), "", name)
+	key := kcpcache.ToClusterAwareKey(s.clusterName.String(), "", name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

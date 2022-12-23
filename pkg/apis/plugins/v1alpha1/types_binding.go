@@ -25,7 +25,7 @@ type Binding struct {
 // BindingSpec defines the desired state of plugin binding
 type BindingSpec struct {
 	// PluginType is the type of plugin to bind to.
-	PluginType metav1.TypeMeta `json:"pluginType,omitempty"`
+	PluginType string `json:"pluginType,omitempty"`
 	// PluginName is the name of the plugin to bind to.
 	PluginName string `json:"pluginName,omitempty"`
 	// Selector is a label selector for agents to bind to.

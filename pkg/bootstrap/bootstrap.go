@@ -9,7 +9,7 @@ import (
 	"github.com/faroshq/faros-hub/pkg/config"
 	"github.com/faroshq/faros-hub/pkg/models"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 )
 
 // TODO: All this package should go away once we have a proper bootstrap
@@ -31,8 +31,8 @@ type Bootstraper interface {
 type bootstrap struct {
 	config *config.ControllerConfig
 
-	kcpClient     kcpclient.Interface
 	clientFactory utilkubernetes.ClientFactory
+	kcpClient     kcpclient.ClusterInterface
 }
 
 func New(config *config.ControllerConfig) (*bootstrap, error) {

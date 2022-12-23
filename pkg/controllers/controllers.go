@@ -115,22 +115,22 @@ func (c *controllerManager) Run(ctx context.Context) error {
 	// bootstrap will set missing ctrlRestConfig and deploy kcp wide resources
 	ctxT, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	plugins, err := c.bootstrap(ctxT)
+	_, err := c.bootstrap(ctxT)
 	if err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 
 	eg := errgroup.Group{}
 
-	eg.Go(func() error {
-		return c.runEdge(ctx, plugins)
-	})
-	eg.Go(func() error {
-		return c.runSystemTenants(ctx)
-	})
-	eg.Go(func() error {
-		return c.runSystemPlugins(ctx, plugins)
-	})
+	//eg.Go(func() error {
+	//	return c.runEdge(ctx, plugins)
+	//})
+	//eg.Go(func() error {
+	//	return c.runSystemTenants(ctx)
+	//})
+	//eg.Go(func() error {
+	//		return c.runSystemPlugins(ctx, plugins)
+	//	})
 
 	return eg.Wait()
 }

@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"	
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"	
+	"github.com/kcp-dev/logicalcluster/v3"
 	
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/labels"
@@ -38,7 +38,7 @@ type RegistrationClusterLister interface {
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*edgev1alpha1.Registration, err error)
 	// Cluster returns a lister that can list and get Registrations in one workspace.
-Cluster(cluster logicalcluster.Name) RegistrationLister
+Cluster(clusterName logicalcluster.Name) RegistrationLister
 RegistrationClusterListerExpansion
 }
 
@@ -65,8 +65,8 @@ func (s *registrationClusterLister) List(selector labels.Selector) (ret []*edgev
 }
 
 // Cluster scopes the lister to one workspace, allowing users to list and get Registrations.
-func (s *registrationClusterLister) Cluster(cluster logicalcluster.Name) RegistrationLister {
-return &registrationLister{indexer: s.indexer, cluster: cluster}
+func (s *registrationClusterLister) Cluster(clusterName logicalcluster.Name) RegistrationLister {
+return &registrationLister{indexer: s.indexer, clusterName: clusterName}
 }
 
 // RegistrationLister can list Registrations across all namespaces, or scope down to a RegistrationNamespaceLister for one namespace.
@@ -82,12 +82,12 @@ RegistrationListerExpansion
 // registrationLister can list all Registrations inside a workspace or scope down to a RegistrationLister for one namespace.
 type registrationLister struct {
 	indexer cache.Indexer
-	cluster logicalcluster.Name
+	clusterName logicalcluster.Name
 }
 
 // List lists all Registrations in the indexer for a workspace.
 func (s *registrationLister) List(selector labels.Selector) (ret []*edgev1alpha1.Registration, err error) {
-	err = kcpcache.ListAllByCluster(s.indexer, s.cluster, selector, func(i interface{}) {
+	err = kcpcache.ListAllByCluster(s.indexer, s.clusterName, selector, func(i interface{}) {
 		ret = append(ret, i.(*edgev1alpha1.Registration))
 	})
 	return ret, err
@@ -95,7 +95,7 @@ func (s *registrationLister) List(selector labels.Selector) (ret []*edgev1alpha1
 
 // Registrations returns an object that can list and get Registrations in one namespace.
 func (s *registrationLister) Registrations(namespace string) RegistrationNamespaceLister {
-return &registrationNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
+return &registrationNamespaceLister{indexer: s.indexer, clusterName: s.clusterName, namespace: namespace}
 }
 
 // registrationNamespaceLister helps list and get Registrations.
@@ -113,13 +113,13 @@ type RegistrationNamespaceLister interface {
 // All objects returned here must be treated as read-only.
 type registrationNamespaceLister struct {
 	indexer   cache.Indexer
-	cluster   logicalcluster.Name
+	clusterName   logicalcluster.Name
 	namespace string
 }
 
 // List lists all Registrations in the indexer for a given workspace and namespace.
 func (s *registrationNamespaceLister) List(selector labels.Selector) (ret []*edgev1alpha1.Registration, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
+	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.clusterName, s.namespace, selector, func(i interface{}) {
 		ret = append(ret, i.(*edgev1alpha1.Registration))
 	})
 	return ret, err
@@ -127,7 +127,7 @@ func (s *registrationNamespaceLister) List(selector labels.Selector) (ret []*edg
 
 // Get retrieves the Registration from the indexer for a given workspace, namespace and name.
 func (s *registrationNamespaceLister) Get(name string) (*edgev1alpha1.Registration, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+	key := kcpcache.ToClusterAwareKey(s.clusterName.String(), s.namespace, name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

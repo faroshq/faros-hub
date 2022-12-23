@@ -22,7 +22,7 @@ package v1alpha1
 
 import (
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	"k8s.io/client-go/rest"
 	kcpedgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster/typed/edge/v1alpha1"
@@ -35,11 +35,11 @@ type EdgeV1alpha1ClusterClient struct {
 	*kcptesting.Fake 
 }
 
-func (c *EdgeV1alpha1ClusterClient) Cluster(cluster logicalcluster.Name) edgev1alpha1.EdgeV1alpha1Interface {
-	if cluster == logicalcluster.Wildcard {
+func (c *EdgeV1alpha1ClusterClient) Cluster(clusterPath logicalcluster.Path) edgev1alpha1.EdgeV1alpha1Interface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
-	return &EdgeV1alpha1Client{Fake: c.Fake, Cluster: cluster}
+	return &EdgeV1alpha1Client{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -54,7 +54,7 @@ var _ edgev1alpha1.EdgeV1alpha1Interface = (*EdgeV1alpha1Client)(nil)
 
 type EdgeV1alpha1Client struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (c *EdgeV1alpha1Client) RESTClient() rest.Interface {
@@ -64,9 +64,9 @@ func (c *EdgeV1alpha1Client) RESTClient() rest.Interface {
 
 
 func (c *EdgeV1alpha1Client) Agents(namespace string) edgev1alpha1.AgentInterface {
-	return &agentsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+	return &agentsClient{Fake: c.Fake, ClusterPath: c.ClusterPath, Namespace: namespace}
 }
 
 func (c *EdgeV1alpha1Client) Registrations(namespace string) edgev1alpha1.RegistrationInterface {
-	return &registrationsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+	return &registrationsClient{Fake: c.Fake, ClusterPath: c.ClusterPath, Namespace: namespace}
 }

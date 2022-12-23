@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,10 +23,10 @@ const (
 )
 
 type reconciler interface {
-	reconcile(ctx context.Context, cluster logicalcluster.Name, registration *edgev1alpha1.Registration) (reconcileStatus, error)
+	reconcile(ctx context.Context, cluster logicalcluster.Path, registration *edgev1alpha1.Registration) (reconcileStatus, error)
 }
 
-func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name, registration *edgev1alpha1.Registration) (bool, error) {
+func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Path, registration *edgev1alpha1.Registration) (bool, error) {
 	var reconcilers []reconciler
 	createReconcilers := []reconciler{
 		&finalizerAddReconciler{ // must be first
@@ -38,19 +38,19 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 			getRegistrationResourceName: func(r *edgev1alpha1.Registration) string {
 				return getRegistrationResourceName(r)
 			},
-			createOrUpdateServiceAccount: func(ctx context.Context, cluster logicalcluster.Name, sa *corev1.ServiceAccount) error {
+			createOrUpdateServiceAccount: func(ctx context.Context, cluster logicalcluster.Path, sa *corev1.ServiceAccount) error {
 				return createOrUpdateServiceAccount(ctx, c.coreClientSet.Cluster(cluster), sa)
 			},
-			createOrUpdateSecret: func(ctx context.Context, cluster logicalcluster.Name, secret *corev1.Secret) error {
+			createOrUpdateSecret: func(ctx context.Context, cluster logicalcluster.Path, secret *corev1.Secret) error {
 				return createOrUpdateSecret(ctx, c.coreClientSet.Cluster(cluster), secret)
 			},
-			createOrUpdateRole: func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.Role) error {
+			createOrUpdateRole: func(ctx context.Context, cluster logicalcluster.Path, role *rbacv1.Role) error {
 				return createOrUpdateRole(ctx, c.coreClientSet.Cluster(cluster), role)
 			},
-			createOrUpdateRoleBinding: func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.RoleBinding) error {
+			createOrUpdateRoleBinding: func(ctx context.Context, cluster logicalcluster.Path, roleBinding *rbacv1.RoleBinding) error {
 				return createOrUpdateRoleBinding(ctx, c.coreClientSet.Cluster(cluster), roleBinding)
 			},
-			getSecret: func(ctx context.Context, cluster logicalcluster.Name, name, namespace string) (*corev1.Secret, error) {
+			getSecret: func(ctx context.Context, cluster logicalcluster.Path, name, namespace string) (*corev1.Secret, error) {
 				return c.coreClientSet.Cluster(cluster).CoreV1().Secrets(namespace).Get(ctx, name, metav1.GetOptions{})
 			},
 		},
@@ -61,16 +61,16 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 			getRegistrationResourceName: func(r *edgev1alpha1.Registration) string {
 				return getRegistrationResourceName(r)
 			},
-			deleteServiceAccount: func(ctx context.Context, cluster logicalcluster.Name, sa *corev1.ServiceAccount) error {
+			deleteServiceAccount: func(ctx context.Context, cluster logicalcluster.Path, sa *corev1.ServiceAccount) error {
 				return c.coreClientSet.Cluster(cluster).CoreV1().ServiceAccounts(sa.Namespace).Delete(ctx, sa.Name, metav1.DeleteOptions{})
 			},
-			deleteSecret: func(ctx context.Context, cluster logicalcluster.Name, secret *corev1.Secret) error {
+			deleteSecret: func(ctx context.Context, cluster logicalcluster.Path, secret *corev1.Secret) error {
 				return c.coreClientSet.Cluster(cluster).CoreV1().Secrets(secret.Namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
 			},
-			deleteRole: func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.Role) error {
+			deleteRole: func(ctx context.Context, cluster logicalcluster.Path, role *rbacv1.Role) error {
 				return c.coreClientSet.Cluster(cluster).RbacV1().Roles(role.Namespace).Delete(ctx, role.Name, metav1.DeleteOptions{})
 			},
-			deleteRoleBinding: func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.RoleBinding) error {
+			deleteRoleBinding: func(ctx context.Context, cluster logicalcluster.Path, roleBinding *rbacv1.RoleBinding) error {
 				return c.coreClientSet.Cluster(cluster).RbacV1().RoleBindings(roleBinding.Namespace).Delete(ctx, roleBinding.Name, metav1.DeleteOptions{})
 			},
 		},

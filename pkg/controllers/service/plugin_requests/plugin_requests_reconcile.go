@@ -8,7 +8,7 @@ import (
 	"github.com/faroshq/faros-hub/pkg/models"
 	v1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -23,10 +23,10 @@ const (
 )
 
 type reconciler interface {
-	reconcile(ctx context.Context, cluster logicalcluster.Name, request *pluginsv1alpha1.Request) (reconcileStatus, error)
+	reconcile(ctx context.Context, cluster logicalcluster.Path, request *pluginsv1alpha1.Request) (reconcileStatus, error)
 }
 
-func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name, request *pluginsv1alpha1.Request) (bool, error) {
+func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Path, request *pluginsv1alpha1.Request) (bool, error) {
 	var reconcilers []reconciler
 	createReconcilers := []reconciler{
 		&finalizerAddReconciler{ // must be first
@@ -38,8 +38,8 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 			getPlugins: func() models.PluginsList {
 				return c.plugins
 			},
-			createAPIExport: func(ctx context.Context, destinationCluster logicalcluster.Name, pluginVersion, pluginName string) error {
-				sourceCluster := logicalcluster.New(c.config.ControllersPluginsWorkspace)
+			createAPIExport: func(ctx context.Context, destinationCluster logicalcluster.Path, pluginVersion, pluginName string) error {
+				sourceCluster := logicalcluster.NewPath(c.config.ControllersPluginsWorkspace)
 				sourceName := fmt.Sprintf("%s.%s", pluginVersion, pluginName)
 				destinationName := pluginName
 
@@ -82,7 +82,7 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 	return requeue, utilerrors.NewAggregate(errs)
 }
 
-func createAPIBinding(ctx context.Context, kcpClient kcpclientset.ClusterInterface, sourceCluster, destinationCluster logicalcluster.Name, sourceName, destinationName string) error {
+func createAPIBinding(ctx context.Context, kcpClient kcpclientset.ClusterInterface, sourceCluster, destinationCluster logicalcluster.Path, sourceName, destinationName string) error {
 	apiExport, err := kcpClient.Cluster(sourceCluster).ApisV1alpha1().APIExports().Get(ctx, sourceName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -93,10 +93,10 @@ func createAPIBinding(ctx context.Context, kcpClient kcpclientset.ClusterInterfa
 			Name: destinationName,
 		},
 		Spec: v1alpha1.APIBindingSpec{
-			Reference: v1alpha1.ExportReference{
-				Workspace: &v1alpha1.WorkspaceExportReference{
-					Path:       sourceCluster.String(),
-					ExportName: apiExport.Name,
+			Reference: v1alpha1.BindingReference{
+				Export: &v1alpha1.ExportBindingReference{
+					Path: sourceCluster.String(),
+					Name: apiExport.Name,
 				},
 			},
 		},
@@ -111,7 +111,6 @@ func createAPIBinding(ctx context.Context, kcpClient kcpclientset.ClusterInterfa
 		}
 	case err == nil:
 		current.Spec = apiBinding.Spec
-		//current.ResourceVersion = ""
 		_, err = kcpClient.Cluster(destinationCluster).ApisV1alpha1().APIBindings().Update(ctx, current, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to update the APIBinding %s", err)

@@ -21,9 +21,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"	
-	"github.com/kcp-dev/logicalcluster/v2"
-	
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
+	"github.com/kcp-dev/logicalcluster/v3"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,8 +38,8 @@ type BindingClusterLister interface {
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*pluginsv1alpha1.Binding, err error)
 	// Cluster returns a lister that can list and get Bindings in one workspace.
-Cluster(cluster logicalcluster.Name) BindingLister
-BindingClusterListerExpansion
+	Cluster(clusterName logicalcluster.Name) BindingLister
+	BindingClusterListerExpansion
 }
 
 type bindingClusterLister struct {
@@ -65,8 +65,8 @@ func (s *bindingClusterLister) List(selector labels.Selector) (ret []*pluginsv1a
 }
 
 // Cluster scopes the lister to one workspace, allowing users to list and get Bindings.
-func (s *bindingClusterLister) Cluster(cluster logicalcluster.Name) BindingLister {
-return &bindingLister{indexer: s.indexer, cluster: cluster}
+func (s *bindingClusterLister) Cluster(clusterName logicalcluster.Name) BindingLister {
+return &bindingLister{indexer: s.indexer, clusterName: clusterName}
 }
 
 // BindingLister can list Bindings across all namespaces, or scope down to a BindingNamespaceLister for one namespace.
@@ -82,12 +82,12 @@ BindingListerExpansion
 // bindingLister can list all Bindings inside a workspace or scope down to a BindingLister for one namespace.
 type bindingLister struct {
 	indexer cache.Indexer
-	cluster logicalcluster.Name
+	clusterName logicalcluster.Name
 }
 
 // List lists all Bindings in the indexer for a workspace.
 func (s *bindingLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Binding, err error) {
-	err = kcpcache.ListAllByCluster(s.indexer, s.cluster, selector, func(i interface{}) {
+	err = kcpcache.ListAllByCluster(s.indexer, s.clusterName, selector, func(i interface{}) {
 		ret = append(ret, i.(*pluginsv1alpha1.Binding))
 	})
 	return ret, err
@@ -95,7 +95,7 @@ func (s *bindingLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.B
 
 // Bindings returns an object that can list and get Bindings in one namespace.
 func (s *bindingLister) Bindings(namespace string) BindingNamespaceLister {
-return &bindingNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
+return &bindingNamespaceLister{indexer: s.indexer, clusterName: s.clusterName, namespace: namespace}
 }
 
 // bindingNamespaceLister helps list and get Bindings.
@@ -113,13 +113,13 @@ type BindingNamespaceLister interface {
 // All objects returned here must be treated as read-only.
 type bindingNamespaceLister struct {
 	indexer   cache.Indexer
-	cluster   logicalcluster.Name
+	clusterName   logicalcluster.Name
 	namespace string
 }
 
 // List lists all Bindings in the indexer for a given workspace and namespace.
 func (s *bindingNamespaceLister) List(selector labels.Selector) (ret []*pluginsv1alpha1.Binding, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
+	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.clusterName, s.namespace, selector, func(i interface{}) {
 		ret = append(ret, i.(*pluginsv1alpha1.Binding))
 	})
 	return ret, err
@@ -127,7 +127,7 @@ func (s *bindingNamespaceLister) List(selector labels.Selector) (ret []*pluginsv
 
 // Get retrieves the Binding from the indexer for a given workspace, namespace and name.
 func (s *bindingNamespaceLister) Get(name string) (*pluginsv1alpha1.Binding, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+	key := kcpcache.ToClusterAwareKey(s.clusterName.String(), s.namespace, name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

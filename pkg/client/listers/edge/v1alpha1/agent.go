@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"	
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"	
+	"github.com/kcp-dev/logicalcluster/v3"
 	
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/apimachinery/pkg/labels"
@@ -38,7 +38,7 @@ type AgentClusterLister interface {
 	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*edgev1alpha1.Agent, err error)
 	// Cluster returns a lister that can list and get Agents in one workspace.
-Cluster(cluster logicalcluster.Name) AgentLister
+Cluster(clusterName logicalcluster.Name) AgentLister
 AgentClusterListerExpansion
 }
 
@@ -65,8 +65,8 @@ func (s *agentClusterLister) List(selector labels.Selector) (ret []*edgev1alpha1
 }
 
 // Cluster scopes the lister to one workspace, allowing users to list and get Agents.
-func (s *agentClusterLister) Cluster(cluster logicalcluster.Name) AgentLister {
-return &agentLister{indexer: s.indexer, cluster: cluster}
+func (s *agentClusterLister) Cluster(clusterName logicalcluster.Name) AgentLister {
+return &agentLister{indexer: s.indexer, clusterName: clusterName}
 }
 
 // AgentLister can list Agents across all namespaces, or scope down to a AgentNamespaceLister for one namespace.
@@ -82,12 +82,12 @@ AgentListerExpansion
 // agentLister can list all Agents inside a workspace or scope down to a AgentLister for one namespace.
 type agentLister struct {
 	indexer cache.Indexer
-	cluster logicalcluster.Name
+	clusterName logicalcluster.Name
 }
 
 // List lists all Agents in the indexer for a workspace.
 func (s *agentLister) List(selector labels.Selector) (ret []*edgev1alpha1.Agent, err error) {
-	err = kcpcache.ListAllByCluster(s.indexer, s.cluster, selector, func(i interface{}) {
+	err = kcpcache.ListAllByCluster(s.indexer, s.clusterName, selector, func(i interface{}) {
 		ret = append(ret, i.(*edgev1alpha1.Agent))
 	})
 	return ret, err
@@ -95,7 +95,7 @@ func (s *agentLister) List(selector labels.Selector) (ret []*edgev1alpha1.Agent,
 
 // Agents returns an object that can list and get Agents in one namespace.
 func (s *agentLister) Agents(namespace string) AgentNamespaceLister {
-return &agentNamespaceLister{indexer: s.indexer, cluster: s.cluster, namespace: namespace}
+return &agentNamespaceLister{indexer: s.indexer, clusterName: s.clusterName, namespace: namespace}
 }
 
 // agentNamespaceLister helps list and get Agents.
@@ -113,13 +113,13 @@ type AgentNamespaceLister interface {
 // All objects returned here must be treated as read-only.
 type agentNamespaceLister struct {
 	indexer   cache.Indexer
-	cluster   logicalcluster.Name
+	clusterName   logicalcluster.Name
 	namespace string
 }
 
 // List lists all Agents in the indexer for a given workspace and namespace.
 func (s *agentNamespaceLister) List(selector labels.Selector) (ret []*edgev1alpha1.Agent, err error) {
-	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.cluster, s.namespace, selector, func(i interface{}) {
+	err = kcpcache.ListAllByClusterAndNamespace(s.indexer, s.clusterName, s.namespace, selector, func(i interface{}) {
 		ret = append(ret, i.(*edgev1alpha1.Agent))
 	})
 	return ret, err
@@ -127,7 +127,7 @@ func (s *agentNamespaceLister) List(selector labels.Selector) (ret []*edgev1alph
 
 // Get retrieves the Agent from the indexer for a given workspace, namespace and name.
 func (s *agentNamespaceLister) Get(name string) (*edgev1alpha1.Agent, error) {
-	key := kcpcache.ToClusterAwareKey(s.cluster.String(), s.namespace, name)
+	key := kcpcache.ToClusterAwareKey(s.clusterName.String(), s.namespace, name)
 	obj, exists, err := s.indexer.GetByKey(key)
 	if err != nil {
 		return nil, err

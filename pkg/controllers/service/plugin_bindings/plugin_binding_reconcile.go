@@ -4,7 +4,10 @@ import (
 	"context"
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
+	"github.com/kcp-dev/logicalcluster/v3"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
@@ -17,10 +20,10 @@ const (
 )
 
 type reconciler interface {
-	reconcile(ctx context.Context, cluster logicalcluster.Name, binding *pluginsv1alpha1.Binding) (reconcileStatus, error)
+	reconcile(ctx context.Context, cluster logicalcluster.Path, binding *pluginsv1alpha1.Binding) (reconcileStatus, error)
 }
 
-func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name, binding *pluginsv1alpha1.Binding) (bool, error) {
+func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Path, binding *pluginsv1alpha1.Binding) (bool, error) {
 	var reconcilers []reconciler
 	createReconcilers := []reconciler{
 		&finalizerAddReconciler{ // must be first
@@ -28,7 +31,11 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 				return finalizerName
 			},
 		},
-		&bindingReconciler{},
+		&bindingReconciler{
+			getAPIBinding: func(ctx context.Context, cluster logicalcluster.Path, name string) (bool, error) {
+				return getAPIBinding(ctx, c.kcpClientSet, cluster, name)
+			},
+		},
 	}
 
 	deleteReconcilers := []reconciler{
@@ -63,4 +70,12 @@ func (c *Controller) reconcile(ctx context.Context, cluster logicalcluster.Name,
 	}
 
 	return requeue, utilerrors.NewAggregate(errs)
+}
+
+func getAPIBinding(ctx context.Context, kcpClient kcpclientset.ClusterInterface, cluster logicalcluster.Path, name string) (bool, error) {
+	_, err := kcpClient.Cluster(cluster).ApisV1alpha1().APIExports().Get(ctx, name, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return false, err
+	}
+	return !apierrors.IsNotFound(err), nil
 }

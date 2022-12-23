@@ -26,8 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/cache"
 
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 		edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
@@ -63,10 +63,10 @@ func (f *genericClusterInformer) Lister() kcpcache.GenericClusterLister {
 }
 
 // Cluster scopes to a GenericInformer.
-func (f *genericClusterInformer) Cluster(cluster logicalcluster.Name) GenericInformer {
+func (f *genericClusterInformer) Cluster(clusterName logicalcluster.Name) GenericInformer {
 	return &genericInformer{
-		informer: f.Informer().Cluster(cluster),
-		lister:   f.Lister().ByCluster(cluster),
+		informer: f.Informer().Cluster(clusterName),
+		lister:   f.Lister().ByCluster(clusterName),
 	}
 }
 

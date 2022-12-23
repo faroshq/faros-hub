@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,12 +49,12 @@ type bindingsClusterClient struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *bindingsClusterClient) Cluster(cluster logicalcluster.Name) kcppluginsv1alpha1.BindingsNamespacer {
-	if cluster == logicalcluster.Wildcard {
+func (c *bindingsClusterClient) Cluster(clusterPath logicalcluster.Path) kcppluginsv1alpha1.BindingsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &bindingsNamespacer{Fake: c.Fake, Cluster: cluster}
+	return &bindingsNamespacer{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -84,21 +84,21 @@ func (c *bindingsClusterClient) Watch(ctx context.Context, opts metav1.ListOptio
 }
 type bindingsNamespacer struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (n *bindingsNamespacer) Namespace(namespace string) pluginsv1alpha1client.BindingInterface {
-	return &bindingsClient{Fake: n.Fake, Cluster: n.Cluster, Namespace: namespace}
+	return &bindingsClient{Fake: n.Fake, ClusterPath: n.ClusterPath, Namespace: namespace}
 }
 type bindingsClient struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 	Namespace string
 }
 
 
 func (c *bindingsClient) Create(ctx context.Context, binding *pluginsv1alpha1.Binding, opts metav1.CreateOptions) (*pluginsv1alpha1.Binding, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(bindingsResource, c.Cluster, c.Namespace, binding), &pluginsv1alpha1.Binding{})
+	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(bindingsResource, c.ClusterPath, c.Namespace, binding), &pluginsv1alpha1.Binding{})
 	if obj == nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *bindingsClient) Create(ctx context.Context, binding *pluginsv1alpha1.Bi
 }
 
 func (c *bindingsClient) Update(ctx context.Context, binding *pluginsv1alpha1.Binding, opts metav1.UpdateOptions) (*pluginsv1alpha1.Binding, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(bindingsResource, c.Cluster, c.Namespace, binding), &pluginsv1alpha1.Binding{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(bindingsResource, c.ClusterPath, c.Namespace, binding), &pluginsv1alpha1.Binding{})
 	if obj == nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (c *bindingsClient) Update(ctx context.Context, binding *pluginsv1alpha1.Bi
 }
 
 func (c *bindingsClient) UpdateStatus(ctx context.Context, binding *pluginsv1alpha1.Binding, opts metav1.UpdateOptions) (*pluginsv1alpha1.Binding, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(bindingsResource, c.Cluster, "status", c.Namespace, binding), &pluginsv1alpha1.Binding{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(bindingsResource, c.ClusterPath, "status", c.Namespace, binding), &pluginsv1alpha1.Binding{})
 	if obj == nil {
 		return nil, err
 	}
@@ -122,19 +122,19 @@ func (c *bindingsClient) UpdateStatus(ctx context.Context, binding *pluginsv1alp
 }
 
 func (c *bindingsClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(bindingsResource, c.Cluster, c.Namespace, name, opts), &pluginsv1alpha1.Binding{})
+	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(bindingsResource, c.ClusterPath, c.Namespace, name, opts), &pluginsv1alpha1.Binding{})
 	return err
 }
 
 func (c *bindingsClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := kcptesting.NewDeleteCollectionAction(bindingsResource, c.Cluster, c.Namespace, listOpts)
+	action := kcptesting.NewDeleteCollectionAction(bindingsResource, c.ClusterPath, c.Namespace, listOpts)
 
 	_, err := c.Fake.Invokes(action, &pluginsv1alpha1.BindingList{})
 	return err
 }
 
 func (c *bindingsClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*pluginsv1alpha1.Binding, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(bindingsResource, c.Cluster, c.Namespace, name), &pluginsv1alpha1.Binding{})
+	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(bindingsResource, c.ClusterPath, c.Namespace, name), &pluginsv1alpha1.Binding{})
 	if obj == nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (c *bindingsClient) Get(ctx context.Context, name string, options metav1.Ge
 
 // List takes label and field selectors, and returns the list of Bindings that match those selectors.
 func (c *bindingsClient) List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.BindingList, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewListAction(bindingsResource, bindingsKind, c.Cluster, c.Namespace, opts), &pluginsv1alpha1.BindingList{})
+	obj, err := c.Fake.Invokes(kcptesting.NewListAction(bindingsResource, bindingsKind, c.ClusterPath, c.Namespace, opts), &pluginsv1alpha1.BindingList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -162,11 +162,11 @@ func (c *bindingsClient) List(ctx context.Context, opts metav1.ListOptions) (*pl
 }
 
 func (c *bindingsClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(bindingsResource, c.Cluster, c.Namespace, opts))
+	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(bindingsResource, c.ClusterPath, c.Namespace, opts))
 }
 
 func (c *bindingsClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*pluginsv1alpha1.Binding, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(bindingsResource, c.Cluster, c.Namespace, name, pt, data, subresources...), &pluginsv1alpha1.Binding{})
+	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(bindingsResource, c.ClusterPath, c.Namespace, name, pt, data, subresources...), &pluginsv1alpha1.Binding{})
 	if obj == nil {
 		return nil, err
 	}

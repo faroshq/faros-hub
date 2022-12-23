@@ -4,7 +4,7 @@ import (
 	"context"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 

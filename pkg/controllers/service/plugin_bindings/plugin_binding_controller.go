@@ -12,9 +12,10 @@ import (
 	pluginsinformers "github.com/faroshq/faros-hub/pkg/client/informers/externalversions/plugins/v1alpha1"
 	pluginslisters "github.com/faroshq/faros-hub/pkg/client/listers/plugins/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
+	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 	"github.com/kcp-dev/kcp/pkg/logging"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,6 +40,7 @@ type Controller struct {
 	queue workqueue.RateLimitingInterface
 
 	farosClientSet farosclientset.ClusterInterface
+	kcpClientSet   kcpclientset.ClusterInterface
 	pluginsIndexer cache.Indexer
 	pluginsLister  pluginslisters.BindingClusterLister
 }
@@ -46,6 +48,7 @@ type Controller struct {
 func NewController(
 	config *config.ControllerConfig,
 	farosClientSet farosclientset.ClusterInterface,
+	kcpClientSet kcpclientset.ClusterInterface,
 	pluginsInformer pluginsinformers.BindingClusterInformer,
 ) (*Controller, error) {
 	queue := workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), controllerName)
@@ -54,6 +57,7 @@ func NewController(
 		config:         config,
 		queue:          queue,
 		farosClientSet: farosClientSet,
+		kcpClientSet:   kcpClientSet,
 		pluginsIndexer: pluginsInformer.Informer().GetIndexer(),
 		pluginsLister:  pluginsInformer.Lister(),
 	}
@@ -151,7 +155,7 @@ func (c *Controller) process(ctx context.Context, key string) (bool, error) {
 	ctx = klog.NewContext(ctx, logger)
 
 	var errs []error
-	requeue, err := c.reconcile(ctx, cluster, obj)
+	requeue, err := c.reconcile(ctx, cluster.Path(), obj)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -223,6 +227,6 @@ func (c *Controller) patchIfNeeded(ctx context.Context, old, obj *pluginsv1alpha
 		subresources = []string{"status"}
 	}
 
-	_, err = c.farosClientSet.Cluster(clusterName).PluginsV1alpha1().Bindings(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
+	_, err = c.farosClientSet.Cluster(clusterName.Path()).PluginsV1alpha1().Bindings(obj.Namespace).Patch(ctx, obj.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{}, subresources...)
 	return err
 }

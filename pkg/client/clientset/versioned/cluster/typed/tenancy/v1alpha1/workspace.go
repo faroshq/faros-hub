@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/apimachinery/v2/pkg/client"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +41,7 @@ type WorkspacesClusterGetter interface {
 // WorkspaceClusterInterface can operate on Workspaces across all clusters,
 // or scope down to one cluster and return a tenancyv1alpha1client.WorkspaceInterface.
 type WorkspaceClusterInterface interface {
-	Cluster(logicalcluster.Name) tenancyv1alpha1client.WorkspaceInterface
+	Cluster(logicalcluster.Path) tenancyv1alpha1client.WorkspaceInterface
 	List(ctx context.Context, opts metav1.ListOptions) (*tenancyv1alpha1.WorkspaceList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,12 +51,12 @@ type workspacesClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *workspacesClusterInterface) Cluster(name logicalcluster.Name) tenancyv1alpha1client.WorkspaceInterface {
-	if name == logicalcluster.Wildcard {
+func (c *workspacesClusterInterface) Cluster(clusterPath logicalcluster.Path) tenancyv1alpha1client.WorkspaceInterface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return c.clientCache.ClusterOrDie(name).Workspaces()
+	return c.clientCache.ClusterOrDie(clusterPath).Workspaces()
 }
 
 

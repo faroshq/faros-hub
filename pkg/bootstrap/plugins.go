@@ -10,7 +10,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
@@ -46,8 +46,8 @@ func newPluginStore() *pluginStore {
 
 func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.PluginsList, error) {
 	logger := klog.FromContext(ctx)
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(b.config.ControllersPluginsWorkspace))
 
+	clusterPath := logicalcluster.NewPath(workspace)
 	path := b.config.PluginsDir
 	store := newPluginStore()
 
@@ -89,7 +89,7 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 				return fmt.Errorf("failed to unmarshal API resource schema for plugin %q: %w", name, err)
 			}
 
-			_, err = b.kcpClient.ApisV1alpha1().APIResourceSchemas().Create(ctx, &schema, metav1.CreateOptions{})
+			_, err = b.kcpClient.Cluster(clusterPath).ApisV1alpha1().APIResourceSchemas().Create(ctx, &schema, metav1.CreateOptions{})
 			if err != nil && apierrors.IsConflict(err) {
 				return fmt.Errorf("failed to create API resource schema for plugin %q: %w", name, err)
 			}
@@ -108,7 +108,7 @@ func (b *bootstrap) LoadPlugins(ctx context.Context, workspace string) (models.P
 			spew.Dump(export)
 			spew.Dump(string(data))
 
-			_, err = b.kcpClient.ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
+			_, err = b.kcpClient.Cluster(clusterPath).ApisV1alpha1().APIExports().Create(ctx, &export, metav1.CreateOptions{})
 			if err != nil && apierrors.IsConflict(err) {
 				return fmt.Errorf("failed to create API export schema for plugin %q: %w", name, err)
 			}

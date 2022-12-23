@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/apimachinery/v2/pkg/client"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +41,7 @@ type BindingsClusterGetter interface {
 // BindingClusterInterface can operate on Bindings across all clusters,
 // or scope down to one cluster and return a BindingsNamespacer.
 type BindingClusterInterface interface {
-	Cluster(logicalcluster.Name) BindingsNamespacer
+	Cluster(logicalcluster.Path) BindingsNamespacer
 	List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.BindingList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,12 +51,12 @@ type bindingsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *bindingsClusterInterface) Cluster(name logicalcluster.Name) BindingsNamespacer {
-	if name == logicalcluster.Wildcard {
+func (c *bindingsClusterInterface) Cluster(clusterPath logicalcluster.Path) BindingsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &bindingsNamespacer{clientCache: c.clientCache, name: name}
+	return &bindingsNamespacer{clientCache: c.clientCache, clusterPath: clusterPath}
 }
 
 
@@ -76,9 +76,9 @@ type BindingsNamespacer interface {
 
 type bindingsNamespacer struct {
 	clientCache kcpclient.Cache[*pluginsv1alpha1client.PluginsV1alpha1Client]
-	name logicalcluster.Name
+	clusterPath logicalcluster.Path
 }
 
 func (n *bindingsNamespacer) Namespace(namespace string) pluginsv1alpha1client.BindingInterface {
-	return n.clientCache.ClusterOrDie(n.name).Bindings(namespace)
+	return n.clientCache.ClusterOrDie(n.clusterPath).Bindings(namespace)
 }

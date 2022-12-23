@@ -29,9 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
-	kcpinformers "github.com/kcp-dev/apimachinery/third_party/informers"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
+	kcpinformers "github.com/kcp-dev/apimachinery/v2/third_party/informers"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	pluginsv1alpha1listers "github.com/faroshq/faros-hub/pkg/client/listers/plugins/v1alpha1"
@@ -108,10 +108,10 @@ type PluginInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() pluginsv1alpha1listers.PluginLister
 }
-func (f *pluginClusterInformer) Cluster(cluster logicalcluster.Name) PluginInformer {
+func (f *pluginClusterInformer) Cluster(clusterName logicalcluster.Name) PluginInformer {
 	return &pluginInformer{
-		informer: f.Informer().Cluster(cluster),
-		lister:   f.Lister().Cluster(cluster),
+		informer: f.Informer().Cluster(clusterName),
+		lister:   f.Lister().Cluster(clusterName),
 	}
 }
 

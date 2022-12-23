@@ -29,9 +29,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 
-	kcpcache "github.com/kcp-dev/apimachinery/pkg/cache"
-	kcpinformers "github.com/kcp-dev/apimachinery/third_party/informers"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpcache "github.com/kcp-dev/apimachinery/v2/pkg/cache"
+	kcpinformers "github.com/kcp-dev/apimachinery/v2/third_party/informers"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	edgev1alpha1listers "github.com/faroshq/faros-hub/pkg/client/listers/edge/v1alpha1"
@@ -108,10 +108,10 @@ type RegistrationInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() edgev1alpha1listers.RegistrationLister
 }
-func (f *registrationClusterInformer) Cluster(cluster logicalcluster.Name) RegistrationInformer {
+func (f *registrationClusterInformer) Cluster(clusterName logicalcluster.Name) RegistrationInformer {
 	return &registrationInformer{
-		informer: f.Informer().Cluster(cluster),
-		lister:   f.Lister().Cluster(cluster),
+		informer: f.Informer().Cluster(clusterName),
+		lister:   f.Lister().Cluster(clusterName),
 	}
 }
 

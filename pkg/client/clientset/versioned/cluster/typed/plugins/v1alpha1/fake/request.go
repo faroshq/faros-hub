@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,12 +47,12 @@ type requestsClusterClient struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *requestsClusterClient) Cluster(cluster logicalcluster.Name) pluginsv1alpha1client.RequestInterface {
-	if cluster == logicalcluster.Wildcard {
+func (c *requestsClusterClient) Cluster(clusterPath logicalcluster.Path) pluginsv1alpha1client.RequestInterface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &requestsClient{Fake: c.Fake, Cluster: cluster}
+	return &requestsClient{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -82,13 +82,13 @@ func (c *requestsClusterClient) Watch(ctx context.Context, opts metav1.ListOptio
 }
 type requestsClient struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 	
 }
 
 
 func (c *requestsClient) Create(ctx context.Context, request *pluginsv1alpha1.Request, opts metav1.CreateOptions) (*pluginsv1alpha1.Request, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootCreateAction(requestsResource, c.Cluster, request), &pluginsv1alpha1.Request{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootCreateAction(requestsResource, c.ClusterPath, request), &pluginsv1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c *requestsClient) Create(ctx context.Context, request *pluginsv1alpha1.Re
 }
 
 func (c *requestsClient) Update(ctx context.Context, request *pluginsv1alpha1.Request, opts metav1.UpdateOptions) (*pluginsv1alpha1.Request, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateAction(requestsResource, c.Cluster, request), &pluginsv1alpha1.Request{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateAction(requestsResource, c.ClusterPath, request), &pluginsv1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *requestsClient) Update(ctx context.Context, request *pluginsv1alpha1.Re
 }
 
 func (c *requestsClient) UpdateStatus(ctx context.Context, request *pluginsv1alpha1.Request, opts metav1.UpdateOptions) (*pluginsv1alpha1.Request, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateSubresourceAction(requestsResource, c.Cluster, "status", request), &pluginsv1alpha1.Request{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateSubresourceAction(requestsResource, c.ClusterPath, "status", request), &pluginsv1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -112,19 +112,19 @@ func (c *requestsClient) UpdateStatus(ctx context.Context, request *pluginsv1alp
 }
 
 func (c *requestsClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	_, err := c.Fake.Invokes(kcptesting.NewRootDeleteActionWithOptions(requestsResource, c.Cluster, name, opts), &pluginsv1alpha1.Request{})
+	_, err := c.Fake.Invokes(kcptesting.NewRootDeleteActionWithOptions(requestsResource, c.ClusterPath, name, opts), &pluginsv1alpha1.Request{})
 	return err
 }
 
 func (c *requestsClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := kcptesting.NewRootDeleteCollectionAction(requestsResource, c.Cluster, listOpts)
+	action := kcptesting.NewRootDeleteCollectionAction(requestsResource, c.ClusterPath, listOpts)
 
 	_, err := c.Fake.Invokes(action, &pluginsv1alpha1.RequestList{})
 	return err
 }
 
 func (c *requestsClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*pluginsv1alpha1.Request, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootGetAction(requestsResource, c.Cluster, name), &pluginsv1alpha1.Request{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootGetAction(requestsResource, c.ClusterPath, name), &pluginsv1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *requestsClient) Get(ctx context.Context, name string, options metav1.Ge
 
 // List takes label and field selectors, and returns the list of Requests that match those selectors.
 func (c *requestsClient) List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.RequestList, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootListAction(requestsResource, requestsKind, c.Cluster, opts), &pluginsv1alpha1.RequestList{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootListAction(requestsResource, requestsKind, c.ClusterPath, opts), &pluginsv1alpha1.RequestList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -152,11 +152,11 @@ func (c *requestsClient) List(ctx context.Context, opts metav1.ListOptions) (*pl
 }
 
 func (c *requestsClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.Fake.InvokesWatch(kcptesting.NewRootWatchAction(requestsResource, c.Cluster, opts))
+	return c.Fake.InvokesWatch(kcptesting.NewRootWatchAction(requestsResource, c.ClusterPath, opts))
 }
 
 func (c *requestsClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*pluginsv1alpha1.Request, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootPatchSubresourceAction(requestsResource, c.Cluster, name, pt, data, subresources...), &pluginsv1alpha1.Request{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootPatchSubresourceAction(requestsResource, c.ClusterPath, name, pt, data, subresources...), &pluginsv1alpha1.Request{})
 	if obj == nil {
 		return nil, err
 	}

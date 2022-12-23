@@ -22,7 +22,7 @@ package v1alpha1
 
 import (
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	"k8s.io/client-go/rest"
 	kcppluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster/typed/plugins/v1alpha1"
@@ -35,11 +35,11 @@ type PluginsV1alpha1ClusterClient struct {
 	*kcptesting.Fake 
 }
 
-func (c *PluginsV1alpha1ClusterClient) Cluster(cluster logicalcluster.Name) pluginsv1alpha1.PluginsV1alpha1Interface {
-	if cluster == logicalcluster.Wildcard {
+func (c *PluginsV1alpha1ClusterClient) Cluster(clusterPath logicalcluster.Path) pluginsv1alpha1.PluginsV1alpha1Interface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
-	return &PluginsV1alpha1Client{Fake: c.Fake, Cluster: cluster}
+	return &PluginsV1alpha1Client{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -58,7 +58,7 @@ var _ pluginsv1alpha1.PluginsV1alpha1Interface = (*PluginsV1alpha1Client)(nil)
 
 type PluginsV1alpha1Client struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (c *PluginsV1alpha1Client) RESTClient() rest.Interface {
@@ -68,13 +68,13 @@ func (c *PluginsV1alpha1Client) RESTClient() rest.Interface {
 
 
 func (c *PluginsV1alpha1Client) Bindings(namespace string) pluginsv1alpha1.BindingInterface {
-	return &bindingsClient{Fake: c.Fake, Cluster: c.Cluster, Namespace: namespace}
+	return &bindingsClient{Fake: c.Fake, ClusterPath: c.ClusterPath, Namespace: namespace}
 }
 
 func (c *PluginsV1alpha1Client) Plugins() pluginsv1alpha1.PluginInterface {
-	return &pluginsClient{Fake: c.Fake, Cluster: c.Cluster}
+	return &pluginsClient{Fake: c.Fake, ClusterPath: c.ClusterPath}
 }
 
 func (c *PluginsV1alpha1Client) Requests() pluginsv1alpha1.RequestInterface {
-	return &requestsClient{Fake: c.Fake, Cluster: c.Cluster}
+	return &requestsClient{Fake: c.Fake, ClusterPath: c.ClusterPath}
 }

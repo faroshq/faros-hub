@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -47,12 +47,12 @@ type usersClusterClient struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *usersClusterClient) Cluster(cluster logicalcluster.Name) tenancyv1alpha1client.UserInterface {
-	if cluster == logicalcluster.Wildcard {
+func (c *usersClusterClient) Cluster(clusterPath logicalcluster.Path) tenancyv1alpha1client.UserInterface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &usersClient{Fake: c.Fake, Cluster: cluster}
+	return &usersClient{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -82,13 +82,13 @@ func (c *usersClusterClient) Watch(ctx context.Context, opts metav1.ListOptions)
 }
 type usersClient struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 	
 }
 
 
 func (c *usersClient) Create(ctx context.Context, user *tenancyv1alpha1.User, opts metav1.CreateOptions) (*tenancyv1alpha1.User, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootCreateAction(usersResource, c.Cluster, user), &tenancyv1alpha1.User{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootCreateAction(usersResource, c.ClusterPath, user), &tenancyv1alpha1.User{})
 	if obj == nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (c *usersClient) Create(ctx context.Context, user *tenancyv1alpha1.User, op
 }
 
 func (c *usersClient) Update(ctx context.Context, user *tenancyv1alpha1.User, opts metav1.UpdateOptions) (*tenancyv1alpha1.User, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateAction(usersResource, c.Cluster, user), &tenancyv1alpha1.User{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateAction(usersResource, c.ClusterPath, user), &tenancyv1alpha1.User{})
 	if obj == nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (c *usersClient) Update(ctx context.Context, user *tenancyv1alpha1.User, op
 }
 
 func (c *usersClient) UpdateStatus(ctx context.Context, user *tenancyv1alpha1.User, opts metav1.UpdateOptions) (*tenancyv1alpha1.User, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateSubresourceAction(usersResource, c.Cluster, "status", user), &tenancyv1alpha1.User{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootUpdateSubresourceAction(usersResource, c.ClusterPath, "status", user), &tenancyv1alpha1.User{})
 	if obj == nil {
 		return nil, err
 	}
@@ -112,19 +112,19 @@ func (c *usersClient) UpdateStatus(ctx context.Context, user *tenancyv1alpha1.Us
 }
 
 func (c *usersClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	_, err := c.Fake.Invokes(kcptesting.NewRootDeleteActionWithOptions(usersResource, c.Cluster, name, opts), &tenancyv1alpha1.User{})
+	_, err := c.Fake.Invokes(kcptesting.NewRootDeleteActionWithOptions(usersResource, c.ClusterPath, name, opts), &tenancyv1alpha1.User{})
 	return err
 }
 
 func (c *usersClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := kcptesting.NewRootDeleteCollectionAction(usersResource, c.Cluster, listOpts)
+	action := kcptesting.NewRootDeleteCollectionAction(usersResource, c.ClusterPath, listOpts)
 
 	_, err := c.Fake.Invokes(action, &tenancyv1alpha1.UserList{})
 	return err
 }
 
 func (c *usersClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*tenancyv1alpha1.User, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootGetAction(usersResource, c.Cluster, name), &tenancyv1alpha1.User{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootGetAction(usersResource, c.ClusterPath, name), &tenancyv1alpha1.User{})
 	if obj == nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *usersClient) Get(ctx context.Context, name string, options metav1.GetOp
 
 // List takes label and field selectors, and returns the list of Users that match those selectors.
 func (c *usersClient) List(ctx context.Context, opts metav1.ListOptions) (*tenancyv1alpha1.UserList, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootListAction(usersResource, usersKind, c.Cluster, opts), &tenancyv1alpha1.UserList{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootListAction(usersResource, usersKind, c.ClusterPath, opts), &tenancyv1alpha1.UserList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -152,11 +152,11 @@ func (c *usersClient) List(ctx context.Context, opts metav1.ListOptions) (*tenan
 }
 
 func (c *usersClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.Fake.InvokesWatch(kcptesting.NewRootWatchAction(usersResource, c.Cluster, opts))
+	return c.Fake.InvokesWatch(kcptesting.NewRootWatchAction(usersResource, c.ClusterPath, opts))
 }
 
 func (c *usersClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*tenancyv1alpha1.User, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewRootPatchSubresourceAction(usersResource, c.Cluster, name, pt, data, subresources...), &tenancyv1alpha1.User{})
+	obj, err := c.Fake.Invokes(kcptesting.NewRootPatchSubresourceAction(usersResource, c.ClusterPath, name, pt, data, subresources...), &tenancyv1alpha1.User{})
 	if obj == nil {
 		return nil, err
 	}

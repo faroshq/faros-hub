@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/apimachinery/v2/pkg/client"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +41,7 @@ type AgentsClusterGetter interface {
 // AgentClusterInterface can operate on Agents across all clusters,
 // or scope down to one cluster and return a AgentsNamespacer.
 type AgentClusterInterface interface {
-	Cluster(logicalcluster.Name) AgentsNamespacer
+	Cluster(logicalcluster.Path) AgentsNamespacer
 	List(ctx context.Context, opts metav1.ListOptions) (*edgev1alpha1.AgentList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,12 +51,12 @@ type agentsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *agentsClusterInterface) Cluster(name logicalcluster.Name) AgentsNamespacer {
-	if name == logicalcluster.Wildcard {
+func (c *agentsClusterInterface) Cluster(clusterPath logicalcluster.Path) AgentsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &agentsNamespacer{clientCache: c.clientCache, name: name}
+	return &agentsNamespacer{clientCache: c.clientCache, clusterPath: clusterPath}
 }
 
 
@@ -76,9 +76,9 @@ type AgentsNamespacer interface {
 
 type agentsNamespacer struct {
 	clientCache kcpclient.Cache[*edgev1alpha1client.EdgeV1alpha1Client]
-	name logicalcluster.Name
+	clusterPath logicalcluster.Path
 }
 
 func (n *agentsNamespacer) Namespace(namespace string) edgev1alpha1client.AgentInterface {
-	return n.clientCache.ClusterOrDie(n.name).Agents(namespace)
+	return n.clientCache.ClusterOrDie(n.clusterPath).Agents(namespace)
 }

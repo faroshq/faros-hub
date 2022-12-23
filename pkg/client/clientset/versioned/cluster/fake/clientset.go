@@ -23,7 +23,7 @@ package fake
 import (
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 	kcpfakediscovery "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/discovery/fake"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
@@ -52,7 +52,7 @@ func NewSimpleClientset(objects ...runtime.Object) *ClusterClientset {
 	o.AddAll(objects...)
 
 	cs := &ClusterClientset{Fake: &kcptesting.Fake{}, tracker: o}
-	cs.discovery = &kcpfakediscovery.FakeDiscovery{Fake: cs.Fake, Cluster: logicalcluster.Wildcard}
+	cs.discovery = &kcpfakediscovery.FakeDiscovery{Fake: cs.Fake, ClusterPath: logicalcluster.Wildcard}
 	cs.AddReactor("*", "*", kcptesting.ObjectReaction(o))
 	cs.AddWatchReactor("*", kcptesting.WatchReaction(o))
 
@@ -93,15 +93,15 @@ func (c *ClusterClientset) TenancyV1alpha1() kcptenancyv1alpha1.TenancyV1alpha1C
 	return &faketenancyv1alpha1.TenancyV1alpha1ClusterClient{Fake: c.Fake}
 }
 // Cluster scopes this clientset to one cluster.
-func (c *ClusterClientset) Cluster(cluster logicalcluster.Name) client.Interface {
-	if cluster == logicalcluster.Wildcard {
+func (c *ClusterClientset) Cluster(clusterPath logicalcluster.Path) client.Interface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 	return &Clientset{
 		Fake: c.Fake,
-		discovery: &kcpfakediscovery.FakeDiscovery{Fake: c.Fake, Cluster: cluster},
-		tracker: c.tracker.Cluster(cluster),
-		cluster: cluster,
+		discovery: &kcpfakediscovery.FakeDiscovery{Fake: c.Fake, ClusterPath: clusterPath},
+		tracker: c.tracker.Cluster(clusterPath),
+		clusterPath: clusterPath,
 	}
 }
 
@@ -112,7 +112,7 @@ type Clientset struct {
 	*kcptesting.Fake
 	discovery *kcpfakediscovery.FakeDiscovery
 	tracker   kcptesting.ScopedObjectTracker
-	cluster logicalcluster.Name
+	clusterPath logicalcluster.Path
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -127,15 +127,15 @@ func (c *Clientset) Tracker() kcptesting.ScopedObjectTracker {
 
 // EdgeV1alpha1 retrieves the EdgeV1alpha1Client.  
 func (c *Clientset) EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface {
-	return &fakeedgev1alpha1.EdgeV1alpha1Client{Fake: c.Fake, Cluster: c.cluster}
+	return &fakeedgev1alpha1.EdgeV1alpha1Client{Fake: c.Fake, ClusterPath: c.clusterPath}
 }
 
 // PluginsV1alpha1 retrieves the PluginsV1alpha1Client.  
 func (c *Clientset) PluginsV1alpha1() pluginsv1alpha1.PluginsV1alpha1Interface {
-	return &fakepluginsv1alpha1.PluginsV1alpha1Client{Fake: c.Fake, Cluster: c.cluster}
+	return &fakepluginsv1alpha1.PluginsV1alpha1Client{Fake: c.Fake, ClusterPath: c.clusterPath}
 }
 
 // TenancyV1alpha1 retrieves the TenancyV1alpha1Client.  
 func (c *Clientset) TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface {
-	return &faketenancyv1alpha1.TenancyV1alpha1Client{Fake: c.Fake, Cluster: c.cluster}
+	return &faketenancyv1alpha1.TenancyV1alpha1Client{Fake: c.Fake, ClusterPath: c.clusterPath}
 }

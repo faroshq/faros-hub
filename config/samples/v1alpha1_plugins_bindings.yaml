@@ -1,6 +1,9 @@
 apiVersion: plugins.faros.sh/v1alpha1
 kind: Binding
 metadata:
-  name: bob
+  name: vilnius-ssd-enabled
 spec:
-
+  pluginType: systemds.services.plugins.faros.sh
+  pluginName: ssd-enabled
+  selector:
+    location: vilnius

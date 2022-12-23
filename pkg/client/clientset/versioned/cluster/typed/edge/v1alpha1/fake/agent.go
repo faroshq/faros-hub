@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	kcptesting "github.com/kcp-dev/client-go/third_party/k8s.io/client-go/testing"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -49,12 +49,12 @@ type agentsClusterClient struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *agentsClusterClient) Cluster(cluster logicalcluster.Name) kcpedgev1alpha1.AgentsNamespacer {
-	if cluster == logicalcluster.Wildcard {
+func (c *agentsClusterClient) Cluster(clusterPath logicalcluster.Path) kcpedgev1alpha1.AgentsNamespacer {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return &agentsNamespacer{Fake: c.Fake, Cluster: cluster}
+	return &agentsNamespacer{Fake: c.Fake, ClusterPath: clusterPath}
 }
 
 
@@ -84,21 +84,21 @@ func (c *agentsClusterClient) Watch(ctx context.Context, opts metav1.ListOptions
 }
 type agentsNamespacer struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 }
 
 func (n *agentsNamespacer) Namespace(namespace string) edgev1alpha1client.AgentInterface {
-	return &agentsClient{Fake: n.Fake, Cluster: n.Cluster, Namespace: namespace}
+	return &agentsClient{Fake: n.Fake, ClusterPath: n.ClusterPath, Namespace: namespace}
 }
 type agentsClient struct {
 	*kcptesting.Fake
-	Cluster logicalcluster.Name
+	ClusterPath logicalcluster.Path
 	Namespace string
 }
 
 
 func (c *agentsClient) Create(ctx context.Context, agent *edgev1alpha1.Agent, opts metav1.CreateOptions) (*edgev1alpha1.Agent, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(agentsResource, c.Cluster, c.Namespace, agent), &edgev1alpha1.Agent{})
+	obj, err := c.Fake.Invokes(kcptesting.NewCreateAction(agentsResource, c.ClusterPath, c.Namespace, agent), &edgev1alpha1.Agent{})
 	if obj == nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *agentsClient) Create(ctx context.Context, agent *edgev1alpha1.Agent, op
 }
 
 func (c *agentsClient) Update(ctx context.Context, agent *edgev1alpha1.Agent, opts metav1.UpdateOptions) (*edgev1alpha1.Agent, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(agentsResource, c.Cluster, c.Namespace, agent), &edgev1alpha1.Agent{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateAction(agentsResource, c.ClusterPath, c.Namespace, agent), &edgev1alpha1.Agent{})
 	if obj == nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func (c *agentsClient) Update(ctx context.Context, agent *edgev1alpha1.Agent, op
 }
 
 func (c *agentsClient) UpdateStatus(ctx context.Context, agent *edgev1alpha1.Agent, opts metav1.UpdateOptions) (*edgev1alpha1.Agent, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(agentsResource, c.Cluster, "status", c.Namespace, agent), &edgev1alpha1.Agent{})
+	obj, err := c.Fake.Invokes(kcptesting.NewUpdateSubresourceAction(agentsResource, c.ClusterPath, "status", c.Namespace, agent), &edgev1alpha1.Agent{})
 	if obj == nil {
 		return nil, err
 	}
@@ -122,19 +122,19 @@ func (c *agentsClient) UpdateStatus(ctx context.Context, agent *edgev1alpha1.Age
 }
 
 func (c *agentsClient) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
-	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(agentsResource, c.Cluster, c.Namespace, name, opts), &edgev1alpha1.Agent{})
+	_, err := c.Fake.Invokes(kcptesting.NewDeleteActionWithOptions(agentsResource, c.ClusterPath, c.Namespace, name, opts), &edgev1alpha1.Agent{})
 	return err
 }
 
 func (c *agentsClient) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
-	action := kcptesting.NewDeleteCollectionAction(agentsResource, c.Cluster, c.Namespace, listOpts)
+	action := kcptesting.NewDeleteCollectionAction(agentsResource, c.ClusterPath, c.Namespace, listOpts)
 
 	_, err := c.Fake.Invokes(action, &edgev1alpha1.AgentList{})
 	return err
 }
 
 func (c *agentsClient) Get(ctx context.Context, name string, options metav1.GetOptions) (*edgev1alpha1.Agent, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(agentsResource, c.Cluster, c.Namespace, name), &edgev1alpha1.Agent{})
+	obj, err := c.Fake.Invokes(kcptesting.NewGetAction(agentsResource, c.ClusterPath, c.Namespace, name), &edgev1alpha1.Agent{})
 	if obj == nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (c *agentsClient) Get(ctx context.Context, name string, options metav1.GetO
 
 // List takes label and field selectors, and returns the list of Agents that match those selectors.
 func (c *agentsClient) List(ctx context.Context, opts metav1.ListOptions) (*edgev1alpha1.AgentList, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewListAction(agentsResource, agentsKind, c.Cluster, c.Namespace, opts), &edgev1alpha1.AgentList{})
+	obj, err := c.Fake.Invokes(kcptesting.NewListAction(agentsResource, agentsKind, c.ClusterPath, c.Namespace, opts), &edgev1alpha1.AgentList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -162,11 +162,11 @@ func (c *agentsClient) List(ctx context.Context, opts metav1.ListOptions) (*edge
 }
 
 func (c *agentsClient) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
-	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(agentsResource, c.Cluster, c.Namespace, opts))
+	return c.Fake.InvokesWatch(kcptesting.NewWatchAction(agentsResource, c.ClusterPath, c.Namespace, opts))
 }
 
 func (c *agentsClient) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (*edgev1alpha1.Agent, error) {
-	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(agentsResource, c.Cluster, c.Namespace, name, pt, data, subresources...), &edgev1alpha1.Agent{})
+	obj, err := c.Fake.Invokes(kcptesting.NewPatchSubresourceAction(agentsResource, c.ClusterPath, c.Namespace, name, pt, data, subresources...), &edgev1alpha1.Agent{})
 	if obj == nil {
 		return nil, err
 	}

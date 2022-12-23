@@ -10,7 +10,7 @@ import (
 	"github.com/faroshq/faros-hub/pkg/models"
 	"github.com/faroshq/faros-hub/pkg/store"
 	storesql "github.com/faroshq/faros-hub/pkg/store/sql"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"k8s.io/klog/v2"
 )
 
@@ -38,7 +38,7 @@ func New(ctx context.Context, config *config.ControllerConfig) (Bridge, error) {
 	return &bridge{
 		store:          store,
 		config:         config,
-		farosClientSet: farosClientSet.Cluster(logicalcluster.New(config.ControllersTenantWorkspace)),
+		farosClientSet: farosClientSet.Cluster(logicalcluster.NewPath(config.ControllersTenantWorkspace)),
 	}, nil
 }
 

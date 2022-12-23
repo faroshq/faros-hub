@@ -1,5 +1,9 @@
 apiVersion: services.plugins.faros.sh/v1alpha1
-kind: SystemD
+kind: Systemd
 metadata:
-  name: systemd-test
+  name: systemd-ssd-enabled
 spec:
+  units:
+  - name: sshd
+    state: enabled
+

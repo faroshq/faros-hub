@@ -13,14 +13,14 @@ import (
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 )
 
 // listPlugins lists all plugins globally
 func (s *Service) listPlugins(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	cluster := logicalcluster.New(s.config.ControllersPluginsWorkspace)
-	client := s.kcpClient.Cluster(cluster)
+	clusterPath := logicalcluster.NewPath(s.config.ControllersPluginsWorkspace)
+	client := s.kcpClient.Cluster(clusterPath)
 
 	authenticated, _, err := s.authenticate(w, r)
 	if err != nil || !authenticated {

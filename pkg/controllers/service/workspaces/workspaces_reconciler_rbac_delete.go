@@ -2,11 +2,9 @@ package workspaces
 
 import (
 	"context"
-	"fmt"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -16,18 +14,14 @@ type workspaceRBACDeleteReconciler struct {
 	getOrgClusterAccessName  func(workspace *tenancyv1alpha1.Workspace) string
 	getUserWithPrefixName    func(user string) string
 	getRBACClusterAdminName  func(workspace *tenancyv1alpha1.Workspace) string
-	deleteClusterRole        func(ctx context.Context, cluster logicalcluster.Name, clusterRole *rbacv1.ClusterRole) error
-	deleteClusterRoleBinding func(ctx context.Context, cluster logicalcluster.Name, clusterRoleBinding *rbacv1.ClusterRoleBinding) error
+	deleteClusterRole        func(ctx context.Context, cluster logicalcluster.Path, clusterRole *rbacv1.ClusterRole) error
+	deleteClusterRoleBinding func(ctx context.Context, cluster logicalcluster.Path, clusterRoleBinding *rbacv1.ClusterRoleBinding) error
 }
 
 func (r *workspaceRBACDeleteReconciler) reconcile(ctx context.Context, workspace *tenancyv1alpha1.Workspace) (reconcileStatus, error) {
 	workspacePath := r.getWorkspaceName(workspace)
-	cluster := logicalcluster.New(workspacePath)
-
-	parent, exits := cluster.Parent()
-	if !exits {
-		return reconcileStatusError, fmt.Errorf("parent cluster not found")
-	}
+	clusterPath := logicalcluster.NewPath(workspacePath)
+	rootPath := logicalcluster.NewPath("root")
 
 	// global bindings
 	clusterRole := &rbacv1.ClusterRole{
@@ -36,7 +30,7 @@ func (r *workspaceRBACDeleteReconciler) reconcile(ctx context.Context, workspace
 		},
 	}
 
-	err := r.deleteClusterRole(ctx, kcptenancyv1alpha1.RootCluster, clusterRole)
+	err := r.deleteClusterRole(ctx, rootPath, clusterRole)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -47,7 +41,7 @@ func (r *workspaceRBACDeleteReconciler) reconcile(ctx context.Context, workspace
 		},
 	}
 
-	err = r.deleteClusterRoleBinding(ctx, kcptenancyv1alpha1.RootCluster, clusterRoleBinding)
+	err = r.deleteClusterRoleBinding(ctx, rootPath, clusterRoleBinding)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -59,7 +53,7 @@ func (r *workspaceRBACDeleteReconciler) reconcile(ctx context.Context, workspace
 		},
 	}
 
-	err = r.deleteClusterRole(ctx, parent, clusterRole)
+	err = r.deleteClusterRole(ctx, clusterPath, clusterRole)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}
@@ -70,7 +64,7 @@ func (r *workspaceRBACDeleteReconciler) reconcile(ctx context.Context, workspace
 		},
 	}
 
-	err = r.deleteClusterRoleBinding(ctx, parent, clusterRoleBinding)
+	err = r.deleteClusterRoleBinding(ctx, clusterPath, clusterRoleBinding)
 	if err != nil {
 		return reconcileStatusStopAndRequeue, err
 	}

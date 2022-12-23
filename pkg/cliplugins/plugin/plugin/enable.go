@@ -14,7 +14,6 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
@@ -161,55 +160,29 @@ func (o *EnableOptions) Run(ctx context.Context) error {
 
 	fmt.Fprintf(o.Out, "Plugin request %s created\n", o.Name)
 	if len(o.BindingLabelSelector) > 0 {
-		coreclient, err := kubernetes.NewForConfig(config)
+		fmt.Fprintf(o.Out, "Creating plugin binding\n")
+		// found the api version
+		binding := pluginsv1alpha1.Binding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      o.Name,
+				Namespace: o.Namespace,
+			},
+			Spec: pluginsv1alpha1.BindingSpec{
+				PluginType: o.PluginName,
+				PluginName: o.Name,
+				Selector: metav1.LabelSelector{
+					MatchLabels: o.BindingLabelSelector,
+				},
+			},
+		}
+
+		_, err = farosclient.PluginsV1alpha1().Bindings(o.Namespace).Create(ctx, &binding, metav1.CreateOptions{})
 		if err != nil {
-			return fmt.Errorf("failed to create kubernetes client: %v", err)
+			return err
 		}
 
-		apiGroups, err := coreclient.Discovery().ServerGroups()
-		if err != nil {
-			return fmt.Errorf("failed to retrieve api groups: %v", err)
-		}
-
-		// plugin names are kind.apiVersion. Example systemds.service.plugins.faros.sh
-		// We don't know the apiVersion, so we need to iterate over all api groups
-		// and match one enabled.
-
-		parts := strings.SplitN(o.PluginName, ".", 2)
-
-		for _, apiGroup := range apiGroups.Groups {
-			if strings.Compare(apiGroup.Name, parts[1]) == 0 {
-				fmt.Fprintf(o.Out, "Creating plugin binding\n")
-				// found the api group
-				for _, version := range apiGroup.Versions {
-					// found the api version
-					binding := pluginsv1alpha1.Binding{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:      o.Name,
-							Namespace: o.Namespace,
-						},
-						Spec: pluginsv1alpha1.BindingSpec{
-							PluginType: metav1.TypeMeta{
-								Kind:       parts[0],
-								APIVersion: version.GroupVersion,
-							},
-							PluginName: o.Name,
-							Selector: metav1.LabelSelector{
-								MatchLabels: o.BindingLabelSelector,
-							},
-						},
-					}
-
-					_, err = farosclient.PluginsV1alpha1().Bindings(o.Namespace).Create(ctx, &binding, metav1.CreateOptions{})
-					if err != nil {
-						return err
-					}
-
-					fmt.Fprintf(o.Out, "Plugin binding %s created\n", o.Name)
-					return nil
-				}
-			}
-		}
+		fmt.Fprintf(o.Out, "Plugin binding %s created\n", o.Name)
+		return nil
 	}
 
 	return nil

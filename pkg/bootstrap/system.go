@@ -7,7 +7,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/root"
 	"github.com/faroshq/faros-hub/pkg/bootstrap/templates/servicetenants"
@@ -30,8 +30,9 @@ func (b *bootstrap) bootstrapServiceTenantAssets(ctx context.Context, workspace 
 		return err
 	}
 
-	ctxC := logicalcluster.WithCluster(ctx, logicalcluster.New(b.config.ControllersWorkspace))
-	export, err := b.kcpClient.ApisV1alpha1().APIExports().Get(ctxC, "tenancy.faros.sh", metav1.GetOptions{})
+	clusterPath := logicalcluster.NewPath(workspace)
+
+	export, err := b.kcpClient.Cluster(clusterPath).ApisV1alpha1().APIExports().Get(ctx, "tenancy.faros.sh", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

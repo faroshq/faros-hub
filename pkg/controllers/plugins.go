@@ -67,6 +67,7 @@ func (c *controllerManager) runSystemPlugins(ctx context.Context, plugins models
 	ctrlBindings, err := pluginbindings.NewController(
 		c.config,
 		farosClientSet,
+		c.kcpClientSet,
 		informer.Plugins().V1alpha1().Bindings(),
 	)
 	if err != nil {

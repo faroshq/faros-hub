@@ -5,9 +5,8 @@ import (
 	"fmt"
 
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
-	kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 	kcptenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +40,7 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 			getWorkspaceName: func(w *tenancyv1alpha1.Workspace) string {
 				return getWorkspaceName(c.config, w)
 			},
-			createFarosWorkspace: func(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
+			createFarosWorkspace: func(ctx context.Context, cluster logicalcluster.Path, workspace *tenancyv1alpha1.Workspace) error {
 				return c.createFarosWorkspace(ctx, cluster, workspace)
 			},
 		},
@@ -49,16 +48,16 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 			getWorkspaceName: func(w *tenancyv1alpha1.Workspace) string {
 				return getWorkspaceName(c.config, w)
 			},
-			getKCPWorkspace: func(ctx context.Context, cluster logicalcluster.Name, name string) (*kcptenancyv1beta1.Workspace, error) {
+			getKCPWorkspace: func(ctx context.Context, cluster logicalcluster.Path, name string) (*kcptenancyv1beta1.Workspace, error) {
 				return c.kcpClientSet.Cluster(cluster).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{})
 			},
 			getOrgClusterAccessName: func(w *tenancyv1alpha1.Workspace) string {
 				return getOrgClusterAccessName(c.config, w)
 			},
-			createOrUpdateClusterRole: func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.ClusterRole) error {
+			createOrUpdateClusterRole: func(ctx context.Context, cluster logicalcluster.Path, role *rbacv1.ClusterRole) error {
 				return createOrUpdateClusterRole(ctx, c.coreClientSet.Cluster(cluster), role)
 			},
-			createOrUpdateClusterRoleBinding: func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.ClusterRoleBinding) error {
+			createOrUpdateClusterRoleBinding: func(ctx context.Context, cluster logicalcluster.Path, roleBinding *rbacv1.ClusterRoleBinding) error {
 				return createOrUpdateClusterRoleBinding(ctx, c.coreClientSet.Cluster(cluster), roleBinding)
 			},
 			getUserWithPrefixName: func(name string) string {
@@ -78,10 +77,10 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 			getOrgClusterAccessName: func(w *tenancyv1alpha1.Workspace) string {
 				return getOrgClusterAccessName(c.config, w)
 			},
-			deleteClusterRole: func(ctx context.Context, cluster logicalcluster.Name, role *rbacv1.ClusterRole) error {
+			deleteClusterRole: func(ctx context.Context, cluster logicalcluster.Path, role *rbacv1.ClusterRole) error {
 				return c.coreClientSet.Cluster(cluster).RbacV1().ClusterRoles().Delete(ctx, role.Name, metav1.DeleteOptions{})
 			},
-			deleteClusterRoleBinding: func(ctx context.Context, cluster logicalcluster.Name, roleBinding *rbacv1.ClusterRoleBinding) error {
+			deleteClusterRoleBinding: func(ctx context.Context, cluster logicalcluster.Path, roleBinding *rbacv1.ClusterRoleBinding) error {
 				return c.coreClientSet.Cluster(cluster).RbacV1().ClusterRoleBindings().Delete(ctx, roleBinding.Name, metav1.DeleteOptions{})
 			},
 			getUserWithPrefixName: func(name string) string {
@@ -92,7 +91,7 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 			},
 		},
 		&kcpWorkspaceDeleteReconciler{
-			deleteFarosWorkspace: func(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
+			deleteFarosWorkspace: func(ctx context.Context, cluster logicalcluster.Path, workspace *tenancyv1alpha1.Workspace) error {
 				return c.deleteFarosWorkspace(ctx, cluster, workspace)
 			},
 			getWorkspaceName: func(w *tenancyv1alpha1.Workspace) string {
@@ -131,7 +130,7 @@ func (c *Controller) reconcile(ctx context.Context, ws *tenancyv1alpha1.Workspac
 	return requeue, utilerrors.NewAggregate(errs)
 }
 
-func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
+func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcluster.Path, workspace *tenancyv1alpha1.Workspace) error {
 	logger := klog.FromContext(ctx)
 
 	ws := &kcptenancyv1beta1.Workspace{
@@ -139,7 +138,7 @@ func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcl
 			Name: workspace.Name,
 		},
 		Spec: kcptenancyv1beta1.WorkspaceSpec{
-			Type: kcptenancyv1alpha1.ClusterWorkspaceTypeReference{
+			Type: kcptenancyv1beta1.WorkspaceTypeReference{
 				Name: "faros",
 				Path: "root",
 			},
@@ -164,7 +163,7 @@ func (c *Controller) createFarosWorkspace(ctx context.Context, cluster logicalcl
 	return nil
 }
 
-func (c *Controller) deleteFarosWorkspace(ctx context.Context, cluster logicalcluster.Name, workspace *tenancyv1alpha1.Workspace) error {
+func (c *Controller) deleteFarosWorkspace(ctx context.Context, cluster logicalcluster.Path, workspace *tenancyv1alpha1.Workspace) error {
 	ws := &kcptenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: workspace.Name,

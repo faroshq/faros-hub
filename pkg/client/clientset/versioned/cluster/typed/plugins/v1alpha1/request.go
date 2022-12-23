@@ -21,8 +21,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	kcpclient "github.com/kcp-dev/apimachinery/pkg/client"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/apimachinery/v2/pkg/client"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -41,7 +41,7 @@ type RequestsClusterGetter interface {
 // RequestClusterInterface can operate on Requests across all clusters,
 // or scope down to one cluster and return a pluginsv1alpha1client.RequestInterface.
 type RequestClusterInterface interface {
-	Cluster(logicalcluster.Name) pluginsv1alpha1client.RequestInterface
+	Cluster(logicalcluster.Path) pluginsv1alpha1client.RequestInterface
 	List(ctx context.Context, opts metav1.ListOptions) (*pluginsv1alpha1.RequestList, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
@@ -51,12 +51,12 @@ type requestsClusterInterface struct {
 }
 
 // Cluster scopes the client down to a particular cluster.
-func (c *requestsClusterInterface) Cluster(name logicalcluster.Name) pluginsv1alpha1client.RequestInterface {
-	if name == logicalcluster.Wildcard {
+func (c *requestsClusterInterface) Cluster(clusterPath logicalcluster.Path) pluginsv1alpha1client.RequestInterface {
+	if clusterPath == logicalcluster.Wildcard {
 		panic("A specific cluster must be provided when scoping, not the wildcard.")
 	}
 
-	return c.clientCache.ClusterOrDie(name).Requests()
+	return c.clientCache.ClusterOrDie(clusterPath).Requests()
 }
 
 

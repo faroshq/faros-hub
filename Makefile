@@ -8,12 +8,13 @@ TOOLS_DIR=hack/tools
 TOOLS_GOBIN_DIR := $(abspath $(TOOLS_DIR))
 KO_DOCKER_REPO ?= ${REPO}
 
-CODE_GENERATOR_VER := 2dc1248118a7f2337c6374ff5778c0880e1a4226
+CODE_GENERATOR_VER := v2.0.0-alpha.1
 CODE_GENERATOR_BIN := code-generator
 CODE_GENERATOR := $(TOOLS_GOBIN_DIR)/$(CODE_GENERATOR_BIN)-$(CODE_GENERATOR_VER)
 export CODE_GENERATOR # so hack scripts can use it
 
 KUSTOMIZE_VERSION ?= v3.8.7
+
 CONTROLLER_GEN_VER := v0.10.0
 CONTROLLER_GEN_BIN := controller-gen
 
@@ -24,7 +25,7 @@ export CONTROLLER_GEN # so hack scripts can use it
 APIEXPORT_PREFIX = today
 
 $(CODE_GENERATOR):
-	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) github.com/kcp-dev/code-generator $(CODE_GENERATOR_BIN) $(CODE_GENERATOR_VER)
+	GOBIN=$(TOOLS_GOBIN_DIR) $(GO_INSTALL) github.com/kcp-dev/code-generator/v2 $(CODE_GENERATOR_BIN) $(CODE_GENERATOR_VER)
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 $(KUSTOMIZE): ## Download kustomize locally if necessary.
