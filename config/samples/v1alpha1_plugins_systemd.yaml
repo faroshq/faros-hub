@@ -1,0 +1,9 @@
+apiVersion: services.plugins.faros.sh/v1alpha1
+kind: Systemd
+metadata:
+  name: systemd-ssd-enabled
+spec:
+  units:
+  - name: sshd
+    state: enabled
+

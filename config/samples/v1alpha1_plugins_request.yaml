@@ -1,0 +1,7 @@
+apiVersion: plugins.faros.sh/v1alpha1
+kind: Request
+metadata:
+  name: systemds.services.plugins.faros.sh
+spec:
+  name: systemds.services.plugins.faros.sh
+  version: latest

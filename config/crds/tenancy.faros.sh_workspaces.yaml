@@ -13,13 +13,9 @@ spec:
     listKind: WorkspaceList
     plural: workspaces
     singular: workspace
-  scope: Namespaced
+  scope: Cluster
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: Workspace is the Schema for the Workspace API
@@ -48,6 +44,9 @@ spec:
                 items:
                   type: string
                 type: array
+              name:
+                description: Name string is the name of the workspace
+                type: string
             type: object
           status:
             description: WorkspaceStatus defines the observed state of Workspace

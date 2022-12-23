@@ -18,8 +18,8 @@ import (
 
 var kubeConfigAuthKey = "faros"
 
-// UseWorkspacesOptions contains options for configuring faros workspaces
-type UseWorkspacesOptions struct {
+// UseOptions contains options for configuring faros
+type UseOptions struct {
 	*base.Options
 	Name string
 
@@ -27,9 +27,9 @@ type UseWorkspacesOptions struct {
 	modifyConfig func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error
 }
 
-// NewUseWorkspacesOptions returns a new GetWorkspacesOptions.
-func NewUseWorkspacesOptions(streams genericclioptions.IOStreams) *UseWorkspacesOptions {
-	return &UseWorkspacesOptions{
+// NewUseOptions returns a new GetOptions.
+func NewUseOptions(streams genericclioptions.IOStreams) *UseOptions {
+	return &UseOptions{
 		Options: base.NewOptions(streams),
 		modifyConfig: func(configAccess clientcmd.ConfigAccess, newConfig *clientcmdapi.Config) error {
 			return clientcmd.ModifyConfig(configAccess, *newConfig, true)
@@ -38,12 +38,12 @@ func NewUseWorkspacesOptions(streams genericclioptions.IOStreams) *UseWorkspaces
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *UseWorkspacesOptions) BindFlags(cmd *cobra.Command) {
+func (o *UseOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *UseWorkspacesOptions) Complete(args []string) error {
+func (o *UseOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (o *UseWorkspacesOptions) Complete(args []string) error {
 }
 
 // Validate validates the SyncOptions are complete and usable.
-func (o *UseWorkspacesOptions) Validate() error {
+func (o *UseOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -66,8 +66,8 @@ func (o *UseWorkspacesOptions) Validate() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-// Run gets workspaces from tenant workspace api
-func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
+// Run gets workspace from tenant workspace api
+func (o *UseOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err
@@ -86,40 +86,46 @@ func (o *UseWorkspacesOptions) Run(ctx context.Context) error {
 
 	workspace := &tenancyv1alpha1.Workspace{}
 
-	err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
-	if err != nil {
-		return err
-	}
-
 	// Get raw config and add new cluster and context to it
 	rawConfig, err := o.ClientConfig.RawConfig()
 	if err != nil {
 		return err
 	}
 
-	rawConfig.Clusters[workspace.Name] = &clientcmdapi.Cluster{
-		Server: workspace.Status.WorkspaceURL,
-	}
-
-	farosCluster, ok := rawConfig.Clusters[kubeConfigAuthKey]
-	if !ok {
-		rawConfig.Clusters[workspace.Name].InsecureSkipTLSVerify = true
-	} else {
-		if farosCluster.InsecureSkipTLSVerify {
-			rawConfig.Clusters[workspace.Name].InsecureSkipTLSVerify = true
-		} else {
-			rawConfig.Clusters[workspace.Name].CertificateAuthorityData = farosCluster.CertificateAuthorityData
-			rawConfig.Clusters[workspace.Name].CertificateAuthority = farosCluster.CertificateAuthority
+	if o.Name != kubeConfigAuthKey {
+		err = farosclient.RESTClient().Get().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
+		if err != nil {
+			return err
 		}
+
+		rawConfig.Clusters[workspace.Spec.Name] = &clientcmdapi.Cluster{
+			Server: workspace.Status.WorkspaceURL,
+		}
+
+		farosCluster, ok := rawConfig.Clusters[kubeConfigAuthKey]
+		if !ok {
+			rawConfig.Clusters[workspace.Spec.Name].InsecureSkipTLSVerify = true
+		} else {
+			if farosCluster.InsecureSkipTLSVerify {
+				rawConfig.Clusters[workspace.Spec.Name].InsecureSkipTLSVerify = true
+			} else {
+				rawConfig.Clusters[workspace.Spec.Name].CertificateAuthorityData = farosCluster.CertificateAuthorityData
+				rawConfig.Clusters[workspace.Spec.Name].CertificateAuthority = farosCluster.CertificateAuthority
+			}
+		}
+
+		rawConfig.Contexts[workspace.Spec.Name] = &clientcmdapi.Context{
+			Cluster:  workspace.Spec.Name,
+			AuthInfo: kubeConfigAuthKey,
+		}
+
+		rawConfig.CurrentContext = workspace.Spec.Name
+
+	} else {
+		// if user requests "faros" context, just set it as current context
+		rawConfig.CurrentContext = kubeConfigAuthKey
 	}
 
-	rawConfig.Contexts[workspace.Name] = &clientcmdapi.Context{
-		Cluster:  workspace.Name,
-		AuthInfo: kubeConfigAuthKey,
-	}
-
-	rawConfig.CurrentContext = workspace.Name
-
-	fmt.Println("Using workspace", workspace.Name)
+	fmt.Println("Using workspace", o.Name)
 	return o.modifyConfig(o.ClientConfig.ConfigAccess(), &rawConfig)
 }

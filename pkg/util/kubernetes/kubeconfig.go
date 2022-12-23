@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"

@@ -28,6 +28,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	ctx := ctrl.SetupSignalHandler()
+	ctx = klog.NewContext(ctx, klog.NewKlogr())
 
 	err := run(ctx)
 	if err != nil {

@@ -1,6 +1,10 @@
 package config
 
-import "k8s.io/client-go/rest"
+import (
+	"time"
+
+	"k8s.io/client-go/rest"
+)
 
 const (
 	ConfigFileName = "config.yaml"
@@ -33,6 +37,14 @@ type APIConfig struct {
 	// Must match one in Controllers config
 	ControllersTenantWorkspace string `envconfig:"FAROS_API_TENANT_WORKSPACE" yaml:"controllersTenantWorkspace,omitempty" default:"root:faros:service:tenants"`
 
+	// ControllersPluginsWorkspace is name of workspace for global plugins management. Used in service management
+	ControllersPluginsWorkspace string `envconfig:"FAROS_API_PLUGINS_WORKSPACE" yaml:"controllersPluginsWorkspace,omitempty" default:"root:faros:service:plugins"`
+
+	// TenantsWorkspacePrefix is prefix of workspace tenants are operating in
+	// TODO: Move under users once we can rebase to main. There is some bug in
+	// using homedir but I was not able to reproduce it in main kcp branch so I am not sure if it is fixed
+	TenantsWorkspacePrefix string `envconfig:"FAROS_TENANTS_WORKSPACE_PREFIX" yaml:"tenantsWorkspacePrefix,omitempty" default:"root:faros-tenants:edge"`
+
 	// OIDC provider configuration
 	OIDCIssuerURL      string `envconfig:"FAROS_OIDC_ISSUER_URL" yaml:"oidcIssuerURL,omitempty" default:"https://dex.dev.faros.sh"`
 	OIDCClientID       string `envconfig:"FAROS_OIDC_CLIENT_ID" yaml:"oidcClientID,omitempty" default:"faros"`
@@ -42,6 +54,28 @@ type APIConfig struct {
 	OIDCUserPrefix     string `envconfig:"FAROS_OIDC_USER_PREFIX" yaml:"oidcUserPrefix,omitempty" default:"faros-sso"`
 	OIDCGroupsPrefix   string `envconfig:"FAROS_OIDC_GROUPS_PREFIX" yaml:"oidcGroupsPrefix,omitempty" default:"faros-sso"`
 	OIDCAuthSessionKey string `envconfig:"FAROS_OIDC_AUTH_SESSION_KEY" yaml:"oidcAuthSessionKey,omitempty" default:""`
+
+	Database Database `yaml:"database,omitempty"`
+}
+
+type Database struct {
+	SqliteURI string `envconfig:"FAROS_DATABASE_SQLITE_URI" default:"dev/database.sqlite3"`
+	// Name of the database
+	Name string `envconfig:"FAROS_DATABASE_NAME" default:"faros"`
+	// Type is the type of database to use.
+	Type string `envconfig:"FAROS_DATABASE_TYPE" default:"sqlite" `
+	// Host is the host of the database
+	Host string `envconfig:"FAROS_DATABASE_HOST" default:"localhost"`
+	// Port is the port of the database
+	Port int `envconfig:"FAROS_DATABASE_PORT" default:"5432"`
+	// Password is the password of the database
+	Password string `envconfig:"FAROS_DATABASE_PASSWORD" default:""`
+	// Username is the username of the database
+	Username string `envconfig:"FAROS_DATABASE_USERNAME" default:""`
+	// MaxConnIdleTime is the maximum amount of time a database connection can be idle
+	MaxConnIdleTime time.Duration `envconfig:"FAROS_DATABASE_MAX_CONN_IDLE_TIME" default:"30s"`
+	//MaxConnLifeTime is the maximum amount of time a database connection can be used
+	MaxConnLifeTime time.Duration `envconfig:"FAROS_DATABASE_MAX_CONN_LIFE_TIME" default:"1h"`
 }
 
 type ControllerConfig struct {
@@ -59,10 +93,13 @@ type ControllerConfig struct {
 	// ControllersTenantWorkspace is name of workspace for global tenant management. Used in service management
 	ControllersTenantWorkspace string `envconfig:"FAROS_CONTROLLER_TENANT_WORKSPACE" yaml:"controllersTenantWorkspace,omitempty" default:"root:faros:service:tenants"`
 
+	// ControllersPluginsWorkspace is name of workspace for global plugins management. Used in service management
+	ControllersPluginsWorkspace string `envconfig:"FAROS_CONTROLLER_PLUGINS_WORKSPACE" yaml:"controllersPluginsWorkspace,omitempty" default:"root:faros:service:plugins"`
+
 	// TenantsWorkspacePrefix is prefix of workspace tenants are operating in
 	// TODO: Move under users once we can rebase to main. There is some bug in
 	// using homedir but I was not able to reproduce it in main kcp branch so I am not sure if it is fixed
-	TenantsWorkspacePrefix string `envconfig:"FAROS_TENANTS_WORKSPACE_PREFIX" yaml:"tenantsWorkspacePrefix,omitempty" default:"root:faros-tenants"`
+	TenantsWorkspacePrefix string `envconfig:"FAROS_TENANTS_WORKSPACE_PREFIX" yaml:"tenantsWorkspacePrefix,omitempty" default:"root:faros-tenants:edge"`
 
 	// TenantsCertificateAuthorityFile is the file for certificate for the tenants KubeConfigs. If not set it will set
 	// skip TLS verification for the tenants KubeConfigs
@@ -79,11 +116,20 @@ type ControllerConfig struct {
 	KCPClusterKubeConfigPath string `envconfig:"FAROS_CONTROLLER_KCP_CLUSTER_KUBECONFIG" required:"true" default:"kcp.kubeconfig"`
 	// KCPClusterRestConfig is the rest config for the KCP cluster.
 	KCPClusterRestConfig *rest.Config `envconfig:"-"`
+
+	// PluginsDir is the directory where plugins are stored. Only stored plugins are loaded
+	// and can be used by agents. This is needed as plugins are delivering APIS and CRDs
+	// to be used by agents interacting with hub.
+	PluginsDir string `envconfig:"FAROS_PLUGINS_DIR" yaml:"pluginsDir,omitempty" default:"./plugins"`
+
+	Database Database `yaml:"database,omitempty"`
 }
 
 type AgentConfig struct {
 	Name      string `envconfig:"FAROS_AGENT_NAME" yaml:"name,omitempty" default:""`
-	Namespace string `envconfig:"FAROS_AGENT_NAMESPACE" yaml:"namespace,omitempty" default:""`
+	Namespace string `envconfig:"FAROS_AGENT_NAMESPACE" yaml:"namespace,omitempty" default:"default"`
+
+	PluginsDir string `envconfig:"FAROS_PLUGINS_DIR" yaml:"pluginsDir,omitempty" default:"./plugins"`
 
 	RestConfig *rest.Config `yaml:"-"`
 }

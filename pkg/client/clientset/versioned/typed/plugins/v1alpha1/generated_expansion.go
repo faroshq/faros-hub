@@ -17,12 +17,8 @@ limitations under the License.
 
 package v1alpha1
 
-type AccessExpansion interface{}
+type BindingExpansion interface{}
 
-type ContainerRuntimeExpansion interface{}
+type PluginExpansion interface{}
 
-type MonitoringExpansion interface{}
-
-type NetworkExpansion interface{}
-
-type NotificationExpansion interface{}
+type RequestExpansion interface{}

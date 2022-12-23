@@ -5,8 +5,6 @@ metadata:
 spec:
   defaultAPIBindings:
   - path: root:faros:service:controllers
-    exportName: access.faros.sh
-  - path: root:faros:service:controllers
     exportName: edge.faros.sh
   - path: root:faros:service:controllers
     exportName: plugins.faros.sh

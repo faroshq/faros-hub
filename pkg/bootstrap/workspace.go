@@ -2,47 +2,28 @@ package bootstrap
 
 import (
 	"context"
-	"strings"
 	"time"
 
-	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	corev1alpha1 "github.com/kcp-dev/kcp/pkg/apis/core/v1alpha1"
 	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) error {
-	// create nested workspaces if requested one does not have pattern created
-	separatorIndex := strings.LastIndex(workspace, ":")
-	name := workspace[separatorIndex+1:]
-	parent, exists := logicalcluster.New(workspace).Parent()
-	if exists {
-		_, err := b.kcpClient.Cluster(parent).TenancyV1alpha1().ClusterWorkspaces().Get(ctx, name, metav1.GetOptions{})
-		if err != nil && (apierrors.IsNotFound(err) || apierrors.IsForbidden(err)) {
-			switch {
-			case apierrors.IsNotFound(err) && parent.String() == string(tenancyv1alpha1.RootWorkspaceTypeName):
-				// ok, flow below will create root workspace
-			case apierrors.IsForbidden(err) && parent.String() == string(tenancyv1alpha1.RootWorkspaceTypeName):
-				return err
-			case (apierrors.IsForbidden(err) && parent.String() != string(tenancyv1alpha1.RootWorkspaceTypeName)) ||
-				(apierrors.IsNotFound(err) && parent.String() != string(tenancyv1alpha1.RootWorkspaceTypeName)):
-				// create parent workspace if it does not exist
-				err = b.createNamedWorkspace(ctx, parent.String())
-				if err != nil {
-					return err
-				}
-			default:
-				return err
-			}
-		}
+	clusterPath := logicalcluster.NewPath(workspace)
+
+	_, err := b.kcpClient.Cluster(clusterPath).TenancyV1alpha1().ClusterWorkspaces().Get(ctx, workspace, metav1.GetOptions{})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return err
 	}
 
-	var structuredWorkspaceType tenancyv1alpha1.ClusterWorkspaceTypeReference
-	ws, err := b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
+	var structuredWorkspaceType tenancyv1beta1.WorkspaceTypeReference
+	ws, err := b.kcpClient.Cluster(clusterPath).TenancyV1beta1().Workspaces().Create(ctx, &tenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: workspace,
 		},
 		Spec: tenancyv1beta1.WorkspaceSpec{
 			Type: structuredWorkspaceType,
@@ -53,7 +34,7 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	if err := wait.PollImmediate(time.Millisecond*100, time.Second*5, func() (bool, error) {
-		if _, err := b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{}); err != nil {
+		if _, err := b.kcpClient.Cluster(clusterPath).TenancyV1beta1().Workspaces().Get(ctx, workspace, metav1.GetOptions{}); err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, nil
 			}
@@ -65,13 +46,13 @@ func (b *bootstrap) createNamedWorkspace(ctx context.Context, workspace string) 
 	}
 
 	// wait for being ready
-	if ws.Status.Phase != tenancyv1alpha1.ClusterWorkspacePhaseReady {
+	if ws.Status.Phase != corev1alpha1.LogicalClusterPhaseReady {
 		if err := wait.PollImmediate(time.Millisecond*500, time.Second*5, func() (bool, error) {
-			ws, err = b.kcpClient.Cluster(parent).TenancyV1beta1().Workspaces().Get(ctx, name, metav1.GetOptions{})
+			ws, err = b.kcpClient.Cluster(clusterPath).TenancyV1beta1().Workspaces().Get(ctx, workspace, metav1.GetOptions{})
 			if err != nil {
 				return false, err
 			}
-			if ws.Status.Phase == tenancyv1alpha1.ClusterWorkspacePhaseReady {
+			if ws.Status.Phase == corev1alpha1.LogicalClusterPhaseReady {
 				return true, nil
 			}
 			return false, nil

@@ -44,6 +44,9 @@ spec:
             description: RegistrationStatus defines the observed state of Registration
               object
             properties:
+              ca:
+                description: CA certificate used to validate the agent
+                type: string
               conditions:
                 description: Current processing state of the Agent.
                 items:

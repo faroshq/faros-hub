@@ -9,26 +9,36 @@ import (
 	health "github.com/InVisionApp/go-health/v2"
 	healthhandlers "github.com/InVisionApp/go-health/v2/handlers"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
+	farosclusterclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/cluster"
 	"github.com/faroshq/faros-hub/pkg/server/auth"
+	"github.com/faroshq/faros-hub/pkg/store"
 	"github.com/faroshq/faros-hub/pkg/util/recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	//kcptenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	//workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
-	"github.com/kcp-dev/logicalcluster/v2"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
+	"github.com/kcp-dev/logicalcluster/v3"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
+	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/config"
+	storesql "github.com/faroshq/faros-hub/pkg/store/sql"
+)
+
+var (
+	scheme       = runtime.NewScheme()
+	codecs       = serializer.NewCodecFactory(scheme)
+	limit  int64 = 1024 * 1024 * 10
 )
 
 func init() {
 	utilruntime.Must(tenancyv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(pluginsv1alpha1.AddToScheme(scheme))
 }
 
 var _ Interface = &Service{}
@@ -40,6 +50,7 @@ type Interface interface {
 const (
 	pathAPIVersion   = "/faros.sh/api/v1alpha1"
 	pathWorkspaces   = "/workspaces"
+	pathPlugins      = "/plugins"
 	pathOIDC         = "/oidc"
 	pathOIDCLogin    = "/oidc/login"
 	pathOIDCCallback = "/oidc/callback"
@@ -51,66 +62,60 @@ type Service struct {
 	server        *http.Server
 	router        *mux.Router
 	health        *health.Health
-	cluster       logicalcluster.Name
+	store         store.Store
 
-	// tunneling tooling
 	kcpClient   kcpclient.ClusterInterface
-	farosClient farosclient.ClusterInterface
-	coreClients kubernetes.ClusterInterface
-
-	//proxy       *httputil.ReverseProxy
+	farosClient farosclient.Interface
 }
 
-func New(config *config.APIConfig) (*Service, error) {
-	//p := newKubeConfigProxy(config.RestConfig)
-
-	kcpClient, err := kcpclient.NewClusterForConfig(config.KCPClusterRestConfig)
+func New(ctx context.Context, config *config.APIConfig) (*Service, error) {
+	store, err := storesql.NewStore(ctx, &config.Database)
+	if err != nil {
+		return nil, err
+	}
+	kcpClient, err := kcpclient.NewForConfig(config.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	farosClient, err := farosclient.NewClusterForConfig(config.KCPClusterRestConfig)
+	// farosClient is used to manage tenants workspace objects only
+	farosClient, err := farosclusterclient.NewForConfig(config.KCPClusterRestConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	coreClient, err := kubernetes.NewClusterForConfig(config.KCPClusterRestConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	//proxy := &httputil.ReverseProxy{
-	//	Director:  p.director,
-	//	Transport: roundtripper.RoundTripperFunc(p.roundTripper),
-	//	//ErrorLog:  log.New(k.log.Writer(), "", 0),
-	//}
-
-	authenticator, err := auth.NewAuthenticator(config, coreClient, farosClient, path.Join(pathAPIVersion, pathOIDCCallback))
+	authenticator, err := auth.NewAuthenticator(
+		config,
+		store,
+		path.Join(pathAPIVersion, pathOIDCCallback),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Service{
-		config: config,
-		//proxy:         proxy,
-		cluster:       logicalcluster.New(config.ControllersTenantWorkspace),
+		config:        config,
 		health:        health.New(),
+		store:         store,
 		kcpClient:     kcpClient,
-		farosClient:   farosClient,
-		coreClients:   coreClient,
+		farosClient:   farosClient.Cluster(logicalcluster.NewPath(config.ControllersTenantWorkspace)),
 		authenticator: authenticator,
 	}
 
 	s.router = setupRouter()
 	apiRouter := s.router.PathPrefix(pathAPIVersion).Subrouter()
-	apiRouter.HandleFunc("/healthz", healthhandlers.NewJSONHandlerFunc(s.health, nil))
-	apiRouter.HandleFunc(pathOIDCLogin, s.oidcLogin)
-	apiRouter.HandleFunc(pathOIDCCallback, s.oidcCallback)
+	apiRouter.HandleFunc("/healthz", healthhandlers.NewJSONHandlerFunc(s.health, nil)) // /healthz
+	apiRouter.HandleFunc(pathOIDCLogin, s.oidcLogin)                                   // /faros.sh/api/v1alpha1/oidc/login
+	apiRouter.HandleFunc(pathOIDCCallback, s.oidcCallback)                             // /faros.sh/api/v1alpha1/oidc/callback
 
-	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodGet)
-	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodGet)
-	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.workspacesHandler).Methods(http.MethodDelete)
-	apiRouter.HandleFunc(pathWorkspaces, s.workspacesHandler).Methods(http.MethodPost)
+	apiRouter.HandleFunc(pathWorkspaces, s.listWorkspaces).Methods(http.MethodGet)                               // /faros.sh/api/v1alpha1/workspaces
+	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.getWorkspace).Methods(http.MethodGet)       // /faros.sh/api/v1alpha1/workspaces/{workspace}
+	apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}"), s.deleteWorkspace).Methods(http.MethodDelete) // /faros.sh/api/v1alpha1/workspaces/{workspace}
+	apiRouter.HandleFunc(pathWorkspaces, s.createWorkspace).Methods(http.MethodPost)                             // /faros.sh/api/v1alpha1/workspaces
+
+	apiRouter.HandleFunc(pathPlugins, s.listPlugins).Methods(http.MethodGet) // /faros.sh/api/v1alpha1/plugins - list all plugins
+	//apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}", pathPlugins), s.listWorkspacePlugins).Methods(http.MethodGet)    // /faros.sh/api/v1alpha1/workspaces/{workspace}/plugins - list plugins for a workspace
+	//apiRouter.HandleFunc(path.Join(pathWorkspaces, "{workspace}", pathPlugins), s.enableWorkspacePlugins).Methods(http.MethodPost) // /faros.sh/api/v1alpha1/workspaces/{workspace}/plugins - enable plugin for a workspace
 
 	s.server = &http.Server{
 		Addr: config.Addr,
@@ -130,7 +135,12 @@ func (s *Service) Run(ctx context.Context) error {
 		defer recover.Panic()
 		<-ctx.Done()
 
-		err := s.health.Stop()
+		err := s.store.Close()
+		if err != nil {
+			klog.Errorf("Error closing store: %v", err)
+		}
+
+		err = s.health.Stop()
 		if err != nil {
 			klog.Error(err)
 		}

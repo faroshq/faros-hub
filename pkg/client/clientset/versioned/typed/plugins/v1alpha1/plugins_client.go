@@ -22,43 +22,31 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/plugins/v1alpha1"
 	"github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	rest "k8s.io/client-go/rest"
 )
 
 type PluginsV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	AccessesGetter
-	ContainerRuntimesGetter
-	MonitoringsGetter
-	NetworksGetter
-	NotificationsGetter
+	BindingsGetter
+	PluginsGetter
+	RequestsGetter
 }
 
 // PluginsV1alpha1Client is used to interact with features provided by the plugins.faros.sh group.
 type PluginsV1alpha1Client struct {
 	restClient rest.Interface
-	cluster    v2.Name
 }
 
-func (c *PluginsV1alpha1Client) Accesses(namespace string) AccessInterface {
-	return newAccesses(c, namespace)
+func (c *PluginsV1alpha1Client) Bindings(namespace string) BindingInterface {
+	return newBindings(c, namespace)
 }
 
-func (c *PluginsV1alpha1Client) ContainerRuntimes(namespace string) ContainerRuntimeInterface {
-	return newContainerRuntimes(c, namespace)
+func (c *PluginsV1alpha1Client) Plugins() PluginInterface {
+	return newPlugins(c)
 }
 
-func (c *PluginsV1alpha1Client) Monitorings(namespace string) MonitoringInterface {
-	return newMonitorings(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) Networks(namespace string) NetworkInterface {
-	return newNetworks(c, namespace)
-}
-
-func (c *PluginsV1alpha1Client) Notifications(namespace string) NotificationInterface {
-	return newNotifications(c, namespace)
+func (c *PluginsV1alpha1Client) Requests() RequestInterface {
+	return newRequests(c)
 }
 
 // NewForConfig creates a new PluginsV1alpha1Client for the given config.
@@ -87,7 +75,7 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*PluginsV1alpha1Clie
 	if err != nil {
 		return nil, err
 	}
-	return &PluginsV1alpha1Client{restClient: client}, nil
+	return &PluginsV1alpha1Client{client}, nil
 }
 
 // NewForConfigOrDie creates a new PluginsV1alpha1Client for the given config and
@@ -102,12 +90,7 @@ func NewForConfigOrDie(c *rest.Config) *PluginsV1alpha1Client {
 
 // New creates a new PluginsV1alpha1Client for the given RESTClient.
 func New(c rest.Interface) *PluginsV1alpha1Client {
-	return &PluginsV1alpha1Client{restClient: c}
-}
-
-// NewWithCluster creates a new PluginsV1alpha1Client for the given RESTClient and cluster.
-func NewWithCluster(c rest.Interface, cluster v2.Name) *PluginsV1alpha1Client {
-	return &PluginsV1alpha1Client{restClient: c, cluster: cluster}
+	return &PluginsV1alpha1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {

@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	scheme "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -52,17 +51,15 @@ type AgentInterface interface {
 
 // agents implements AgentInterface
 type agents struct {
-	client  rest.Interface
-	cluster v2.Name
-	ns      string
+	client rest.Interface
+	ns     string
 }
 
 // newAgents returns a Agents
 func newAgents(c *EdgeV1alpha1Client, namespace string) *agents {
 	return &agents{
-		client:  c.RESTClient(),
-		cluster: c.cluster,
-		ns:      namespace,
+		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -70,7 +67,6 @@ func newAgents(c *EdgeV1alpha1Client, namespace string) *agents {
 func (c *agents) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Agent, err error) {
 	result = &v1alpha1.Agent{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		Name(name).
@@ -88,7 +84,6 @@ func (c *agents) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha
 	}
 	result = &v1alpha1.AgentList{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -106,7 +101,6 @@ func (c *agents) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfac
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -118,7 +112,6 @@ func (c *agents) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interfac
 func (c *agents) Create(ctx context.Context, agent *v1alpha1.Agent, opts v1.CreateOptions) (result *v1alpha1.Agent, err error) {
 	result = &v1alpha1.Agent{}
 	err = c.client.Post().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,7 +125,6 @@ func (c *agents) Create(ctx context.Context, agent *v1alpha1.Agent, opts v1.Crea
 func (c *agents) Update(ctx context.Context, agent *v1alpha1.Agent, opts v1.UpdateOptions) (result *v1alpha1.Agent, err error) {
 	result = &v1alpha1.Agent{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		Name(agent.Name).
@@ -148,7 +140,6 @@ func (c *agents) Update(ctx context.Context, agent *v1alpha1.Agent, opts v1.Upda
 func (c *agents) UpdateStatus(ctx context.Context, agent *v1alpha1.Agent, opts v1.UpdateOptions) (result *v1alpha1.Agent, err error) {
 	result = &v1alpha1.Agent{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		Name(agent.Name).
@@ -163,7 +154,6 @@ func (c *agents) UpdateStatus(ctx context.Context, agent *v1alpha1.Agent, opts v
 // Delete takes name of the agent and deletes it. Returns an error if one occurs.
 func (c *agents) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		Name(name).
@@ -179,7 +169,6 @@ func (c *agents) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, li
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
@@ -193,7 +182,6 @@ func (c *agents) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, li
 func (c *agents) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Agent, err error) {
 	result = &v1alpha1.Agent{}
 	err = c.client.Patch(pt).
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("agents").
 		Name(name).

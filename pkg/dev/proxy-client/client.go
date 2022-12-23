@@ -130,7 +130,7 @@ func (c *Client) startTunneler(ctx context.Context) error {
 
 	director := proxy.Director
 	proxy.Director = func(req *http.Request) {
-		fmt.Printf(req.URL.Path)
+		fmt.Printf("%s:%s", req.Method, req.URL.Path)
 		director(req)
 	}
 	clientDownstream := http.DefaultClient

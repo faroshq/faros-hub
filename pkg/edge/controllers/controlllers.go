@@ -104,7 +104,7 @@ func (c *controllers) Run(ctx context.Context) error {
 		Scheme:      mgr.GetScheme(),
 		Config:      c.config,
 		FarosClient: farosClient,
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(c.config.Name, mgr); err != nil {
 		klog.Error(err, "unable to create controller", "controller")
 		return err
 	}

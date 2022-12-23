@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/edge/v1alpha1"
 	scheme "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -52,17 +51,15 @@ type RegistrationInterface interface {
 
 // registrations implements RegistrationInterface
 type registrations struct {
-	client  rest.Interface
-	cluster v2.Name
-	ns      string
+	client rest.Interface
+	ns     string
 }
 
 // newRegistrations returns a Registrations
 func newRegistrations(c *EdgeV1alpha1Client, namespace string) *registrations {
 	return &registrations{
-		client:  c.RESTClient(),
-		cluster: c.cluster,
-		ns:      namespace,
+		client: c.RESTClient(),
+		ns:     namespace,
 	}
 }
 
@@ -70,7 +67,6 @@ func newRegistrations(c *EdgeV1alpha1Client, namespace string) *registrations {
 func (c *registrations) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Registration, err error) {
 	result = &v1alpha1.Registration{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		Name(name).
@@ -88,7 +84,6 @@ func (c *registrations) List(ctx context.Context, opts v1.ListOptions) (result *
 	}
 	result = &v1alpha1.RegistrationList{}
 	err = c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -106,7 +101,6 @@ func (c *registrations) Watch(ctx context.Context, opts v1.ListOptions) (watch.I
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -118,7 +112,6 @@ func (c *registrations) Watch(ctx context.Context, opts v1.ListOptions) (watch.I
 func (c *registrations) Create(ctx context.Context, registration *v1alpha1.Registration, opts v1.CreateOptions) (result *v1alpha1.Registration, err error) {
 	result = &v1alpha1.Registration{}
 	err = c.client.Post().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -132,7 +125,6 @@ func (c *registrations) Create(ctx context.Context, registration *v1alpha1.Regis
 func (c *registrations) Update(ctx context.Context, registration *v1alpha1.Registration, opts v1.UpdateOptions) (result *v1alpha1.Registration, err error) {
 	result = &v1alpha1.Registration{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		Name(registration.Name).
@@ -148,7 +140,6 @@ func (c *registrations) Update(ctx context.Context, registration *v1alpha1.Regis
 func (c *registrations) UpdateStatus(ctx context.Context, registration *v1alpha1.Registration, opts v1.UpdateOptions) (result *v1alpha1.Registration, err error) {
 	result = &v1alpha1.Registration{}
 	err = c.client.Put().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		Name(registration.Name).
@@ -163,7 +154,6 @@ func (c *registrations) UpdateStatus(ctx context.Context, registration *v1alpha1
 // Delete takes name of the registration and deletes it. Returns an error if one occurs.
 func (c *registrations) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		Name(name).
@@ -179,7 +169,6 @@ func (c *registrations) DeleteCollection(ctx context.Context, opts v1.DeleteOpti
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
@@ -193,7 +182,6 @@ func (c *registrations) DeleteCollection(ctx context.Context, opts v1.DeleteOpti
 func (c *registrations) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Registration, err error) {
 	result = &v1alpha1.Registration{}
 	err = c.client.Patch(pt).
-		Cluster(c.cluster).
 		Namespace(c.ns).
 		Resource("registrations").
 		Name(name).

@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 
+	"github.com/davecgh/go-spew/spew"
 	conditionsv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -28,7 +29,7 @@ type Reconciler struct {
 // +kubebuilder:rbac:groups=edge.faros.sh,resources=agent/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=edge.faros.sh,resources=agent/finalizers,verbs=update
 
-// Reconcile reconciles a Edge object
+// Reconcile reconciles a Agent object
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	if req.Name != r.Config.Name && req.Namespace != r.Config.Namespace {
 		return ctrl.Result{}, nil
@@ -44,6 +45,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	agentCopy := agent.DeepCopy()
+
+	// Load and start required plugins
+	for _, plugin := range agentCopy.Spec.Plugins {
+		// Plugins Logic
+		// TODO: Add plugins download logic, if its not present, download it
+		// for now load it from dir and expect it to be present.
+		p, err := r.loadPlugin(plugin)
+		spew.Dump(p, err)
+	}
+
 	conditions.MarkTrue(agentCopy, conditionsv1alpha1.ReadyCondition)
 
 	_, err = r.FarosClient.EdgeV1alpha1().Agents(r.Config.Namespace).UpdateStatus(ctx, agentCopy, metav1.UpdateOptions{})
@@ -55,8 +66,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(name string, mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&edgev1alpha1.Agent{}).
+		Named(name).
 		Complete(r)
 }

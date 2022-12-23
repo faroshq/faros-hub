@@ -1,0 +1,36 @@
+syntax = "proto3";
+package proto;
+
+message GetNameResponse {
+    string name = 1;
+}
+
+message GetVersionResponse {
+    string version = 1;
+}
+
+message GetAPIResourceSchemaResponse {
+    bytes schema = 1;
+}
+
+message GetAPIExportSchemaResponse {
+    bytes schema = 1;
+}
+
+message InitRequest {
+    string name = 1;
+    string namespace = 2;
+    bytes rest_config = 3;
+}
+
+message Empty {}
+
+service PluginInterface {
+    rpc GetName(Empty) returns (GetNameResponse);
+    rpc GetVersion(Empty) returns (GetVersionResponse);
+    rpc GetAPIResourceSchema(Empty) returns (GetAPIResourceSchemaResponse);
+    rpc GetAPIExportSchema(Empty) returns (GetAPIExportSchemaResponse);
+    rpc Init(InitRequest) returns (Empty);
+    rpc Run(Empty) returns (Empty);
+    rpc Stop(Empty) returns (Empty);
+}

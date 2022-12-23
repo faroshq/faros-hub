@@ -26,6 +26,7 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	ctx := ctrl.SetupSignalHandler()
+	ctx = klog.NewContext(ctx, klog.NewKlogr())
 
 	err := run(ctx)
 	if err != nil {
@@ -40,7 +41,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	server, err := server.New(c)
+	server, err := server.New(ctx, c)
 	if err != nil {
 		return err
 	}

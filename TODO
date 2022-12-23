@@ -9,13 +9,18 @@
 - [ ] Add plugins runner (go plugins) to edge-agent
 - [x] Add CLI for workspace provisioning
 - [ ] Add OIDC provider example
-- [ ] Add user management pattern (system workspace) with binding provisioning
+- [x] Add user management pattern (system workspace) with binding provisioning
 - [ ] Add image and binary builds for hub-api and edge-agent, and controllers
 - [x] Add automatic binding management for new workspaces
 - [x] Improve bootstrap (now failing on updates)
 - [ ] Add HA deployment pattern (helm-chart)
-- [ ] Split KCP to run as component so faros is just built ontop using controllers and right workspaces
+- [x] Split KCP to run as component so faros is just built ontop using controllers and right workspaces
 - [ ] Add health for api endpoints curl -v localhost:8080/faros.sh/api/v1alpha1/healthz
 - [ ] Bootstrap permission claims currently have `all: true`. Scope down.
 - [ ] Move all bootstrap to "bootstrap golang" pattern
 - [ ] Tide-up config package. Use default KUBECONFIG loader for main config
+- [ ] Move plugins to have workspaces of their own
+- [ ] Add `Binding` plugin to schedule plugins to edge devices
+- [ ] Add basic status API for plugins
+- [ ] Add check to `plugins enable` if plugin exists with this name before enabling
+- [ ] Add fail condition on enable if plugin is already enabled or does not exist

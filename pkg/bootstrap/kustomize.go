@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ghodss/yaml"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,6 +13,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
+	"sigs.k8s.io/yaml"
 )
 
 const retryLimit = 5

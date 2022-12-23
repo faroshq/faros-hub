@@ -6,32 +6,6 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - access.faros.sh
-  resources:
-  - request
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - access.faros.sh
-  resources:
-  - request/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - access.faros.sh
-  resources:
-  - request/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - edge.faros.sh
   resources:
   - agent
@@ -53,32 +27,6 @@ rules:
   - edge.faros.sh
   resources:
   - agent/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - edge.faros.sh
-  resources:
-  - registrations
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - edge.faros.sh
-  resources:
-  - registrations/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - edge.faros.sh
-  resources:
-  - registrations/status
   verbs:
   - get
   - patch

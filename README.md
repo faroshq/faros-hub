@@ -3,8 +3,11 @@
 Faros hub is Kubernetes native Edge device management control plane.
 It allows to manage edge IoT devices in the way similar to Kubernetes.
 
+Manage your devices, plugins and all the interactions using `kubectl` or any
+`k8s` compatible tool.
+
 Faros hub will enable you to connect remote device to central hub and deploy
-plugin to them. Plugins is go-lang based application that can be used to
+plugins to them. Plugins are go-lang based application that can be used to
 communicate with device and send data to central hub.
 
 ## Getting started
@@ -124,7 +127,6 @@ go run ./cmd/kubectl-faros workspace get
 Create first agent:
 
 ```bash
-kubectl create namespace default
 go run ./cmd/kubectl-faros agent generate agent1 -f agent1.kubeconfig
 ```
 
@@ -138,6 +140,7 @@ Open new terminal and run agent with generated kubeconfig:
 
 ```bash
 export KUBECONFIG=agent1.kubeconfig
+export FAROS_AGENT_NAME=agent1
 go run ./cmd/edge-agent
 ```
 
@@ -162,6 +165,13 @@ status:
   - lastTransitionTime: "2022-10-15T12:06:39Z"
     status: "True"
     type: Ready
+```
+
+Add plugin to agent:
+TODO: Add registration tokens who would carry automatic plugin metadata to be used.
+
+```bash
+
 ```
 
 # Roadmap

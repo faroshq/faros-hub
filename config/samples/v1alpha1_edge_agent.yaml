@@ -1,0 +1,12 @@
+apiVersion: edge.faros.sh/v1alpha1
+kind: Agent
+metadata:
+  name: foo
+  location: vilnius
+spec:
+status:
+  plugins:
+    - name: ssd-enabled
+      status: ok
+      message: "ssd-enabled plugin is ok"
+      lastTransitionTime: "2020-01-01T00:00:00Z"

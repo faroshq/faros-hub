@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	scheme "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/scheme"
-	v2 "github.com/kcp-dev/logicalcluster/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -33,7 +32,7 @@ import (
 // WorkspacesGetter has a method to return a WorkspaceInterface.
 // A group's client should implement this interface.
 type WorkspacesGetter interface {
-	Workspaces(namespace string) WorkspaceInterface
+	Workspaces() WorkspaceInterface
 }
 
 // WorkspaceInterface has methods to work with Workspace resources.
@@ -52,17 +51,13 @@ type WorkspaceInterface interface {
 
 // workspaces implements WorkspaceInterface
 type workspaces struct {
-	client  rest.Interface
-	cluster v2.Name
-	ns      string
+	client rest.Interface
 }
 
 // newWorkspaces returns a Workspaces
-func newWorkspaces(c *TenancyV1alpha1Client, namespace string) *workspaces {
+func newWorkspaces(c *TenancyV1alpha1Client) *workspaces {
 	return &workspaces{
-		client:  c.RESTClient(),
-		cluster: c.cluster,
-		ns:      namespace,
+		client: c.RESTClient(),
 	}
 }
 
@@ -70,8 +65,6 @@ func newWorkspaces(c *TenancyV1alpha1Client, namespace string) *workspaces {
 func (c *workspaces) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Workspace, err error) {
 	result = &v1alpha1.Workspace{}
 	err = c.client.Get().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -88,8 +81,6 @@ func (c *workspaces) List(ctx context.Context, opts v1.ListOptions) (result *v1a
 	}
 	result = &v1alpha1.WorkspaceList{}
 	err = c.client.Get().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -106,8 +97,6 @@ func (c *workspaces) Watch(ctx context.Context, opts v1.ListOptions) (watch.Inte
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -118,8 +107,6 @@ func (c *workspaces) Watch(ctx context.Context, opts v1.ListOptions) (watch.Inte
 func (c *workspaces) Create(ctx context.Context, workspace *v1alpha1.Workspace, opts v1.CreateOptions) (result *v1alpha1.Workspace, err error) {
 	result = &v1alpha1.Workspace{}
 	err = c.client.Post().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(workspace).
@@ -132,8 +119,6 @@ func (c *workspaces) Create(ctx context.Context, workspace *v1alpha1.Workspace, 
 func (c *workspaces) Update(ctx context.Context, workspace *v1alpha1.Workspace, opts v1.UpdateOptions) (result *v1alpha1.Workspace, err error) {
 	result = &v1alpha1.Workspace{}
 	err = c.client.Put().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		Name(workspace.Name).
 		VersionedParams(&opts, scheme.ParameterCodec).
@@ -148,8 +133,6 @@ func (c *workspaces) Update(ctx context.Context, workspace *v1alpha1.Workspace, 
 func (c *workspaces) UpdateStatus(ctx context.Context, workspace *v1alpha1.Workspace, opts v1.UpdateOptions) (result *v1alpha1.Workspace, err error) {
 	result = &v1alpha1.Workspace{}
 	err = c.client.Put().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		Name(workspace.Name).
 		SubResource("status").
@@ -163,8 +146,6 @@ func (c *workspaces) UpdateStatus(ctx context.Context, workspace *v1alpha1.Works
 // Delete takes name of the workspace and deletes it. Returns an error if one occurs.
 func (c *workspaces) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		Name(name).
 		Body(&opts).
@@ -179,8 +160,6 @@ func (c *workspaces) DeleteCollection(ctx context.Context, opts v1.DeleteOptions
 		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -193,8 +172,6 @@ func (c *workspaces) DeleteCollection(ctx context.Context, opts v1.DeleteOptions
 func (c *workspaces) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Workspace, err error) {
 	result = &v1alpha1.Workspace{}
 	err = c.client.Patch(pt).
-		Cluster(c.cluster).
-		Namespace(c.ns).
 		Resource("workspaces").
 		Name(name).
 		SubResource(subresources...).

@@ -7,8 +7,9 @@ import (
 	"strings"
 
 	"github.com/faroshq/faros-hub/pkg/config"
+	"github.com/faroshq/faros-hub/pkg/models"
 	utilkubernetes "github.com/faroshq/faros-hub/pkg/util/kubernetes"
-	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	kcpclient "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 )
 
 // TODO: All this package should go away once we have a proper bootstrap
@@ -23,13 +24,15 @@ type Bootstraper interface {
 	BootstrapServiceTenantAssets(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsCRD(ctx context.Context, workspace string) error
 	DeployKustomizeAssetsKCP(ctx context.Context, workspace string) error
+
+	LoadPlugins(ctx context.Context, workspace string) (models.PluginsList, error)
 }
 
 type bootstrap struct {
 	config *config.ControllerConfig
 
-	kcpClient     kcpclient.ClusterInterface
 	clientFactory utilkubernetes.ClientFactory
+	kcpClient     kcpclient.ClusterInterface
 }
 
 func New(config *config.ControllerConfig) (*bootstrap, error) {
@@ -43,7 +46,7 @@ func New(config *config.ControllerConfig) (*bootstrap, error) {
 		return nil, err
 	}
 
-	client, err := kcpclient.NewClusterForConfig(rootRest)
+	client, err := kcpclient.NewForConfig(rootRest)
 	if err != nil {
 		return nil, err
 	}

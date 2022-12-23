@@ -1,28 +1,16 @@
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+# TODO: Construct this from plugins list and expose into workspace
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
 metadata:
-  name: workspace-admin
-  clusterName: root
-rules:
-- apiGroups:
-  - tenancy.kcp.dev
-  resources:
-  - workspaces/content
-  resourceNames:
-  - faros
-  verbs:
-  - admin
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: cluster-admin
-  clusterName: root
-subjects:
-- kind: User
-  name: faros-sso:mangirdas@judeikis.lt
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: faros-system-workspace-admin
+  name: systemds.services.plugins.faros.sh
+spec:
+  reference:
+    workspace:
+      exportName: v20221123.systemds.services.plugins.faros.sh
+      path: root:faros:service:plugins
+  permissionClaims:
+  - group: "services.plugins.faros.sh"
+    resource: "systemds"
+    state: Accepted
+    all: true
+    identityHash: e12721b4c1db51c7249bf413a4174599cefb0895e689a0ff71ec2f0d25b26bcc

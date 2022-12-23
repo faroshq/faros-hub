@@ -19,8 +19,6 @@ package fake
 
 import (
 	clientset "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
-	accessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1"
-	fakeaccessv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/access/v1alpha1/fake"
 	edgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1"
 	fakeedgev1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/edge/v1alpha1/fake"
 	pluginsv1alpha1 "github.com/faroshq/faros-hub/pkg/client/clientset/versioned/typed/plugins/v1alpha1"
@@ -83,11 +81,6 @@ var (
 	_ clientset.Interface = &Clientset{}
 	_ testing.FakeClient  = &Clientset{}
 )
-
-// AccessV1alpha1 retrieves the AccessV1alpha1Client
-func (c *Clientset) AccessV1alpha1() accessv1alpha1.AccessV1alpha1Interface {
-	return &fakeaccessv1alpha1.FakeAccessV1alpha1{Fake: &c.Fake}
-}
 
 // EdgeV1alpha1 retrieves the EdgeV1alpha1Client
 func (c *Clientset) EdgeV1alpha1() edgev1alpha1.EdgeV1alpha1Interface {

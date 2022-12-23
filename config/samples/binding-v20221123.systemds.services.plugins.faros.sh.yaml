@@ -1,0 +1,15 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: systemds.services.plugins.faros.sh
+spec:
+  permissionClaims:
+  - group: services.plugins.faros.sh
+    resource: "systemds"
+    state: Accepted
+    all: true
+    identityHash: 913bb568ce2f5f8b023b2d60980982d14e4b7db49948e841b7d86b224374693f
+  reference:
+    workspace:
+      exportName: v20221123.systemds.services.plugins.faros.sh
+      path: root:faros:service:plugins

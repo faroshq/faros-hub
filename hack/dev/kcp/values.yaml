@@ -2,7 +2,7 @@ externalHostname: kcp.dev.faros.sh
 kcp:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "2"
+  v: "12"
   tokenAuth:
     enabled: true
   hostAliases:
@@ -14,7 +14,7 @@ kcp:
 kcpFrontProxy:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "2"
+  v: "12"
   ingress:
     enabled: true
     annotations:
@@ -37,7 +37,7 @@ kcpFrontProxy:
 virtualWorkspaces:
   image: ghcr.io/kcp-dev/kcp
   tag: latest
-  v: "2"
+  v: "12"
 oidc:
   issuerUrl: https://dex.dev.faros.sh
   clientId: faros

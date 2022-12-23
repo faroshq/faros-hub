@@ -15,11 +15,7 @@ spec:
     singular: user
   scope: Cluster
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1alpha1
+  - name: v1alpha1
     schema:
       openAPIV3Schema:
         description: User is the Schema for the User API

@@ -9,32 +9,31 @@ import (
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
-	tenancyv1alpha1 "github.com/faroshq/faros-hub/pkg/apis/tenancy/v1alpha1"
 	farosclient "github.com/faroshq/faros-hub/pkg/client/clientset/versioned"
 	"github.com/faroshq/faros-hub/pkg/cliplugins/base"
 )
 
-// DeleteWorkspacesOptions contains options for configuring faros workspaces
-type DeleteWorkspacesOptions struct {
+// DeleteOptions contains options for configuring faros
+type DeleteOptions struct {
 	*base.Options
 
 	Name string
 }
 
-// NewGetWorkspacesOptions returns a new GetWorkspacesOptions.
-func NewDeleteWorkspacesOptions(streams genericclioptions.IOStreams) *DeleteWorkspacesOptions {
-	return &DeleteWorkspacesOptions{
+// NewGetOptions returns a new GetOptions.
+func NewDeleteOptions(streams genericclioptions.IOStreams) *DeleteOptions {
+	return &DeleteOptions{
 		Options: base.NewOptions(streams),
 	}
 }
 
 // BindFlags binds fields GenerateOptions as command line flags to cmd's flagset.
-func (o *DeleteWorkspacesOptions) BindFlags(cmd *cobra.Command) {
+func (o *DeleteOptions) BindFlags(cmd *cobra.Command) {
 	o.Options.BindFlags(cmd)
 }
 
 // Complete ensures all dynamically populated fields are initialized.
-func (o *DeleteWorkspacesOptions) Complete(args []string) error {
+func (o *DeleteOptions) Complete(args []string) error {
 	if err := o.Options.Complete(); err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func (o *DeleteWorkspacesOptions) Complete(args []string) error {
 }
 
 // Validate validates the SyncOptions are complete and usable.
-func (o *DeleteWorkspacesOptions) Validate() error {
+func (o *DeleteOptions) Validate() error {
 	var errs []error
 
 	if err := o.Options.Validate(); err != nil {
@@ -58,7 +57,7 @@ func (o *DeleteWorkspacesOptions) Validate() error {
 }
 
 // Run gets workspaces from tenant workspace api
-func (o *DeleteWorkspacesOptions) Run(ctx context.Context) error {
+func (o *DeleteOptions) Run(ctx context.Context) error {
 	config, err := o.ClientConfig.ClientConfig()
 	if err != nil {
 		return err
@@ -75,9 +74,7 @@ func (o *DeleteWorkspacesOptions) Run(ctx context.Context) error {
 		return err
 	}
 
-	workspace := &tenancyv1alpha1.Workspace{}
-
-	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Into(workspace)
+	err = farosclient.RESTClient().Delete().AbsPath("/faros.sh/api/v1alpha1/workspaces/" + o.Name).Do(ctx).Error()
 	if err != nil {
 		return err
 	}
